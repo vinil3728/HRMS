@@ -1,0 +1,45 @@
+.placeholder-container {
+  display: flex;
+  justify-content: center;
+  padding: 40px 16px;
+}
+
+.placeholder-card {
+  max-width: 500px;
+  width: 100%;
+  padding: 48px 32px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: var(--primary-50);
+  color: var(--primary-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.placeholder-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 8px;
+}
+
+.placeholder-desc {
+  font-size: 14px;
+  color: var(--gray-500);
+  margin-bottom: 20px;
+}
+
+.status-wrap {
+  display: flex;
+  justify-content: center;
+}

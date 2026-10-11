@@ -1,0 +1,144 @@
+@if (isOpen() && user(); as u) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="user-view-modal-title">
+    <button class="modal-backdrop" (click)="onClose()" aria-label="Close modal backdrop"></button>
+    <div class="modal-container">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="user-header-profile">
+          <div class="user-avatar-badge">
+            <app-avatar
+              [name]="u.employee ? (u.employee.firstName + ' ' + u.employee.lastName) : u.username"
+              [size]="48"
+            ></app-avatar>
+          </div>
+          <div class="user-header-text">
+            <div class="user-title-row">
+              <h2 id="user-view-modal-title" class="user-title">{{ u.username }}</h2>
+              <app-badge [variant]="u.isActive ? 'ACTIVE' : 'INACTIVE'">
+                {{ u.isActive ? 'Active' : 'Inactive' }}
+              </app-badge>
+              @if (u.role?.isSystemRole) {
+                <span class="system-role-pill">System Role</span>
+              }
+            </div>
+            <p class="user-subtitle">
+              User ID: <span class="mono-id">{{ u.id }}</span>
+            </p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" (click)="onClose()" aria-label="Close modal">
+          <app-icon name="x" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <!-- Account Overview Card -->
+        <div class="detail-card">
+          <div class="card-header-line">
+            <app-icon name="shield" [size]="16"></app-icon>
+            <h3 class="card-heading">Authentication & Role</h3>
+          </div>
+          <div class="card-grid">
+            <div class="meta-field">
+              <span class="meta-label">Username</span>
+              <span class="meta-value font-medium">{{ u.username }}</span>
+            </div>
+            <div class="meta-field">
+              <span class="meta-label">Access Control Role</span>
+              <div class="meta-value role-chip">
+                <span class="role-name">{{ u.role?.name || 'No Role' }}</span>
+                <span class="role-code">({{ u.role?.code || 'N/A' }})</span>
+              </div>
+            </div>
+            <div class="meta-field">
+              <span class="meta-label">Account Status</span>
+              <div class="status-indicator" [class.active]="u.isActive">
+                <span class="status-dot"></span>
+                <span class="status-text">{{ u.isActive ? 'Enabled (Can Login)' : 'Disabled (Access Revoked)' }}</span>
+              </div>
+            </div>
+            <div class="meta-field">
+              <span class="meta-label">Account Created</span>
+              <span class="meta-value">
+                {{ u.createdAt ? (u.createdAt | date: 'mediumDate') : 'System Initialized' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Linked Employee Card -->
+        <div class="detail-card">
+          <div class="card-header-line">
+            <app-icon name="users" [size]="16"></app-icon>
+            <h3 class="card-heading">Linked Employee Profile</h3>
+          </div>
+          @if (u.employee; as emp) {
+            <div class="card-grid">
+              <div class="meta-field">
+                <span class="meta-label">Employee Full Name</span>
+                <span class="meta-value font-medium">{{ emp.firstName }} {{ emp.lastName }}</span>
+              </div>
+              <div class="meta-field">
+                <span class="meta-label">Employee Code</span>
+                <span class="meta-value font-mono">{{ emp.employeeCode }}</span>
+              </div>
+              <div class="meta-field">
+                <span class="meta-label">Official Email</span>
+                <span class="meta-value">{{ emp.email }}</span>
+              </div>
+              <div class="meta-field">
+                <span class="meta-label">Department</span>
+                <span class="meta-value">{{ emp.department?.name || 'Unassigned' }}</span>
+              </div>
+              <div class="meta-field">
+                <span class="meta-label">Designation</span>
+                <span class="meta-value">{{ emp.designation?.name || 'Unassigned' }}</span>
+              </div>
+            </div>
+          } @else {
+            <div class="unlinked-notice">
+              <app-icon name="info" [size]="18"></app-icon>
+              <span>This account is not directly linked to an active employee record.</span>
+            </div>
+          }
+        </div>
+
+        <!-- Security Info Note -->
+        <div class="security-notice-box">
+          <app-icon name="shield" [size]="18"></app-icon>
+          <div class="notice-text">
+            <strong>Password Security</strong>: Passwords are encrypted with 12-round bcrypt hash salts. Plaintext credentials are never exposed or transmitted over the wire.
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="onClose()">
+          Close
+        </button>
+
+        <button
+          type="button"
+          class="btn"
+          [class.btn-warning]="u.isActive"
+          [class.btn-success]="!u.isActive"
+          (click)="onToggleStatus()"
+        >
+          <app-icon [name]="u.isActive ? 'x' : 'check'" [size]="16"></app-icon>
+          <span>{{ u.isActive ? 'Deactivate Account' : 'Activate Account' }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="onEdit()"
+        >
+          <app-icon name="edit" [size]="16"></app-icon>
+          <span>Edit User</span>
+        </button>
+      </div>
+    </div>
+  </div>
+}

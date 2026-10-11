@@ -1,0 +1,156 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="summary-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close modal backdrop"></button>
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-icon-badge" [class.finalized]="isFinalized()">
+            <app-icon [name]="isFinalized() ? 'check-circle' : 'file-text'" [size]="20"></app-icon>
+          </div>
+          <div>
+            <h2 id="summary-modal-title" class="modal-title">
+              {{ isFinalized() ? 'Finalized Performance Appraisal' : 'Cycle Summary & Finalization' }}
+            </h2>
+            <p class="modal-subtitle">
+              {{ employeeName() }} &bull; {{ cycle()?.name }}
+            </p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="x" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (errorMessage()) {
+          <div class="alert alert-danger" role="alert">
+            <app-icon name="alert-circle" [size]="18"></app-icon>
+            <span>{{ errorMessage() }}</span>
+          </div>
+        }
+
+        <!-- Finalized Badge & Scorecard Banner if already Finalized -->
+        @if (isFinalized()) {
+          <div class="finalized-banner">
+            <div class="finalized-rating-box">
+              <span class="rating-label">Final Weighted Rating</span>
+              <span class="rating-number">{{ summary()?.finalRating | number:'1.2-2' }}</span>
+              <span class="rating-stars">
+                @for (s of [1,2,3,4,5]; track s) {
+                  <span [class.active-star]="(summary()?.finalRating || 0) >= s">★</span>
+                }
+              </span>
+            </div>
+            <div class="finalized-status-text">
+              <div class="badge badge-success">APPRAISAL FINALIZED</div>
+              <p class="finalized-date">
+                Certified on {{ summary()?.createdAt | date:'mediumDate' }}
+              </p>
+              @if (summary()?.comments) {
+                <p class="finalized-comments">
+                  "{{ summary()?.comments }}"
+                </p>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Scorecard Criteria Checklist (for unfinalized cycles) -->
+        @if (!isFinalized()) {
+          <div class="checklist-card">
+            <h3 class="section-title">Finalization Readiness Checks</h3>
+
+            <div class="check-item">
+              <div class="check-icon" [class.pass]="isWeightValid()" [class.fail]="!isWeightValid()">
+                <app-icon [name]="isWeightValid() ? 'check-circle' : 'alert-circle'" [size]="16"></app-icon>
+              </div>
+              <div class="check-details">
+                <span class="check-title">Cumulative Goal Weightage: {{ totalWeight() }}%</span>
+                <span class="check-desc">
+                  {{ isWeightValid() ? 'Weight strictly equals 100% requirement.' : 'Weights across all goals must sum to exactly 100%.' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="check-item">
+              <div class="check-icon" [class.pass]="cycle()?.status === 'CLOSED'" [class.fail]="cycle()?.status !== 'CLOSED'">
+                <app-icon [name]="cycle()?.status === 'CLOSED' ? 'check-circle' : 'alert-circle'" [size]="16"></app-icon>
+              </div>
+              <div class="check-details">
+                <span class="check-title">Appraisal Cycle Status: {{ cycle()?.status }}</span>
+                <span class="check-desc">
+                  {{ cycle()?.status === 'CLOSED' ? 'Cycle is closed for edits.' : 'Appraisal cycle must be in CLOSED status before finalization.' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="check-item">
+              <div class="check-icon" [class.pass]="goalsCount() > 0" [class.fail]="goalsCount() === 0">
+                <app-icon [name]="goalsCount() > 0 ? 'check-circle' : 'alert-circle'" [size]="16"></app-icon>
+              </div>
+              <div class="check-details">
+                <span class="check-title">Goals Defined: {{ goalsCount() }} Objective(s)</span>
+                <span class="check-desc">
+                  At least one objective must be defined and evaluated.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Projected Rating Preview -->
+          <div class="projected-card">
+            <div class="projected-left">
+              <span class="projected-label">Estimated Manager Score</span>
+              <span class="projected-sub">Calculated from weighted manager ratings</span>
+            </div>
+            <div class="projected-score">
+              <span class="score-val">{{ projectedRating() > 0 ? (projectedRating() | number:'1.2-2') : 'N/A' }}</span>
+              @if (projectedRating() > 0) {
+                <span class="score-max">/ 5.0</span>
+              }
+            </div>
+          </div>
+
+          <!-- Final Comments Input (when finalizing) -->
+          @if (canFinalize()) {
+            <div class="form-group">
+              <label class="form-label" for="summaryComments">
+                Executive / Appraisal Summary Comments
+              </label>
+              <textarea
+                id="summaryComments"
+                class="form-control"
+                rows="3"
+                [value]="comments()"
+                (input)="onCommentsInput($event)"
+                placeholder="Overall appraisal feedback, promotion recommendations, or annual review summary..."
+              ></textarea>
+            </div>
+          }
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="submitting()">
+          Close
+        </button>
+
+        @if (!isFinalized() && canFinalize()) {
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="finalize()"
+            [disabled]="submitting() || !isReadyToFinalize()"
+          >
+            @if (submitting()) {
+              <app-icon name="clock" [size]="16" class="spin"></app-icon>
+            } @else {
+              <app-icon name="award" [size]="16"></app-icon>
+            }
+            <span>{{ submitting() ? 'Finalizing...' : 'Finalize & Lock Appraisal' }}</span>
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

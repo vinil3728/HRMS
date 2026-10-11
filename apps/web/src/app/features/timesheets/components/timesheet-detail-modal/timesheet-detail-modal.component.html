@@ -1,0 +1,112 @@
+@if (isOpen() && timesheet(); as item) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="detail-timesheet-title">
+    <button class="modal-backdrop" (click)="onClose()" aria-label="Close dialog"></button>
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="header-title-wrap">
+          <div class="icon-wrap">
+            <app-icon name="file-text" [size]="20"></app-icon>
+          </div>
+          <div>
+            <h2 id="detail-timesheet-title" class="modal-title">Timesheet Entry Details</h2>
+            <p class="modal-subtitle">
+              {{ item.project }} &bull; {{ item.workDate | date: 'fullDate' }}
+            </p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" (click)="onClose()" aria-label="Close modal">
+          <app-icon name="x" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Rejection Feedback Alert (if REJECTED) -->
+        @if (item.status === 'REJECTED' && item.rejectionReason) {
+          <div class="rejection-box">
+            <div class="rejection-header">
+              <app-icon name="alert-circle" [size]="18"></app-icon>
+              <strong>Returned / Rejection Reason</strong>
+            </div>
+            <p class="rejection-text">{{ item.rejectionReason }}</p>
+            @if (item.reviewedBy) {
+              <div class="reviewer-meta">
+                Reviewed by {{ item.reviewedBy.firstName }} {{ item.reviewedBy.lastName }} on {{ item.reviewedAt | date: 'medium' }}
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Top Overview Ribbon -->
+        <div class="overview-ribbon">
+          <div class="ribbon-col">
+            <span class="ribbon-label">Status</span>
+            <app-badge [variant]="getStatusVariant(item.status)">{{ item.status }}</app-badge>
+          </div>
+          <div class="ribbon-col">
+            <span class="ribbon-label">Logged Duration</span>
+            <span class="ribbon-value font-bold text-primary">{{ item.hours }} Hours</span>
+          </div>
+          <div class="ribbon-col">
+            <span class="ribbon-label">Work Date</span>
+            <span class="ribbon-value">{{ item.workDate | date: 'dd MMM yyyy' }}</span>
+          </div>
+          <div class="ribbon-col">
+            <span class="ribbon-label">Project</span>
+            <span class="ribbon-value font-semibold">{{ item.project }}</span>
+          </div>
+        </div>
+
+        <!-- Employee Info Section -->
+        @if (item.employee) {
+          <div class="section-card">
+            <span class="section-title">Employee Information</span>
+            <div class="meta-grid">
+              <div class="meta-item">
+                <span class="meta-label">Employee:</span>
+                <span class="meta-value">{{ item.employee.firstName }} {{ item.employee.lastName }} ({{ item.employee.employeeCode }})</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Department:</span>
+                <span class="meta-value">{{ item.employee.department?.name || 'General' }}</span>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Task Work Description -->
+        <div class="section-card">
+          <span class="section-title">Task Summary & Accomplishments</span>
+          <div class="task-description-box">
+            {{ item.description }}
+          </div>
+        </div>
+
+        <!-- Lifecycle Timestamps -->
+        <div class="timestamps-bar">
+          <div class="time-item">
+            <span class="time-label">Created:</span>
+            <span class="time-val">{{ item.createdAt | date: 'medium' }}</span>
+          </div>
+          @if (item.submittedAt) {
+            <div class="time-item">
+              <span class="time-label">Submitted:</span>
+              <span class="time-val">{{ item.submittedAt | date: 'medium' }}</span>
+            </div>
+          }
+          @if (item.reviewedAt && item.reviewedBy) {
+            <div class="time-item">
+              <span class="time-label">{{ item.status === 'APPROVED' ? 'Approved By:' : 'Reviewed By:' }}</span>
+              <span class="time-val">{{ item.reviewedBy.firstName }} {{ item.reviewedBy.lastName }} ({{ item.reviewedAt | date: 'medium' }})</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="onClose()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+}

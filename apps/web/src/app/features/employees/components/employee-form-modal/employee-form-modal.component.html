@@ -1,0 +1,194 @@
+<div class="modal-overlay">
+  <button
+    type="button"
+    class="modal-backdrop"
+    (click)="onCancel()"
+    aria-label="Close dialog"
+  ></button>
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <!-- Header -->
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title">
+          {{ isEditMode() ? 'Edit Employee' : 'Add New Employee' }}
+        </h2>
+        <p class="modal-subtitle">
+          {{
+            isEditMode()
+              ? 'Update employee profile and departmental assignments'
+              : 'Enter core employee details to create a new record'
+          }}
+        </p>
+      </div>
+      <button
+        type="button"
+        class="close-btn"
+        (click)="onCancel()"
+        aria-label="Close"
+      >
+        <app-icon name="close" [size]="18"></app-icon>
+      </button>
+    </div>
+
+    @if (errorMessage()) {
+      <div class="alert alert-error">
+        <app-icon name="close" [size]="16"></app-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <!-- Form Body -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="firstName">First Name *</label>
+          <input
+            id="firstName"
+            type="text"
+            class="form-control"
+            placeholder="e.g. Ankit"
+            formControlName="firstName"
+            [class.is-invalid]="isFieldInvalid('firstName')"
+          />
+          @if (isFieldInvalid('firstName')) {
+            <span class="form-error">First name is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="lastName">Last Name *</label>
+          <input
+            id="lastName"
+            type="text"
+            class="form-control"
+            placeholder="e.g. Kulkarni"
+            formControlName="lastName"
+            [class.is-invalid]="isFieldInvalid('lastName')"
+          />
+          @if (isFieldInvalid('lastName')) {
+            <span class="form-error">Last name is required</span>
+          }
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="email">Work Email *</label>
+          <input
+            id="email"
+            type="email"
+            class="form-control"
+            placeholder="e.g. ankit.k@treasurex.com"
+            formControlName="email"
+            [class.is-invalid]="isFieldInvalid('email')"
+          />
+          @if (isFieldInvalid('email')) {
+            <span class="form-error">Valid email is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="phone">Phone (+91 format) *</label>
+          <input
+            id="phone"
+            type="text"
+            class="form-control"
+            placeholder="+919876543210"
+            formControlName="phone"
+            [class.is-invalid]="isFieldInvalid('phone')"
+          />
+          @if (isFieldInvalid('phone')) {
+            <span class="form-error">Valid Indian phone (+91...) required</span>
+          }
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <span class="form-label">Department *</span>
+          <app-select
+            [options]="departmentOptions()"
+            formControlName="departmentId"
+            placeholder="Select Department"
+            [fullWidth]="true"
+          ></app-select>
+          @if (isFieldInvalid('departmentId')) {
+            <span class="form-error">Department is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <span class="form-label">Designation *</span>
+          <app-select
+            [options]="designationOptions()"
+            formControlName="designationId"
+            placeholder="Select Designation"
+            [fullWidth]="true"
+          ></app-select>
+          @if (isFieldInvalid('designationId')) {
+            <span class="form-error">Designation is required</span>
+          }
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="dateOfJoining">Date of Joining *</label>
+          <input
+            id="dateOfJoining"
+            type="date"
+            class="form-control"
+            formControlName="dateOfJoining"
+            [class.is-invalid]="isFieldInvalid('dateOfJoining')"
+          />
+          @if (isFieldInvalid('dateOfJoining')) {
+            <span class="form-error">Date of joining is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <span class="form-label">Status *</span>
+          <app-select
+            [options]="statusOptions"
+            formControlName="status"
+            [fullWidth]="true"
+          ></app-select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <span class="form-label">Reporting Manager (Optional)</span>
+        <app-select
+          [options]="managerOptions()"
+          formControlName="managerId"
+          placeholder="None (Top Level)"
+          [fullWidth]="true"
+        ></app-select>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="onCancel()"
+          [disabled]="isSubmitting()"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="isSubmitting() || form.invalid"
+        >
+          @if (isSubmitting()) {
+            <span class="spinner"></span>
+            <span>Saving...</span>
+          } @else {
+            <span>{{ isEditMode() ? 'Update Employee' : 'Add Employee' }}</span>
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

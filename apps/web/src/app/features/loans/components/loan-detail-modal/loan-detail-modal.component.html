@@ -1,0 +1,301 @@
+@if (isOpen() && loan()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="loan-detail-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close modal backdrop"></button>
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div class="header-left">
+          <div class="header-title-row">
+            <h3 id="loan-detail-modal-title" class="modal-title">
+              {{ loan()?.loanType }} Loan Details
+            </h3>
+            <span class="status-badge status-{{ loan()?.status?.toLowerCase() }}">
+              {{ loan()?.status }}
+            </span>
+          </div>
+          <p class="modal-subtitle">
+            Applicant: <strong>{{ loan()?.employee?.firstName }} {{ loan()?.employee?.lastName }}</strong>
+            ({{ loan()?.employee?.employeeCode }}) &bull; Applied: {{ loan()?.createdAt | date:'mediumDate' }}
+          </p>
+        </div>
+        <button class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <!-- Financial Metrics Card -->
+      <div class="kpi-banner">
+        <div class="kpi-cell">
+          <span class="kpi-label">Sanctioned Principal</span>
+          <span class="kpi-val">₹{{ principal() | number:'1.2-2' }}</span>
+        </div>
+        <div class="kpi-cell">
+          <span class="kpi-label">Total Repaid</span>
+          <span class="kpi-val text-success">₹{{ totalRepaid() | number:'1.2-2' }}</span>
+        </div>
+        <div class="kpi-cell">
+          <span class="kpi-label">Remaining Balance</span>
+          <span class="kpi-val text-danger">₹{{ remainingBalance() | number:'1.2-2' }}</span>
+        </div>
+        <div class="kpi-cell">
+          <span class="kpi-label">Repayment Progress</span>
+          <div class="progress-wrap">
+            <div class="progress-bar-bg">
+              <div class="progress-fill" [style.width.%]="repaymentPercent()"></div>
+            </div>
+            <span class="progress-txt">{{ repaymentPercent() }}%</span>
+          </div>
+        </div>
+      </div>
+
+      @if (actionError()) {
+        <div class="alert-error" role="alert">
+          <app-icon name="alert-circle" [size]="16"></app-icon>
+          <span>{{ actionError() }}</span>
+        </div>
+      }
+
+      <div class="modal-body-scrollable">
+        <!-- Rejection Warning if applicable -->
+        @if (loan()?.status === 'REJECTED') {
+          <div class="rejection-callout">
+            <app-icon name="alert-circle" [size]="18" class="text-danger"></app-icon>
+            <div>
+              <div class="callout-title">Application Rejected</div>
+              <div class="callout-desc">Reason: {{ loan()?.rejectionReason }}</div>
+            </div>
+          </div>
+        }
+
+        <!-- Information 3-Column Grid -->
+        <div class="details-grid">
+          <div class="detail-group">
+            <span class="lbl">Repayment Mode</span>
+            <span class="val highlight-mode">
+              @if (loan()?.repaymentMode === 'SPLIT') {
+                Split (Cash + Salary Deduction)
+              } @else if (loan()?.repaymentMode === 'SALARY_DEDUCTION') {
+                100% Salary Deduction
+              } @else if (loan()?.repaymentMode === 'CASH') {
+                100% Cash / Bank Deposit
+              } @else {
+                Not configured yet
+              }
+            </span>
+          </div>
+
+          <div class="detail-group">
+            <span class="lbl">Monthly Installment</span>
+            <span class="val">
+              @if (loan()?.monthlyInstallment) {
+                ₹{{ loan()?.monthlyInstallment | number:'1.2-2' }}/mo
+              } @else {
+                --
+              }
+            </span>
+          </div>
+
+          <div class="detail-group">
+            <span class="lbl">Tenure Duration</span>
+            <span class="val">{{ loan()?.tenureMonths }} Months</span>
+          </div>
+
+          <!-- Split mode breakdown display -->
+          @if (loan()?.repaymentMode === 'SPLIT') {
+            <div class="detail-group">
+              <span class="lbl">Cash Portion</span>
+              <span class="val text-green">₹{{ loan()?.cashAmount | number:'1.2-2' }}</span>
+            </div>
+            <div class="detail-group">
+              <span class="lbl">Salary Deduction Portion</span>
+              <span class="val text-blue">₹{{ loan()?.salaryDeductionAmount | number:'1.2-2' }}</span>
+            </div>
+            <div class="detail-group">
+              <span class="lbl">Repayment Start Date</span>
+              <span class="val">{{ (loan()?.repaymentStartDate | date:'mediumDate') || '--' }}</span>
+            </div>
+          }
+
+          <!-- Disbursement details -->
+          @if (loan()?.disbursedAt) {
+            <div class="detail-group">
+              <span class="lbl">Disbursed On</span>
+              <span class="val">{{ loan()?.disbursedAt | date:'mediumDate' }}</span>
+            </div>
+            <div class="detail-group">
+              <span class="lbl">Payment Reference / UTR</span>
+              <span class="val font-mono">{{ loan()?.disbursementReference }}</span>
+            </div>
+            <div class="detail-group">
+              <span class="lbl">Disbursement Proof</span>
+              <span class="val">
+                @if (loan()?.disbursementReceiptUrl) {
+                  <a
+                    [href]="getReceiptFullUrl(loan()?.disbursementReceiptUrl)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="receipt-link"
+                  >
+                    <app-icon name="receipt" [size]="14"></app-icon>
+                    View Receipt Voucher
+                  </a>
+                } @else {
+                  <span class="text-muted">No receipt attached</span>
+                }
+              </span>
+            </div>
+          }
+        </div>
+
+        <!-- Purpose & Notes -->
+        <div class="purpose-container">
+          <div class="purpose-title">Application Purpose / Justification:</div>
+          <div class="purpose-body">{{ loan()?.purpose }}</div>
+          @if (loan()?.notes) {
+            <div class="notes-body">
+              <strong>Remarks:</strong> {{ loan()?.notes }}
+            </div>
+          }
+        </div>
+
+        <!-- Installment Schedule Table -->
+        <div class="installments-section">
+          <div class="table-header-row">
+            <h4 class="table-title">Repayment Schedule & Installment Tracking</h4>
+            @if (loan()?.repayments?.length) {
+              <span class="table-count">{{ loan()?.repayments?.length }} Installments</span>
+            }
+          </div>
+
+          @if (!loan()?.repayments || loan()?.repayments?.length === 0) {
+            <div class="empty-schedule">
+              <app-icon name="calendar" [size]="24" class="text-muted"></app-icon>
+              <p>Repayment schedule has not been initiated yet.</p>
+              @if (isHr() && (loan()?.status === 'DISBURSED' || loan()?.status === 'APPROVED')) {
+                <button type="button" class="btn btn-sm btn-primary" (click)="onConfigureRepayment()">
+                  <app-icon name="settings" [size]="14"></app-icon>
+                  Configure Repayment Schedule
+                </button>
+              }
+            </div>
+          } @else {
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Due Date</th>
+                    <th>Amount Due</th>
+                    <th>Amount Paid</th>
+                    <th>Mode</th>
+                    <th>Status</th>
+                    <th>Paid Date</th>
+                    <th>Receipt</th>
+                    @if (isHr()) {
+                      <th class="text-right">Action</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (rep of loan()?.repayments; track rep.id) {
+                    <tr>
+                      <td class="font-bold">#{{ rep.installmentNumber }}</td>
+                      <td>{{ rep.dueDate | date:'mediumDate' }}</td>
+                      <td class="font-bold">₹{{ rep.amountDue | number:'1.2-2' }}</td>
+                      <td>
+                        <span [class.text-success]="rep.amountPaid >= rep.amountDue">
+                          ₹{{ (rep.amountPaid || 0) | number:'1.2-2' }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="mode-tag">{{ rep.paymentMode }}</span>
+                      </td>
+                      <td>
+                        <span class="inst-status inst-status-{{ rep.status.toLowerCase() }}">
+                          {{ rep.status }}
+                        </span>
+                      </td>
+                      <td>
+                        {{ (rep.paidAt | date:'mediumDate') || '--' }}
+                      </td>
+                      <td>
+                        @if (rep.receiptUrl) {
+                          <a
+                            [href]="getReceiptFullUrl(rep.receiptUrl)"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="receipt-icon-btn"
+                            title="View Installment Receipt"
+                          >
+                            <app-icon name="receipt" [size]="14"></app-icon>
+                          </a>
+                        } @else {
+                          <span class="text-muted">--</span>
+                        }
+                      </td>
+                      @if (isHr()) {
+                        <td class="text-right">
+                          @if (rep.status !== 'PAID') {
+                            <button
+                              type="button"
+                              class="action-btn-pay"
+                              (click)="onPayInstallment(rep)"
+                              title="Record Payment for Installment"
+                            >
+                              <app-icon name="dollar" [size]="14"></app-icon>
+                              Pay
+                            </button>
+                          } @else {
+                            <span class="text-success text-xs">
+                              <app-icon name="check" [size]="14"></app-icon>
+                              Settled
+                            </span>
+                          }
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Modal Footer with Context Actions -->
+      <div class="modal-footer">
+        <div class="footer-left">
+          @if (isHr() && loan()?.status === 'REPAYMENT_INITIATED') {
+            <button
+              type="button"
+              class="btn btn-success"
+              (click)="onStartRepayment()"
+              [disabled]="startingRepayment()"
+            >
+              @if (startingRepayment()) {
+                <span class="spinner"></span>
+                <span>Starting Repayment...</span>
+              } @else {
+                <app-icon name="trending-up" [size]="16"></app-icon>
+                <span>Start Repayment (Set Active)</span>
+              }
+            </button>
+          }
+          @if (isHr() && (loan()?.status === 'DISBURSED' || loan()?.status === 'REPAYMENT_INITIATED' || loan()?.status === 'ACTIVE')) {
+            <button
+              type="button"
+              class="btn btn-outline"
+              (click)="onConfigureRepayment()"
+            >
+              <app-icon name="settings" [size]="16"></app-icon>
+              <span>Repayment Options</span>
+            </button>
+          }
+        </div>
+
+        <button type="button" class="btn btn-outline" (click)="onCancel()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+}

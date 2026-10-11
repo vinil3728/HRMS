@@ -1,0 +1,112 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="loan-apply-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close modal backdrop"></button>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 id="loan-apply-modal-title" class="modal-title">Apply for Company Loan</h3>
+          <p class="modal-subtitle">Submit a company loan application for HR review and approval.</p>
+        </div>
+        <button class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      @if (errorMessage()) {
+        <div class="alert-error" role="alert">
+          <app-icon name="alert-circle" [size]="16"></app-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-body">
+        <!-- Row 1: Loan Type, Amount, Tenure (3 fields per row) -->
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label">Loan Category <span class="required">*</span></label>
+            <app-select
+              formControlName="loanType"
+              [options]="loanTypes"
+              [fullWidth]="true"
+              placeholder="Select Loan Category"
+            ></app-select>
+          </div>
+
+          <div class="form-group flex-1">
+            <label class="form-label" for="loanAmount">Requested Amount (₹) <span class="required">*</span></label>
+            <input
+              id="loanAmount"
+              type="number"
+              class="form-control"
+              formControlName="amount"
+              placeholder="e.g. 50000"
+              [class.invalid]="isFieldInvalid('amount')"
+            />
+            @if (isFieldInvalid('amount')) {
+              <span class="field-error">Amount is required (min ₹500)</span>
+            }
+          </div>
+
+          <div class="form-group flex-1">
+            <label class="form-label" for="loanTenure">Tenure (Months) <span class="required">*</span></label>
+            <input
+              id="loanTenure"
+              type="number"
+              class="form-control"
+              formControlName="tenureMonths"
+              placeholder="e.g. 6"
+              [class.invalid]="isFieldInvalid('tenureMonths')"
+            />
+            @if (isFieldInvalid('tenureMonths')) {
+              <span class="field-error">Tenure must be 1 to 60 months</span>
+            }
+          </div>
+        </div>
+
+        <!-- Purpose -->
+        <div class="form-group">
+          <label class="form-label" for="loanPurpose">Reason / Justification <span class="required">*</span></label>
+          <textarea
+            id="loanPurpose"
+            rows="3"
+            class="form-control"
+            formControlName="purpose"
+            placeholder="Describe the reason for applying for this company loan..."
+            [class.invalid]="isFieldInvalid('purpose')"
+          ></textarea>
+          @if (isFieldInvalid('purpose')) {
+            <span class="field-error">Purpose is required (min 5 characters)</span>
+          }
+        </div>
+
+        <!-- Notes (Optional) -->
+        <div class="form-group">
+          <label class="form-label" for="loanNotes">Additional Remarks <span class="optional">(Optional)</span></label>
+          <input
+            id="loanNotes"
+            type="text"
+            class="form-control"
+            formControlName="notes"
+            placeholder="Any special remarks or references"
+          />
+        </div>
+
+        <!-- Actions Footer -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="onCancel()" [disabled]="submitting()">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="spinner"></span>
+              <span>Submitting Application...</span>
+            } @else {
+              <app-icon name="send" [size]="16"></app-icon>
+              <span>Submit Loan Application</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

@@ -1,0 +1,168 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="user-form-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close modal backdrop"></button>
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-icon-badge">
+            <app-icon name="users" [size]="20"></app-icon>
+          </div>
+          <div>
+            <h2 id="user-form-modal-title" class="modal-title">
+              {{ isEditMode() ? 'Edit User Credentials & Role' : 'Create User Account' }}
+            </h2>
+            <p class="modal-subtitle">
+              {{ isEditMode() ? 'Update account username, access control role, or reset password.' : 'Provision system login credentials linked to an active employee profile.' }}
+            </p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="x" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-form">
+        <div class="modal-body">
+          @if (errorMessage()) {
+            <div class="alert alert-danger" role="alert">
+              <app-icon name="alert-circle" [size]="18"></app-icon>
+              <span>{{ errorMessage() }}</span>
+            </div>
+          }
+
+          <!-- In Edit mode: show linked employee banner -->
+          @if (isEditMode() && user()?.employee) {
+            <div class="linked-employee-box">
+              <div class="emp-avatar-icon">
+                <app-icon name="users" [size]="18"></app-icon>
+              </div>
+              <div class="emp-details">
+                <span class="emp-name">
+                  {{ user()?.employee?.firstName }} {{ user()?.employee?.lastName }}
+                  <span class="emp-code">({{ user()?.employee?.employeeCode }})</span>
+                </span>
+                <span class="emp-meta">
+                  {{ user()?.employee?.email }} &bull; {{ user()?.employee?.department?.name || 'Department' }}
+                </span>
+              </div>
+            </div>
+          } @else if (!isEditMode()) {
+            <!-- Create mode: Select employee -->
+            <div class="form-group">
+              <span class="form-label required">Linked Employee Profile</span>
+              @if (loadingEmployees()) {
+                <div class="field-loading">
+                  <app-icon name="clock" [size]="16" class="spin"></app-icon>
+                  <span>Loading employees...</span>
+                </div>
+              } @else {
+                <app-select
+                  formControlName="employeeId"
+                  [options]="employeeOptions()"
+                  placeholder="-- Select an employee to provision account --"
+                  [fullWidth]="true"
+                ></app-select>
+                @if (isFieldInvalid('employeeId')) {
+                  <div class="invalid-feedback">
+                    Please select an employee profile to link this user account.
+                  </div>
+                }
+                @if (eligibleEmployees().length === 0 && !loadingEmployees()) {
+                  <span class="field-hint text-warning">
+                    All currently registered employees already have user accounts.
+                  </span>
+                }
+              }
+            </div>
+          }
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <span class="form-label required">Assigned Access Role</span>
+              <app-select
+                formControlName="roleId"
+                [options]="roleOptions()"
+                placeholder="-- Select Access Control Role --"
+                [fullWidth]="true"
+              ></app-select>
+              @if (isFieldInvalid('roleId')) {
+                <div class="invalid-feedback">
+                  Please assign an active role to this user.
+                </div>
+              }
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label required" for="userUsername">Username</label>
+              <input
+                id="userUsername"
+                type="text"
+                class="form-control"
+                [class.is-invalid]="isFieldInvalid('username')"
+                formControlName="username"
+                placeholder="e.g. john.doe"
+              />
+              @if (isFieldInvalid('username')) {
+                <div class="invalid-feedback">
+                  Username is required (min 3 characters).
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label
+              class="form-label"
+              [class.required]="!isEditMode()"
+              for="userPassword"
+            >
+              {{ isEditMode() ? 'Reset Password (Optional)' : 'Initial Password' }}
+            </label>
+            <input
+              id="userPassword"
+              type="password"
+              class="form-control"
+              [class.is-invalid]="isFieldInvalid('password')"
+              formControlName="password"
+              [placeholder]="isEditMode() ? 'Leave blank to retain current password...' : 'Enter strong password (min 8 characters)...'"
+            />
+            @if (isFieldInvalid('password')) {
+              <div class="invalid-feedback">
+                Password must be at least 8 characters long.
+              </div>
+            }
+            @if (isEditMode()) {
+              <span class="field-hint">
+                Only fill this in if you want to overwrite the user's password.
+              </span>
+            }
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="onCancel()"
+            [disabled]="submitting()"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="submitting() || (!isEditMode() && eligibleEmployees().length === 0)"
+          >
+            @if (submitting()) {
+              <app-icon name="clock" [size]="16" class="spin"></app-icon>
+              <span>Saving Account...</span>
+            } @else {
+              <app-icon name="check" [size]="16"></app-icon>
+              <span>{{ isEditMode() ? 'Save Changes' : 'Create User' }}</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

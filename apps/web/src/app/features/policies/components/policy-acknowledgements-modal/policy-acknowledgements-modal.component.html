@@ -1,0 +1,138 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="ack-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close modal backdrop"></button>
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-icon-badge">
+            <app-icon name="check-circle" [size]="20"></app-icon>
+          </div>
+          <div>
+            <h2 id="ack-modal-title" class="modal-title">
+              Policy Compliance Acknowledgements
+            </h2>
+            <p class="modal-subtitle">
+              {{ policy()?.title }} ({{ policy()?.code }})
+            </p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="x" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <div class="modal-toolbar">
+        <div class="search-box">
+          <app-icon name="search" [size]="15" class="search-icon"></app-icon>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Filter employees by name or ID..."
+            [value]="searchTerm()"
+            (input)="onSearchInput($event)"
+          />
+        </div>
+
+        <div class="toolbar-right">
+          <span class="count-badge">
+            {{ filteredAcknowledgements().length }} Acknowledged
+          </span>
+          <button
+            type="button"
+            class="btn btn-outline btn-sm"
+            (click)="exportCsv()"
+            [disabled]="acknowledgements().length === 0"
+          >
+            <app-icon name="download" [size]="14"></app-icon>
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        @if (errorMessage()) {
+          <div class="alert alert-danger" role="alert">
+            <app-icon name="alert-circle" [size]="18"></app-icon>
+            <span>{{ errorMessage() }}</span>
+          </div>
+        }
+
+        @if (loading()) {
+          <div class="loading-state">
+            <app-icon name="clock" [size]="28" class="spin"></app-icon>
+            <span>Loading employee acknowledgements...</span>
+          </div>
+        }
+
+        @if (!loading() && filteredAcknowledgements().length === 0) {
+          <div class="empty-state">
+            <div class="empty-icon-wrap">
+              <app-icon name="shield" [size]="36"></app-icon>
+            </div>
+            <h3>No Acknowledgements Found</h3>
+            <p>
+              {{
+                searchTerm()
+                  ? 'No matching employee records found for your search.'
+                  : 'No employees have submitted compliance acknowledgement for this policy yet.'
+              }}
+            </p>
+          </div>
+        }
+
+        @if (!loading() && filteredAcknowledgements().length > 0) {
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>ID Code</th>
+                  <th>Department</th>
+                  <th>Acknowledged Timestamp</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (ack of filteredAcknowledgements(); track ack.id) {
+                  <tr>
+                    <td>
+                      <div class="emp-cell">
+                        <app-avatar
+                          [name]="ack.employee.firstName + ' ' + ack.employee.lastName"
+                          [size]="32"
+                        ></app-avatar>
+                        <div class="emp-info">
+                          <span class="emp-name">
+                            {{ ack.employee.firstName }} {{ ack.employee.lastName }}
+                          </span>
+                          <span class="emp-email">{{ ack.employee.email }}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="code-tag">{{ ack.employee.employeeCode }}</span>
+                    </td>
+                    <td>
+                      <span class="dept-text">{{ ack.employee.department?.name || '&mdash;' }}</span>
+                    </td>
+                    <td>
+                      <div class="date-cell">
+                        <app-icon name="check" [size]="14" class="text-success"></app-icon>
+                        <span>{{ ack.acknowledgedAt | date:'medium' }}</span>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="onCancel()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+}

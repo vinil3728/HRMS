@@ -1,0 +1,3644 @@
+{
+  "info": {
+    "name": "HRMS API Collection",
+    "description": "Complete Postman collection for HRMS (Human Resource Management System) backend API with 91 endpoints across 11 modules, complete with Bearer token authentication, environment variables, realistic request bodies, and auto-token extraction scripts.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "employeeId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "departmentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "designationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "roleId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "permissionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "documentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "attendanceId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "leaveId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "balanceId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cycleId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "goalId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "evaluationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "policyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reimbursementId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. Health & Status",
+      "item": [
+        {
+          "name": "API Welcome / Health Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            },
+            "description": "Returns greeting message confirming that the API service is alive."
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Authentication",
+      "item": [
+        {
+          "name": "Bootstrap Initial Admin",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeId\": \"{{employeeId}}\",\n  \"username\": \"admin\",\n  \"password\": \"AdminPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/bootstrap-admin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "bootstrap-admin"
+              ]
+            },
+            "description": "Creates initial superadmin user. Can only be invoked when zero users exist in the database."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "        console.log('Saved accessToken to collection variable');",
+                  "    }",
+                  "    if (json.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "        console.log('Saved refreshToken to collection variable');",
+                  "    }",
+                  "    if (json.user && json.user.id) {",
+                  "        pm.collectionVariables.set('userId', json.user.id);",
+                  "    }",
+                  "    if (json.user && json.user.employeeId) {",
+                  "        pm.collectionVariables.set('employeeId', json.user.employeeId);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"AdminPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Authenticates with username & password. Automatically saves accessToken and refreshToken to collection variables."
+          }
+        },
+        {
+          "name": "Refresh Access Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "    }",
+                  "    if (json.refreshToken) {",
+                  "        pm.collectionVariables.set('refreshToken', json.refreshToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Issues a new JWT access token and refreshes rotation using an active refresh token."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Revokes the active refresh token session."
+          }
+        },
+        {
+          "name": "Create User Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeId\": \"{{employeeId}}\",\n  \"username\": \"john.doe\",\n  \"password\": \"UserPassword123!\",\n  \"roleId\": \"{{roleId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "users"
+              ]
+            },
+            "description": "Registers a login account for an employee and assigns a system role (requires EMPLOYEE_CREATE permission)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Departments",
+      "item": [
+        {
+          "name": "Create Department",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.id) {",
+                  "        pm.collectionVariables.set('departmentId', json.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Engineering\",\n  \"code\": \"ENG\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/departments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "departments"
+              ]
+            },
+            "description": "Creates a new department record (requires DEPARTMENT_CREATE permission)."
+          }
+        },
+        {
+          "name": "Get All Departments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/departments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "departments"
+              ]
+            },
+            "description": "Retrieves list of all departments (requires DEPARTMENT_VIEW permission)."
+          }
+        },
+        {
+          "name": "Get Department By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/departments/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "departments",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{departmentId}}"
+                }
+              ]
+            },
+            "description": "Retrieves department details by UUID (requires DEPARTMENT_VIEW permission)."
+          }
+        },
+        {
+          "name": "Update Department",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Engineering & Technology\",\n  \"code\": \"ENG\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/departments/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "departments",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{departmentId}}"
+                }
+              ]
+            },
+            "description": "Updates an existing department (requires DEPARTMENT_UPDATE permission)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. Designations",
+      "item": [
+        {
+          "name": "Create Designation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.id) {",
+                  "        pm.collectionVariables.set('designationId', json.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Senior Software Engineer\",\n  \"code\": \"SSE\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/designations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "designations"
+              ]
+            },
+            "description": "Creates a new job title / designation (requires DESIGNATION_CREATE permission)."
+          }
+        },
+        {
+          "name": "Get All Designations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/designations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "designations"
+              ]
+            },
+            "description": "Retrieves list of all designations (requires DESIGNATION_VIEW permission)."
+          }
+        },
+        {
+          "name": "Get Designation By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/designations/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "designations",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{designationId}}"
+                }
+              ]
+            },
+            "description": "Retrieves single designation details by UUID (requires DESIGNATION_VIEW permission)."
+          }
+        },
+        {
+          "name": "Update Designation",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Lead Software Engineer\",\n  \"code\": \"LSE\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/designations/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "designations",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{designationId}}"
+                }
+              ]
+            },
+            "description": "Updates designation name, code, or active status (requires DESIGNATION_UPDATE permission)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. Employees",
+      "item": [
+        {
+          "name": "Core Employee Management",
+          "item": [
+            {
+              "name": "Create Employee",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    var json = pm.response.json();",
+                      "    if (json.id) {",
+                      "        pm.collectionVariables.set('employeeId', json.id);",
+                      "    }",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"employeeCode\": \"EMP-001\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"+919876543210\",\n  \"dateOfJoining\": \"2026-01-15\",\n  \"status\": \"ACTIVE\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"designationId\": \"{{designationId}}\",\n  \"managerId\": null\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees"
+                  ]
+                },
+                "description": "Registers a new employee (requires EMPLOYEE_CREATE permission)."
+              }
+            },
+            {
+              "name": "List Employees (Filtered & Paginated)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees?search=John&page=1&limit=10&status=ACTIVE",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees"
+                  ],
+                  "query": [
+                    {
+                      "key": "search",
+                      "value": "John",
+                      "description": "Search query for name, code, or email"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "description": "Page number"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10",
+                      "description": "Page limit (max 100)"
+                    },
+                    {
+                      "key": "status",
+                      "value": "ACTIVE",
+                      "description": "Filter by status: ACTIVE or INACTIVE"
+                    }
+                  ]
+                },
+                "description": "Lists all employees with search and pagination (requires EMPLOYEE_VIEW permission)."
+              }
+            },
+            {
+              "name": "Get Employee By ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Retrieves complete employee record (requires EMPLOYEE_VIEW & access guard)."
+              }
+            },
+            {
+              "name": "Update Employee",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Smith\",\n  \"email\": \"john.smith@example.com\",\n  \"phone\": \"+919876543210\",\n  \"dateOfJoining\": \"2026-01-15\",\n  \"status\": \"ACTIVE\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"designationId\": \"{{designationId}}\",\n  \"managerId\": null\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Updates employee personal/organizational details (requires EMPLOYEE_UPDATE permission)."
+              }
+            },
+            {
+              "name": "Update Employee Status",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"INACTIVE\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:id/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":id",
+                    "status"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Toggles employee lifecycle status between ACTIVE and INACTIVE (requires EMPLOYEE_STATUS_UPDATE permission)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Profile Details",
+          "item": [
+            {
+              "name": "Create Employee Profile Details",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"dateOfBirth\": \"1995-05-20\",\n  \"gender\": \"Male\",\n  \"maritalStatus\": \"Single\",\n  \"bloodGroup\": \"O+\",\n  \"nationality\": \"Indian\",\n  \"personalEmail\": \"johndoe.personal@example.com\",\n  \"alternatePhone\": \"+919876543211\",\n  \"addressLine1\": \"123 Main Street\",\n  \"addressLine2\": \"Apt 4B\",\n  \"city\": \"Bengaluru\",\n  \"state\": \"Karnataka\",\n  \"country\": \"India\",\n  \"postalCode\": \"560001\",\n  \"emergencyContactName\": \"Jane Doe\",\n  \"emergencyContactRelationship\": \"Spouse\",\n  \"emergencyContactPhone\": \"+919876543212\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/profile",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "profile"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Creates extended personal and contact details for an employee (requires EMPLOYEE_PROFILE_CREATE)."
+              }
+            },
+            {
+              "name": "Get Employee Profile Details",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/profile",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "profile"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Retrieves extended profile details (requires EMPLOYEE_PROFILE_VIEW)."
+              }
+            },
+            {
+              "name": "Update Employee Profile Details",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"maritalStatus\": \"Married\",\n  \"addressLine1\": \"456 Silicon Valley Blvd\",\n  \"emergencyContactName\": \"Jane Doe\",\n  \"emergencyContactRelationship\": \"Spouse\",\n  \"emergencyContactPhone\": \"+919876543212\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/profile",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "profile"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Modifies extended profile details (requires EMPLOYEE_PROFILE_UPDATE)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Identity Details",
+          "item": [
+            {
+              "name": "Create Employee Identity Details",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"aadhaarNumber\": \"123456789012\",\n  \"panNumber\": \"ABCDE1234F\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/identity",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "identity"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Creates government identity records: 12-digit Aadhaar & 10-char PAN (requires EMPLOYEE_IDENTITY_CREATE)."
+              }
+            },
+            {
+              "name": "Get Employee Identity Details",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/identity",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "identity"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Fetches employee identity information (requires EMPLOYEE_IDENTITY_VIEW)."
+              }
+            },
+            {
+              "name": "Update Employee Identity Details",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"aadhaarNumber\": \"123456789012\",\n  \"panNumber\": \"ABCDE1234F\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/identity",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "identity"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Updates employee Aadhaar and/or PAN details (requires EMPLOYEE_IDENTITY_UPDATE)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bank Details",
+          "item": [
+            {
+              "name": "Create Employee Bank Details",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"accountHolderName\": \"John Doe\",\n  \"accountNumber\": \"12345678901234\",\n  \"ifscCode\": \"HDFC0001234\",\n  \"bankName\": \"HDFC Bank\",\n  \"branchName\": \"Koramangala\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/bank-details",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "bank-details"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Creates bank account and IFSC details for payroll processing (requires EMPLOYEE_BANK_CREATE)."
+              }
+            },
+            {
+              "name": "Get Employee Bank Details",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/bank-details",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "bank-details"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Retrieves bank details for an employee (requires EMPLOYEE_BANK_VIEW)."
+              }
+            },
+            {
+              "name": "Update Employee Bank Details",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"accountHolderName\": \"John Doe\",\n  \"accountNumber\": \"12345678901234\",\n  \"ifscCode\": \"HDFC0001234\",\n  \"bankName\": \"HDFC Bank\",\n  \"branchName\": \"Indiranagar\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/bank-details",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "bank-details"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Updates employee banking information (requires EMPLOYEE_BANK_UPDATE)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Employee Documents",
+          "item": [
+            {
+              "name": "Create Document Metadata",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    var json = pm.response.json();",
+                      "    if (json.id) {",
+                      "        pm.collectionVariables.set('documentId', json.id);",
+                      "    }",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"documentType\": \"RESUME\",\n  \"fileName\": \"resume.pdf\",\n  \"filePath\": \"uploads/employees/resume.pdf\",\n  \"mimeType\": \"application/pdf\",\n  \"fileSize\": 1048576\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/documents",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "documents"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Registers document record metadata directly (requires EMPLOYEE_DOCUMENT_CREATE). Document types: AADHAAR, PAN, PASSPORT, RESUME, OFFER_LETTER, JOINING_LETTER, EXPERIENCE_LETTER, EDUCATIONAL_CERTIFICATE, OTHER."
+              }
+            },
+            {
+              "name": "Upload Document File (Multipart)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": "",
+                      "description": "File attachment"
+                    },
+                    {
+                      "key": "documentType",
+                      "value": "RESUME",
+                      "type": "text",
+                      "description": "AADHAAR | PAN | PASSPORT | RESUME | OFFER_LETTER | JOINING_LETTER | EXPERIENCE_LETTER | EDUCATIONAL_CERTIFICATE | OTHER"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/documents/upload",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "documents",
+                    "upload"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Uploads binary document file via multipart/form-data (requires EMPLOYEE_DOCUMENT_UPLOAD)."
+              }
+            },
+            {
+              "name": "List All Documents for Employee",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/documents",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "documents"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Lists all uploaded document metadata records for an employee (requires EMPLOYEE_DOCUMENT_VIEW)."
+              }
+            },
+            {
+              "name": "Get Document By ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/documents/:documentId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "documents",
+                    ":documentId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "documentId",
+                      "value": "{{documentId}}"
+                    }
+                  ]
+                },
+                "description": "Fetches single document record metadata (requires EMPLOYEE_DOCUMENT_VIEW)."
+              }
+            },
+            {
+              "name": "Download Document File",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/documents/:documentId/download",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "documents",
+                    ":documentId",
+                    "download"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "documentId",
+                      "value": "{{documentId}}"
+                    }
+                  ]
+                },
+                "description": "Streams and downloads the physical document file (requires EMPLOYEE_DOCUMENT_DOWNLOAD)."
+              }
+            },
+            {
+              "name": "Delete Document",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/documents/:documentId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "documents",
+                    ":documentId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "documentId",
+                      "value": "{{documentId}}"
+                    }
+                  ]
+                },
+                "description": "Deletes document record and removes file from disk storage (requires EMPLOYEE_DOCUMENT_DELETE)."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06. Attendance",
+      "item": [
+        {
+          "name": "Create Attendance Record",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.id) {",
+                  "        pm.collectionVariables.set('attendanceId', json.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attendanceDate\": \"2026-09-24\",\n  \"checkIn\": \"2026-09-24T09:00:00Z\",\n  \"checkOut\": \"2026-09-24T18:00:00Z\",\n  \"status\": \"PRESENT\",\n  \"remarks\": \"On time\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/attendance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "attendance"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                }
+              ]
+            },
+            "description": "Directly creates an attendance record (requires ATTENDANCE_CREATE). Status options: PRESENT, ABSENT, HALF_DAY, LEAVE, HOLIDAY, WEEK_OFF."
+          }
+        },
+        {
+          "name": "List Attendance Records (Filtered & Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/attendance?fromDate=2026-09-01&toDate=2026-09-30&status=PRESENT&page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "attendance"
+              ],
+              "query": [
+                {
+                  "key": "fromDate",
+                  "value": "2026-09-01",
+                  "description": "Filter starting date (YYYY-MM-DD)"
+                },
+                {
+                  "key": "toDate",
+                  "value": "2026-09-30",
+                  "description": "Filter ending date (YYYY-MM-DD)"
+                },
+                {
+                  "key": "status",
+                  "value": "PRESENT",
+                  "description": "PRESENT | ABSENT | HALF_DAY | LEAVE | HOLIDAY | WEEK_OFF"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page (max 100)"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                }
+              ]
+            },
+            "description": "Lists attendance history for an employee (requires ATTENDANCE_VIEW)."
+          }
+        },
+        {
+          "name": "Get Attendance Monthly Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/attendance/summary?month=2026-09",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "attendance",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "2026-09",
+                  "description": "Month in YYYY-MM format"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                }
+              ]
+            },
+            "description": "Aggregates total days present, absent, half days, and leaves for the specified month (requires ATTENDANCE_SUMMARY_VIEW)."
+          }
+        },
+        {
+          "name": "Clock Check-In",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/attendance/check-in",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "attendance",
+                "check-in"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                }
+              ]
+            },
+            "description": "Records current timestamp check-in for today's work shift (requires ATTENDANCE_CHECK_IN)."
+          }
+        },
+        {
+          "name": "Clock Check-Out",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/attendance/check-out",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "attendance",
+                "check-out"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                }
+              ]
+            },
+            "description": "Records current timestamp check-out and computes total working hours (requires ATTENDANCE_CHECK_OUT)."
+          }
+        },
+        {
+          "name": "Get Attendance Record By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/attendance/:attendanceId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "attendance",
+                ":attendanceId"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "attendanceId",
+                  "value": "{{attendanceId}}"
+                }
+              ]
+            },
+            "description": "Fetches a specific attendance entry by UUID (requires ATTENDANCE_VIEW)."
+          }
+        },
+        {
+          "name": "Update Attendance Record",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attendanceDate\": \"2026-09-24\",\n  \"checkIn\": \"2026-09-24T09:15:00Z\",\n  \"checkOut\": \"2026-09-24T18:30:00Z\",\n  \"status\": \"PRESENT\",\n  \"remarks\": \"Adjusted check-in timing\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/attendance/:attendanceId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "attendance",
+                ":attendanceId"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "attendanceId",
+                  "value": "{{attendanceId}}"
+                }
+              ]
+            },
+            "description": "Modifies an existing attendance log entry (requires ATTENDANCE_UPDATE)."
+          }
+        },
+        {
+          "name": "Delete Attendance Record",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/attendance/:attendanceId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "attendance",
+                ":attendanceId"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "attendanceId",
+                  "value": "{{attendanceId}}"
+                }
+              ]
+            },
+            "description": "Deletes an attendance entry (requires ATTENDANCE_DELETE)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "07. Leaves & Balances",
+      "item": [
+        {
+          "name": "Leave Applications",
+          "item": [
+            {
+              "name": "Apply For Leave",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    var json = pm.response.json();",
+                      "    if (json.id) {",
+                      "        pm.collectionVariables.set('leaveId', json.id);",
+                      "    }",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"leaveType\": \"CASUAL\",\n  \"startDate\": \"2026-10-01\",\n  \"endDate\": \"2026-10-02\",\n  \"reason\": \"Personal family event\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/leaves",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "leaves"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Submits a leave request (requires LEAVE_CREATE). Leave types: CASUAL, SICK, EARNED, UNPAID, MATERNITY, PATERNITY, OTHER."
+              }
+            },
+            {
+              "name": "List Leaves (Filtered & Paginated)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/leaves?leaveType=CASUAL&status=PENDING&fromDate=2026-01-01&toDate=2026-12-31&page=1&limit=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "leaves"
+                  ],
+                  "query": [
+                    {
+                      "key": "leaveType",
+                      "value": "CASUAL",
+                      "description": "CASUAL | SICK | EARNED | UNPAID | MATERNITY | PATERNITY | OTHER"
+                    },
+                    {
+                      "key": "status",
+                      "value": "PENDING",
+                      "description": "PENDING | APPROVED | REJECTED | CANCELLED"
+                    },
+                    {
+                      "key": "fromDate",
+                      "value": "2026-01-01",
+                      "description": "Start range"
+                    },
+                    {
+                      "key": "toDate",
+                      "value": "2026-12-31",
+                      "description": "End range"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1",
+                      "description": "Page number"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10",
+                      "description": "Limit"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Retrieves list of leave applications with filter parameters (requires LEAVE_VIEW)."
+              }
+            },
+            {
+              "name": "Get Leave Summary For Year",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/leaves/summary?year=2026",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "leaves",
+                    "summary"
+                  ],
+                  "query": [
+                    {
+                      "key": "year",
+                      "value": "2026",
+                      "description": "Calendar year"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Retrieves total days used and breakdown per leave type for a year (requires LEAVE_SUMMARY_VIEW)."
+              }
+            },
+            {
+              "name": "Get Leave By ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/leaves/:leaveId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "leaves",
+                    ":leaveId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "leaveId",
+                      "value": "{{leaveId}}"
+                    }
+                  ]
+                },
+                "description": "Fetches details of a single leave application (requires LEAVE_VIEW)."
+              }
+            },
+            {
+              "name": "Update Leave Request",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"startDate\": \"2026-10-01\",\n  \"endDate\": \"2026-10-03\",\n  \"reason\": \"Updated family event dates\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/leaves/:leaveId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "leaves",
+                    ":leaveId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "leaveId",
+                      "value": "{{leaveId}}"
+                    }
+                  ]
+                },
+                "description": "Modifies pending leave dates or reason (requires LEAVE_UPDATE)."
+              }
+            },
+            {
+              "name": "Cancel Leave Request",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/leaves/:leaveId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "leaves",
+                    ":leaveId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "leaveId",
+                      "value": "{{leaveId}}"
+                    }
+                  ]
+                },
+                "description": "Cancels an applied leave request (requires LEAVE_DELETE)."
+              }
+            },
+            {
+              "name": "Approve Leave Request",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/leaves/:leaveId/approve",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "leaves",
+                    ":leaveId",
+                    "approve"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "leaveId",
+                      "value": "{{leaveId}}"
+                    }
+                  ]
+                },
+                "description": "Approves an employee's leave request (requires LEAVE_APPROVE and ManagerAccessGuard)."
+              }
+            },
+            {
+              "name": "Reject Leave Request",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"rejectionReason\": \"Critical project milestone overlap\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/leaves/:leaveId/reject",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "leaves",
+                    ":leaveId",
+                    "reject"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "leaveId",
+                      "value": "{{leaveId}}"
+                    }
+                  ]
+                },
+                "description": "Rejects a leave request with an explicit rejection reason (requires LEAVE_REJECT and ManagerAccessGuard)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Leave Balances",
+          "item": [
+            {
+              "name": "Create Leave Balance Allocation",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    var json = pm.response.json();",
+                      "    if (json.id) {",
+                      "        pm.collectionVariables.set('balanceId', json.id);",
+                      "    }",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"leaveType\": \"CASUAL\",\n  \"year\": 2026,\n  \"totalDays\": 12\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/leave-balances",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "leave-balances"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Allocates annual leave quota for an employee (requires LEAVE_BALANCE_CREATE)."
+              }
+            },
+            {
+              "name": "List Leave Balances",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/leave-balances?year=2026",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "leave-balances"
+                  ],
+                  "query": [
+                    {
+                      "key": "year",
+                      "value": "2026",
+                      "description": "Filter by calendar year (optional)"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Lists all leave balances and remaining quotas (requires LEAVE_BALANCE_VIEW)."
+              }
+            },
+            {
+              "name": "Get Leave Balance By ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/leave-balances/:balanceId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "leave-balances",
+                    ":balanceId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "balanceId",
+                      "value": "{{balanceId}}"
+                    }
+                  ]
+                },
+                "description": "Gets single leave balance allocation record (requires LEAVE_BALANCE_VIEW)."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08. Performance Management",
+      "item": [
+        {
+          "name": "Performance Cycles",
+          "item": [
+            {
+              "name": "Create Performance Cycle",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    var json = pm.response.json();",
+                      "    if (json.id) {",
+                      "        pm.collectionVariables.set('cycleId', json.id);",
+                      "    }",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Annual Review 2026\",\n  \"startDate\": \"2026-01-01\",\n  \"endDate\": \"2026-12-31\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/performance-cycles",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "performance-cycles"
+                  ]
+                },
+                "description": "Defines a new performance review appraisal cycle (requires PERFORMANCE_CYCLE_CREATE)."
+              }
+            },
+            {
+              "name": "List Performance Cycles",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/performance-cycles",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "performance-cycles"
+                  ]
+                },
+                "description": "Retrieves all performance appraisal cycles (requires PERFORMANCE_CYCLE_VIEW)."
+              }
+            },
+            {
+              "name": "Get Performance Cycle By ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/performance-cycles/:cycleId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "performance-cycles",
+                    ":cycleId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "cycleId",
+                      "value": "{{cycleId}}"
+                    }
+                  ]
+                },
+                "description": "Fetches details of a performance cycle (requires PERFORMANCE_CYCLE_VIEW)."
+              }
+            },
+            {
+              "name": "Update Performance Cycle",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Annual Review 2026 - Active\",\n  \"startDate\": \"2026-01-01\",\n  \"endDate\": \"2026-12-31\",\n  \"status\": \"OPEN\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/performance-cycles/:cycleId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "performance-cycles",
+                    ":cycleId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "cycleId",
+                      "value": "{{cycleId}}"
+                    }
+                  ]
+                },
+                "description": "Updates cycle date ranges or transitions status: DRAFT, OPEN, CLOSED (requires PERFORMANCE_CYCLE_UPDATE)."
+              }
+            },
+            {
+              "name": "Delete Performance Cycle",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/performance-cycles/:cycleId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "performance-cycles",
+                    ":cycleId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "cycleId",
+                      "value": "{{cycleId}}"
+                    }
+                  ]
+                },
+                "description": "Deletes a performance cycle (requires PERFORMANCE_CYCLE_DELETE)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Performance Goals",
+          "item": [
+            {
+              "name": "Create Performance Goal",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    var json = pm.response.json();",
+                      "    if (json.id) {",
+                      "        pm.collectionVariables.set('goalId', json.id);",
+                      "    }",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Architecture Redesign\",\n  \"description\": \"Refactor core modules to micro-services pattern\",\n  \"target\": \"Deploy to staging environment by Q3\",\n  \"weight\": 40,\n  \"startDate\": \"2026-01-15\",\n  \"endDate\": \"2026-06-30\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/performance-cycles/:cycleId/goals",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "performance-cycles",
+                    ":cycleId",
+                    "goals"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "cycleId",
+                      "value": "{{cycleId}}"
+                    }
+                  ]
+                },
+                "description": "Sets a weighted performance goal/KPI for an employee within a cycle (requires PERFORMANCE_GOAL_CREATE)."
+              }
+            },
+            {
+              "name": "List Performance Goals",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/performance-cycles/:cycleId/goals",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "performance-cycles",
+                    ":cycleId",
+                    "goals"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "cycleId",
+                      "value": "{{cycleId}}"
+                    }
+                  ]
+                },
+                "description": "Lists all goals assigned to an employee for a cycle (requires PERFORMANCE_GOAL_VIEW)."
+              }
+            },
+            {
+              "name": "Get Performance Goal By ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "performance-cycles",
+                    ":cycleId",
+                    "goals",
+                    ":goalId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "cycleId",
+                      "value": "{{cycleId}}"
+                    },
+                    {
+                      "key": "goalId",
+                      "value": "{{goalId}}"
+                    }
+                  ]
+                },
+                "description": "Retrieves details of a single performance goal (requires PERFORMANCE_GOAL_VIEW)."
+              }
+            },
+            {
+              "name": "Update Performance Goal",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Architecture Redesign\",\n  \"description\": \"Refactor core modules to micro-services pattern\",\n  \"target\": \"Deploy to staging environment by Q3\",\n  \"weight\": 40,\n  \"progress\": 75,\n  \"status\": \"IN_PROGRESS\",\n  \"startDate\": \"2026-01-15\",\n  \"endDate\": \"2026-06-30\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "performance-cycles",
+                    ":cycleId",
+                    "goals",
+                    ":goalId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "cycleId",
+                      "value": "{{cycleId}}"
+                    },
+                    {
+                      "key": "goalId",
+                      "value": "{{goalId}}"
+                    }
+                  ]
+                },
+                "description": "Updates progress %, status (NOT_STARTED, IN_PROGRESS, COMPLETED, CANCELLED), or target (requires PERFORMANCE_GOAL_UPDATE)."
+              }
+            },
+            {
+              "name": "Delete Performance Goal",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "performance-cycles",
+                    ":cycleId",
+                    "goals",
+                    ":goalId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "cycleId",
+                      "value": "{{cycleId}}"
+                    },
+                    {
+                      "key": "goalId",
+                      "value": "{{goalId}}"
+                    }
+                  ]
+                },
+                "description": "Deletes a goal from the cycle (requires PERFORMANCE_GOAL_DELETE)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Performance Evaluations",
+          "item": [
+            {
+              "name": "Create Performance Evaluation",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    var json = pm.response.json();",
+                      "    if (json.id) {",
+                      "        pm.collectionVariables.set('evaluationId', json.id);",
+                      "    }",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"evaluationType\": \"SELF\",\n  \"rating\": 4,\n  \"comments\": \"Exceeded initial sprint deadlines and automated tests.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId/evaluations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "performance-cycles",
+                    ":cycleId",
+                    "goals",
+                    ":goalId",
+                    "evaluations"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "cycleId",
+                      "value": "{{cycleId}}"
+                    },
+                    {
+                      "key": "goalId",
+                      "value": "{{goalId}}"
+                    }
+                  ]
+                },
+                "description": "Creates an evaluation review for a goal (requires PERFORMANCE_EVALUATION_CREATE). Types: SELF, MANAGER. Rating: 1 to 5."
+              }
+            },
+            {
+              "name": "List Performance Evaluations",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId/evaluations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "performance-cycles",
+                    ":cycleId",
+                    "goals",
+                    ":goalId",
+                    "evaluations"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "cycleId",
+                      "value": "{{cycleId}}"
+                    },
+                    {
+                      "key": "goalId",
+                      "value": "{{goalId}}"
+                    }
+                  ]
+                },
+                "description": "Lists all evaluation entries (self and manager) on a goal (requires PERFORMANCE_EVALUATION_VIEW)."
+              }
+            },
+            {
+              "name": "Get Performance Evaluation By ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId/evaluations/:evaluationId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "performance-cycles",
+                    ":cycleId",
+                    "goals",
+                    ":goalId",
+                    "evaluations",
+                    ":evaluationId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "cycleId",
+                      "value": "{{cycleId}}"
+                    },
+                    {
+                      "key": "goalId",
+                      "value": "{{goalId}}"
+                    },
+                    {
+                      "key": "evaluationId",
+                      "value": "{{evaluationId}}"
+                    }
+                  ]
+                },
+                "description": "Retrieves a specific evaluation review by UUID (requires PERFORMANCE_EVALUATION_VIEW)."
+              }
+            },
+            {
+              "name": "Update Performance Evaluation",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"rating\": 5,\n  \"comments\": \"Updated rating to outstanding upon completion of stage 2.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId/evaluations/:evaluationId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "performance-cycles",
+                    ":cycleId",
+                    "goals",
+                    ":goalId",
+                    "evaluations",
+                    ":evaluationId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "cycleId",
+                      "value": "{{cycleId}}"
+                    },
+                    {
+                      "key": "goalId",
+                      "value": "{{goalId}}"
+                    },
+                    {
+                      "key": "evaluationId",
+                      "value": "{{evaluationId}}"
+                    }
+                  ]
+                },
+                "description": "Updates rating or feedback comments before submission (requires PERFORMANCE_EVALUATION_UPDATE)."
+              }
+            },
+            {
+              "name": "Submit Performance Evaluation",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId/evaluations/:evaluationId/submit",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "performance-cycles",
+                    ":cycleId",
+                    "goals",
+                    ":goalId",
+                    "evaluations",
+                    ":evaluationId",
+                    "submit"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "cycleId",
+                      "value": "{{cycleId}}"
+                    },
+                    {
+                      "key": "goalId",
+                      "value": "{{goalId}}"
+                    },
+                    {
+                      "key": "evaluationId",
+                      "value": "{{evaluationId}}"
+                    }
+                  ]
+                },
+                "description": "Locks and officially submits the evaluation (requires PERFORMANCE_EVALUATION_SUBMIT)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Performance Summaries",
+          "item": [
+            {
+              "name": "Finalize Performance Summary",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"comments\": \"Exceeds performance benchmarks. Recommended for promotion.\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/performance-cycles/:cycleId/summary/finalize",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "performance-cycles",
+                    ":cycleId",
+                    "summary",
+                    "finalize"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "cycleId",
+                      "value": "{{cycleId}}"
+                    }
+                  ]
+                },
+                "description": "Computes weighted final score and closes appraisal summary (requires PERFORMANCE_SUMMARY_FINALIZE)."
+              }
+            },
+            {
+              "name": "Get Performance Summary",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/employees/:employeeId/performance-cycles/:cycleId/summary",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "employees",
+                    ":employeeId",
+                    "performance-cycles",
+                    ":cycleId",
+                    "summary"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "cycleId",
+                      "value": "{{cycleId}}"
+                    }
+                  ]
+                },
+                "description": "Retrieves aggregated cycle score, goal ratings, and final evaluation summary (requires PERFORMANCE_SUMMARY_VIEW)."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09. Policies & Acknowledgements",
+      "item": [
+        {
+          "name": "Company Policies",
+          "item": [
+            {
+              "name": "Create Policy",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    var json = pm.response.json();",
+                      "    if (json.id) {",
+                      "        pm.collectionVariables.set('policyId', json.id);",
+                      "    }",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Remote Work & Hybrid Workplace Policy\",\n  \"code\": \"POL-REMOTE-01\",\n  \"content\": \"This document outlines employee responsibilities, working hours, and security protocols for remote work.\",\n  \"version\": \"1.0\",\n  \"effectiveDate\": \"2026-01-01\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/policies",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "policies"
+                  ]
+                },
+                "description": "Creates draft company policy document (requires POLICY_CREATE permission)."
+              }
+            },
+            {
+              "name": "List Policies",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/policies?status=PUBLISHED",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "policies"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "PUBLISHED",
+                      "description": "Filter by status: DRAFT | PUBLISHED | ARCHIVED"
+                    }
+                  ]
+                },
+                "description": "Retrieves company policies list (requires POLICY_VIEW permission)."
+              }
+            },
+            {
+              "name": "Get Policy By ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/policies/:policyId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "policies",
+                    ":policyId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "policyId",
+                      "value": "{{policyId}}"
+                    }
+                  ]
+                },
+                "description": "Fetches policy content and details (requires POLICY_VIEW permission)."
+              }
+            },
+            {
+              "name": "Update Policy",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Remote Work & Hybrid Workplace Policy 2026\",\n  \"code\": \"POL-REMOTE-01\",\n  \"content\": \"Updated section 4 with newly revised cyber-security guidelines.\",\n  \"version\": \"1.1\",\n  \"effectiveDate\": \"2026-06-01\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/policies/:policyId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "policies",
+                    ":policyId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "policyId",
+                      "value": "{{policyId}}"
+                    }
+                  ]
+                },
+                "description": "Updates policy text, version, or code (requires POLICY_UPDATE permission)."
+              }
+            },
+            {
+              "name": "Delete Policy",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/policies/:policyId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "policies",
+                    ":policyId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "policyId",
+                      "value": "{{policyId}}"
+                    }
+                  ]
+                },
+                "description": "Deletes a policy entry (requires POLICY_DELETE permission)."
+              }
+            },
+            {
+              "name": "Publish Policy",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/policies/:policyId/publish",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "policies",
+                    ":policyId",
+                    "publish"
+                  ],
+                  "variable": [
+                    {
+                      "key": "policyId",
+                      "value": "{{policyId}}"
+                    }
+                  ]
+                },
+                "description": "Publishes policy, making it visible to all employees for mandatory acknowledgement (requires POLICY_PUBLISH permission)."
+              }
+            },
+            {
+              "name": "Archive Policy",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/policies/:policyId/archive",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "policies",
+                    ":policyId",
+                    "archive"
+                  ],
+                  "variable": [
+                    {
+                      "key": "policyId",
+                      "value": "{{policyId}}"
+                    }
+                  ]
+                },
+                "description": "Archives obsolete policy version (requires POLICY_ARCHIVE permission)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Policy Acknowledgements",
+          "item": [
+            {
+              "name": "Acknowledge Policy",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/policy-acknowledgements/employees/:employeeId/policies/:policyId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "policy-acknowledgements",
+                    "employees",
+                    ":employeeId",
+                    "policies",
+                    ":policyId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "policyId",
+                      "value": "{{policyId}}"
+                    }
+                  ]
+                },
+                "description": "Marks that an employee has read and accepted the policy terms (requires POLICY_ACKNOWLEDGEMENT_CREATE)."
+              }
+            },
+            {
+              "name": "Get Employee Policy Acknowledgements",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/policy-acknowledgements/employees/:employeeId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "policy-acknowledgements",
+                    "employees",
+                    ":employeeId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    }
+                  ]
+                },
+                "description": "Lists all policies acknowledged by an employee (requires POLICY_ACKNOWLEDGEMENT_VIEW)."
+              }
+            },
+            {
+              "name": "Get All Acknowledgements For Policy",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/policy-acknowledgements/policies/:policyId",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "policy-acknowledgements",
+                    "policies",
+                    ":policyId"
+                  ],
+                  "variable": [
+                    {
+                      "key": "policyId",
+                      "value": "{{policyId}}"
+                    }
+                  ]
+                },
+                "description": "Provides company-wide compliance list of employees who acknowledged a specific policy (requires POLICY_ACKNOWLEDGEMENT_POLICY_VIEW)."
+              }
+            },
+            {
+              "name": "Get Employee Policy Acknowledgement Status",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/policy-acknowledgements/employees/:employeeId/policies/:policyId/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "policy-acknowledgements",
+                    "employees",
+                    ":employeeId",
+                    "policies",
+                    ":policyId",
+                    "status"
+                  ],
+                  "variable": [
+                    {
+                      "key": "employeeId",
+                      "value": "{{employeeId}}"
+                    },
+                    {
+                      "key": "policyId",
+                      "value": "{{policyId}}"
+                    }
+                  ]
+                },
+                "description": "Checks whether a specific employee has acknowledged a given policy (requires POLICY_ACKNOWLEDGEMENT_STATUS_VIEW)."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10. Reimbursements",
+      "item": [
+        {
+          "name": "Create Reimbursement Claim",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.id) {",
+                  "        pm.collectionVariables.set('reimbursementId', json.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expenseDate\": \"2026-09-20\",\n  \"category\": \"Travel\",\n  \"description\": \"Client on-site travel train tickets\",\n  \"amount\": 2450.5,\n  \"currency\": \"INR\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/reimbursements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "reimbursements"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                }
+              ]
+            },
+            "description": "Creates draft expense reimbursement claim (requires REIMBURSEMENT_CREATE)."
+          }
+        },
+        {
+          "name": "List Reimbursements (Filtered & Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/reimbursements?status=DRAFT&page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "reimbursements"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "DRAFT",
+                  "description": "DRAFT | SUBMITTED | APPROVED | REJECTED | PAID | CANCELLED"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Page limit"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                }
+              ]
+            },
+            "description": "Lists employee reimbursement claims (requires REIMBURSEMENT_VIEW)."
+          }
+        },
+        {
+          "name": "Get Reimbursement By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/reimbursements/:reimbursementId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "reimbursements",
+                ":reimbursementId"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "reimbursementId",
+                  "value": "{{reimbursementId}}"
+                }
+              ]
+            },
+            "description": "Retrieves details of single expense claim (requires REIMBURSEMENT_VIEW)."
+          }
+        },
+        {
+          "name": "Update Reimbursement Claim",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expenseDate\": \"2026-09-20\",\n  \"category\": \"Travel\",\n  \"description\": \"Client on-site travel train & cab fares\",\n  \"amount\": 2850,\n  \"currency\": \"INR\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/reimbursements/:reimbursementId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "reimbursements",
+                ":reimbursementId"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "reimbursementId",
+                  "value": "{{reimbursementId}}"
+                }
+              ]
+            },
+            "description": "Updates expense details before submission (requires REIMBURSEMENT_UPDATE)."
+          }
+        },
+        {
+          "name": "Delete Reimbursement Claim",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/reimbursements/:reimbursementId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "reimbursements",
+                ":reimbursementId"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "reimbursementId",
+                  "value": "{{reimbursementId}}"
+                }
+              ]
+            },
+            "description": "Deletes a draft reimbursement claim (requires REIMBURSEMENT_DELETE)."
+          }
+        },
+        {
+          "name": "Submit Reimbursement Claim",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/reimbursements/:reimbursementId/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "reimbursements",
+                ":reimbursementId",
+                "submit"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "reimbursementId",
+                  "value": "{{reimbursementId}}"
+                }
+              ]
+            },
+            "description": "Transitions claim from DRAFT to SUBMITTED for manager approval (requires REIMBURSEMENT_SUBMIT)."
+          }
+        },
+        {
+          "name": "Upload Reimbursement Receipt File",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Receipt invoice image or PDF file"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/reimbursements/:reimbursementId/receipt",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "reimbursements",
+                ":reimbursementId",
+                "receipt"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "reimbursementId",
+                  "value": "{{reimbursementId}}"
+                }
+              ]
+            },
+            "description": "Attaches bill/receipt proof to the expense claim via multipart file upload (requires REIMBURSEMENT_RECEIPT_UPLOAD)."
+          }
+        },
+        {
+          "name": "Approve Reimbursement Claim",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/reimbursements/:reimbursementId/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "reimbursements",
+                ":reimbursementId",
+                "approve"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "reimbursementId",
+                  "value": "{{reimbursementId}}"
+                }
+              ]
+            },
+            "description": "Approves submitted reimbursement (requires REIMBURSEMENT_APPROVE and ManagerAccessGuard)."
+          }
+        },
+        {
+          "name": "Reject Reimbursement Claim",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rejectionReason\": \"Official tax invoice required instead of charge card slip\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/reimbursements/:reimbursementId/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "reimbursements",
+                ":reimbursementId",
+                "reject"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "reimbursementId",
+                  "value": "{{reimbursementId}}"
+                }
+              ]
+            },
+            "description": "Rejects reimbursement claim with reason (requires REIMBURSEMENT_REJECT and ManagerAccessGuard)."
+          }
+        },
+        {
+          "name": "Mark Reimbursement as Paid",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/reimbursements/:reimbursementId/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "reimbursements",
+                ":reimbursementId",
+                "pay"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "reimbursementId",
+                  "value": "{{reimbursementId}}"
+                }
+              ]
+            },
+            "description": "Finance/Payroll action marking the approved reimbursement claim as settled/paid (requires REIMBURSEMENT_PAY)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Roles & Permissions",
+      "item": [
+        {
+          "name": "Permissions",
+          "item": [
+            {
+              "name": "List All Permissions",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/permissions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "permissions"
+                  ]
+                },
+                "description": "Lists all available granular system permissions (requires PERMISSION_VIEW)."
+              }
+            },
+            {
+              "name": "Get Permission By ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/permissions/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "permissions",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "{{permissionId}}"
+                    }
+                  ]
+                },
+                "description": "Gets single permission details by UUID (requires PERMISSION_VIEW)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Roles",
+          "item": [
+            {
+              "name": "List All Roles",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/roles",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "roles"
+                  ]
+                },
+                "description": "Retrieves list of all configured user roles (requires ROLE_VIEW)."
+              }
+            },
+            {
+              "name": "Get Role By ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/roles/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "roles",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "{{roleId}}"
+                    }
+                  ]
+                },
+                "description": "Fetches details of a specific role (requires ROLE_VIEW)."
+              }
+            },
+            {
+              "name": "Create Role",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 200 || pm.response.code === 201) {",
+                      "    var json = pm.response.json();",
+                      "    if (json.id) {",
+                      "        pm.collectionVariables.set('roleId', json.id);",
+                      "    }",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"HR Manager\",\n  \"code\": \"HR_MGR\",\n  \"description\": \"Manages human resource records and policies\",\n  \"permissionIds\": []\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/roles",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "roles"
+                  ]
+                },
+                "description": "Creates a new custom role with optional initial permissions (requires ROLE_CREATE)."
+              }
+            },
+            {
+              "name": "Update Role",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Senior HR Manager\",\n  \"code\": \"SR_HR_MGR\",\n  \"description\": \"Senior human resources leadership\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/roles/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "roles",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "{{roleId}}"
+                    }
+                  ]
+                },
+                "description": "Updates role name, code, or description (requires ROLE_UPDATE)."
+              }
+            },
+            {
+              "name": "Activate Role",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/roles/:id/activate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "roles",
+                    ":id",
+                    "activate"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "{{roleId}}"
+                    }
+                  ]
+                },
+                "description": "Enables an inactive role (requires ROLE_ACTIVATE)."
+              }
+            },
+            {
+              "name": "Deactivate Role",
+              "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/roles/:id/deactivate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "roles",
+                    ":id",
+                    "deactivate"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "{{roleId}}"
+                    }
+                  ]
+                },
+                "description": "Deactivates a role, temporarily removing access for assigned users (requires ROLE_DEACTIVATE)."
+              }
+            },
+            {
+              "name": "Assign Permissions To Role",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"permissionIds\": [\n    \"{{permissionId}}\"\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/roles/:id/permissions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "roles",
+                    ":id",
+                    "permissions"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "{{roleId}}"
+                    }
+                  ]
+                },
+                "description": "Overwrites role permissions with the provided list of permission UUIDs (requires ROLE_PERMISSION_ASSIGN)."
+              }
+            },
+            {
+              "name": "Get Permissions Assigned To Role",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/roles/:id/permissions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "roles",
+                    ":id",
+                    "permissions"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "{{roleId}}"
+                    }
+                  ]
+                },
+                "description": "Retrieves list of permissions assigned to this role (requires ROLE_VIEW)."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

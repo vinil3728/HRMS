@@ -1,0 +1,422 @@
+<div class="page-container">
+  <!-- ── Page Header ──────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="title-row">
+        <h1 class="page-title">{{ isOrgView() ? 'Reimbursement Management' : 'My Expense Claims' }}</h1>
+      </div>
+      <p class="page-subtitle">
+        {{
+          isOrgView()
+            ? 'Review employee expenditure claims, verify receipts, and authorize payouts'
+            : 'Submit business expense claims, attach receipts, and track reimbursement payouts'
+        }}
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="exportCsv()"
+        [disabled]="loading() || claims().length === 0"
+      >
+        <app-icon name="export" [size]="16"></app-icon>
+        <span>Export CSV</span>
+      </button>
+
+      @if (!isOrgView() || canManageAllClaims()) {
+        <button
+          *appHasPermission="Permission.REIMBURSEMENT_CREATE"
+          type="button"
+          class="btn btn-primary"
+          (click)="openCreateModal()"
+          [disabled]="!activeTargetEmployeeId()"
+        >
+          <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+          <span>Create Claim</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+  <div class="content-card">
+    <!-- Toolbar Section: Left Tabs, Right Filters (Option 2) -->
+    <div class="toolbar-section">
+      <!-- Tabs Navigation (Left) -->
+      <div class="tabs-nav">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="viewMode() === 'self'"
+          (click)="setViewMode('self')"
+        >
+          <app-icon name="receipt" [size]="16"></app-icon>
+          <span>My Claims</span>
+        </button>
+
+        @if (showViewTabs()) {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="viewMode() === 'org'"
+            (click)="setViewMode('org')"
+          >
+            <app-icon name="users" [size]="16"></app-icon>
+            <span>{{ orgTabLabel() }}</span>
+            <span class="badge">{{ manageableEmployees().length }}</span>
+          </button>
+        }
+      </div>
+
+      <!-- Filters Wrap (Right) -->
+      <div class="filters-wrap">
+        @if (isOrgView() && manageableEmployees().length > 0) {
+          <app-select
+            [options]="employeeOptions()"
+            [value]="selectedEmployeeId()"
+            (valueChange)="onEmployeeChange($event)"
+            placeholder="Select Employee"
+            minWidth="220px"
+          ></app-select>
+        }
+
+        <!-- Status Filter -->
+        <app-select
+          [options]="statusOptions"
+          [value]="statusFilter()"
+          placeholder="All Statuses"
+          minWidth="160px"
+          (valueChange)="onStatusFilterChange($event)"
+        ></app-select>
+
+        <!-- Category Filter -->
+        <app-select
+          [options]="categoryOptions"
+          [value]="categoryFilter()"
+          placeholder="All Categories"
+          minWidth="175px"
+          (valueChange)="onCategoryFilterChange($event)"
+        ></app-select>
+
+        @if (hasActiveFilters()) {
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="resetFilters()"
+            title="Reset Filters"
+          >
+            <app-icon name="activity" [size]="16"></app-icon>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ── Summary Metrics Cards (Directly Below Toolbar, Above Table) ── -->
+    <div class="card-metrics-section">
+      <div class="reimbursement-metrics-grid">
+        <div class="l-metric-card">
+          <div class="l-metric-icon l-icon-blue">
+            <app-icon name="receipt" [size]="20"></app-icon>
+          </div>
+          <div class="l-metric-info">
+            <span class="l-metric-value">{{ totalClaimsCount() }}</span>
+            <span class="l-metric-label">Total Claims</span>
+          </div>
+        </div>
+
+        <div class="l-metric-card">
+          <div class="l-metric-icon l-icon-amber">
+            <app-icon name="clock" [size]="20"></app-icon>
+          </div>
+          <div class="l-metric-info">
+            <span class="l-metric-value text-amber">₹{{ formatCurrency(pendingAmount()) }}</span>
+            <span class="l-metric-label">Pending Review</span>
+          </div>
+        </div>
+
+        <div class="l-metric-card">
+          <div class="l-metric-icon l-icon-purple">
+            <app-icon name="check" [size]="20"></app-icon>
+          </div>
+          <div class="l-metric-info">
+            <span class="l-metric-value text-purple">₹{{ formatCurrency(approvedAmount()) }}</span>
+            <span class="l-metric-label">Approved (To Pay)</span>
+          </div>
+        </div>
+
+        <div class="l-metric-card">
+          <div class="l-metric-icon l-icon-green">
+            <app-icon name="dollar" [size]="20"></app-icon>
+          </div>
+          <div class="l-metric-info">
+            <span class="l-metric-value text-green">₹{{ formatCurrency(paidAmount()) }}</span>
+            <span class="l-metric-label">Total Settled (Paid)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Table & Integrated Bottom Pagination (Single Block) ────────── -->
+    <div class="table-block">
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Amount (INR)</th>
+              <th>Description</th>
+              <th>Receipt</th>
+              <th>Status</th>
+              <th>Notes / Payout</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (loading()) {
+              <tr>
+                <td colspan="8" class="empty-table-cell">
+                  <div class="loading-state">
+                    <div class="spinner-large" aria-hidden="true"></div>
+                    <p>Loading expense claims...</p>
+                  </div>
+                </td>
+              </tr>
+            } @else if (claims().length === 0) {
+              <tr>
+                <td colspan="8" class="empty-table-cell">
+                  <div class="empty-state">
+                    <div class="empty-icon-wrap">
+                      <app-icon name="receipt" [size]="40"></app-icon>
+                    </div>
+                    <h3>No Expense Claims Found</h3>
+                    <p>
+                      @if (hasActiveFilters()) {
+                        No claims match your active filters.
+                      } @else if (isOrgView()) {
+                        No expense claims have been filed by this employee yet.
+                      } @else {
+                        You have not created any expense claims yet.
+                      }
+                    </p>
+                    @if (hasActiveFilters()) {
+                      <button type="button" class="btn btn-outline btn-sm" (click)="resetFilters()">
+                        Reset Filters
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @else {
+              @for (claim of claims(); track claim.id) {
+                <tr class="table-row">
+                  <td>
+                    <span class="cell-date">{{ claim.expenseDate | date: 'dd MMM yyyy' }}</span>
+                  </td>
+                  <td>
+                    <span class="category-badge">{{ claim.category }}</span>
+                  </td>
+                  <td>
+                    <span class="amount-val">₹{{ formatCurrency(claim.amount) }}</span>
+                  </td>
+                  <td class="cell-desc">
+                    <span class="desc-text" [title]="claim.description">
+                      {{ claim.description }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (claim.receiptFileName) {
+                      <button
+                        type="button"
+                        class="receipt-attached-tag"
+                        style="border: none; cursor: pointer;"
+                        (click)="downloadReceipt(claim)"
+                        [title]="'Download ' + claim.receiptFileName"
+                      >
+                        <app-icon name="download" [size]="12"></app-icon>
+                        <span>{{ claim.receiptFileName }}</span>
+                      </button>
+                    } @else {
+                      <span class="receipt-missing-tag">No receipt</span>
+                    }
+                  </td>
+                  <td>
+                    <app-badge [variant]="getStatusVariant(claim.status)">
+                      {{ formatStatusLabel(claim.status) }}
+                    </app-badge>
+                  </td>
+                  <td class="cell-notes">
+                    @if (claim.status === 'PAID' && claim.paidAt) {
+                      <span class="paid-at-text">Paid {{ claim.paidAt | date: 'dd MMM' }}</span>
+                    } @else if (claim.status === 'REJECTED' && claim.rejectionReason) {
+                      <span class="rejected-reason-text" [title]="claim.rejectionReason">
+                        {{ claim.rejectionReason }}
+                      </span>
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
+                  </td>
+                  <td class="text-right">
+                    <div class="action-buttons">
+                      <!-- Submit Claim (from Draft) -->
+                      @if (claim.status === 'DRAFT') {
+                        <button
+                          *appHasPermission="Permission.REIMBURSEMENT_SUBMIT"
+                          type="button"
+                          class="action-icon-btn text-primary"
+                          (click)="onSubmitClaim(claim)"
+                          title="Submit Claim for Approval"
+                          aria-label="Submit Claim for Approval"
+                        >
+                          <app-icon name="trending-up" [size]="16"></app-icon>
+                        </button>
+                      }
+
+                      <!-- Upload / Replace Receipt (only allowed on DRAFT) -->
+                      @if (claim.status === 'DRAFT') {
+                        <button
+                          *appHasPermission="Permission.REIMBURSEMENT_RECEIPT_UPLOAD"
+                          type="button"
+                          class="action-icon-btn"
+                          (click)="openUploadReceiptModal(claim)"
+                          title="Upload/Replace Receipt"
+                          aria-label="Upload/Replace Receipt"
+                        >
+                          <app-icon name="file-text" [size]="15"></app-icon>
+                        </button>
+                      }
+
+                      <!-- Approve (Managers / HR on Submitted) -->
+                      @if (claim.status === 'SUBMITTED' && canReviewSelectedClaims()) {
+                        <button
+                          *appHasPermission="Permission.REIMBURSEMENT_APPROVE"
+                          type="button"
+                          class="action-icon-btn text-success"
+                          (click)="onApproveClaim(claim)"
+                          title="Approve Claim"
+                          aria-label="Approve Claim"
+                        >
+                          <app-icon name="check" [size]="16"></app-icon>
+                        </button>
+                      }
+
+                      <!-- Reject (Managers / HR on Submitted) -->
+                      @if (claim.status === 'SUBMITTED' && canReviewSelectedClaims()) {
+                        <button
+                          *appHasPermission="Permission.REIMBURSEMENT_REJECT"
+                          type="button"
+                          class="action-icon-btn text-danger"
+                          (click)="openRejectModal(claim)"
+                          title="Reject Claim"
+                          aria-label="Reject Claim"
+                        >
+                          <app-icon name="close" [size]="16"></app-icon>
+                        </button>
+                      }
+
+                      <!-- Mark as Paid (Finance / Admin on Approved) -->
+                      @if (claim.status === 'APPROVED' && canReviewSelectedClaims()) {
+                        <button
+                          *appHasPermission="Permission.REIMBURSEMENT_PAY"
+                          type="button"
+                          class="action-icon-btn text-success"
+                          (click)="onPayClaim(claim)"
+                          title="Mark as Paid"
+                          aria-label="Mark as Paid"
+                        >
+                          <app-icon name="dollar" [size]="16"></app-icon>
+                        </button>
+                      }
+
+                      <!-- Edit Draft Claim -->
+                      @if (claim.status === 'DRAFT') {
+                        <button
+                          *appHasPermission="Permission.REIMBURSEMENT_UPDATE"
+                          type="button"
+                          class="action-icon-btn"
+                          (click)="openEditModal(claim)"
+                          title="Edit Claim"
+                          aria-label="Edit Claim"
+                        >
+                          <app-icon name="edit" [size]="16"></app-icon>
+                        </button>
+                      }
+
+                      <!-- Delete Draft Claim -->
+                      @if (claim.status === 'DRAFT') {
+                        <button
+                          *appHasPermission="Permission.REIMBURSEMENT_DELETE"
+                          type="button"
+                          class="action-icon-btn text-danger"
+                          (click)="onDeleteClaim(claim)"
+                          title="Delete Claim"
+                          aria-label="Delete Claim"
+                        >
+                          <app-icon name="close" [size]="14"></app-icon>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Integrated Card Bottom Pagination -->
+      @if (totalRecords() > 0) {
+        <div class="table-pagination-footer">
+          <span class="pagination-count">
+            Showing <strong>{{ claims().length }}</strong> of {{ totalRecords() }} claims
+          </span>
+
+          <div class="pagination-nav">
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() <= 1"
+              (click)="goToPage(currentPage() - 1)"
+              aria-label="Previous page"
+            >
+              <app-icon name="chevron-left" [size]="16"></app-icon>
+            </button>
+            <span class="page-indicator">{{ currentPage() }} / {{ totalPages() }}</span>
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() >= totalPages()"
+              (click)="goToPage(currentPage() + 1)"
+              aria-label="Next page"
+            >
+              <app-icon name="chevron-right" [size]="16"></app-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ── Form Modal (Create / Edit) ────────────────────────────────────── -->
+  @if (activeTargetEmployeeId()) {
+    <app-reimbursement-form-modal
+      [isOpen]="isFormModalOpen()"
+      [reimbursement]="selectedClaim()"
+      [employeeId]="activeTargetEmployeeId()"
+      (closeModal)="closeFormModal()"
+      (saved)="onClaimSaved()"
+    ></app-reimbursement-form-modal>
+
+    <!-- Action Modal (Reject / Upload Receipt) -->
+    <app-reimbursement-action-modal
+      [isOpen]="isActionModalOpen()"
+      [actionType]="actionType()"
+      [reimbursement]="selectedClaim()"
+      [employeeId]="activeTargetEmployeeId()"
+      (closeModal)="closeActionModal()"
+      (actionCompleted)="onActionCompleted()"
+    ></app-reimbursement-action-modal>
+  }
+</div>

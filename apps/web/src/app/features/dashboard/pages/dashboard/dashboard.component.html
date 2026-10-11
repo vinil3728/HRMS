@@ -1,0 +1,365 @@
+<div class="dashboard-page">
+  <!-- ── Header ────────────────────────────────────────────────────────── -->
+  <div class="dashboard-header">
+    <div class="dash-header-left">
+      <h1 class="dash-title">Dashboard</h1>
+      <p class="dash-subtitle">
+        Welcome back, {{ displayName() }} • {{ todayDate | date: 'EEEE, dd MMM yyyy' }}
+      </p>
+    </div>
+
+    <!-- Employee Context Single View Info (Right End) -->
+    <a routerLink="/my-profile" class="emp-context-card" title="View Full Profile">
+      <div class="emp-ctx-avatar-wrap">
+        <app-avatar [name]="displayName()" [size]="40"></app-avatar>
+        <span class="ctx-status-dot" [class.is-active]="myProfile()?.status !== 'INACTIVE'"></span>
+      </div>
+
+      <div class="emp-ctx-details">
+        <div class="emp-ctx-top">
+          <span class="emp-ctx-name">{{ displayName() }}</span>
+          @if (myProfile()?.employeeCode) {
+            <span class="emp-ctx-code">{{ myProfile()?.employeeCode }}</span>
+          }
+          @if (myProfile()?.status) {
+            <span class="emp-ctx-badge" [class.is-active]="myProfile()?.status === 'ACTIVE'">
+              {{ myProfile()?.status }}
+            </span>
+          }
+        </div>
+
+        <div class="emp-ctx-meta">
+          <span class="emp-ctx-meta-item">
+            <app-icon name="briefcase" [size]="12"></app-icon>
+            <span>{{ myProfile()?.designation?.name || 'Employee' }}</span>
+          </span>
+          <span class="ctx-dot">•</span>
+          <span class="emp-ctx-meta-item">
+            <app-icon name="building" [size]="12"></app-icon>
+            <span>{{ myProfile()?.department?.name || 'General' }}</span>
+          </span>
+          @if (myProfile()?.manager) {
+            <span class="ctx-dot">•</span>
+            <span class="emp-ctx-meta-item emp-ctx-manager" title="Reporting Manager">
+              <app-icon name="users" [size]="12"></app-icon>
+              <span>{{ myProfile()?.manager?.firstName }} {{ myProfile()?.manager?.lastName }}</span>
+            </span>
+          }
+        </div>
+      </div>
+
+      <div class="emp-ctx-arrow">
+        <app-icon name="chevron-right" [size]="14"></app-icon>
+      </div>
+    </a>
+  </div>
+
+  <!-- Feedback Banners -->
+  @if (actionBanner()) {
+    <div class="alert alert-success">
+      <app-icon name="check-circle" [size]="16"></app-icon>
+      <span>{{ actionBanner() }}</span>
+    </div>
+  }
+  @if (errorBanner()) {
+    <div class="alert alert-error">
+      <app-icon name="alert-circle" [size]="16"></app-icon>
+      <span>{{ errorBanner() }}</span>
+    </div>
+  }
+
+  <!-- ── Top 2-Card Row: Today's Attendance & Quick Summary ─────────────── -->
+  <div class="top-cards-row">
+    <!-- Today's Attendance Card -->
+    <div class="dash-card attendance-hero-card">
+      <div class="att-hero-content">
+        <div class="att-hero-left">
+          <div class="att-icon-box">
+            <app-icon name="calendar" [size]="24"></app-icon>
+          </div>
+          <div class="att-text-block">
+            <span class="att-label">Today's Attendance</span>
+            <h2 class="att-status-heading">
+              @if (todayRecord()?.checkOut) {
+                Checked Out
+              } @else if (todayRecord()?.checkIn) {
+                Checked In
+              } @else {
+                Not Checked In
+              }
+            </h2>
+            <p class="att-status-desc">
+              @if (todayRecord()?.checkOut) {
+                Shift completed ({{ todayRecord()?.workingHours || 0 }} hrs)
+              } @else if (todayRecord()?.checkIn) {
+                Checked in at {{ todayRecord()?.checkIn | date: 'shortTime' }}
+              } @else {
+                Please check in to start your day
+              }
+            </p>
+          </div>
+        </div>
+
+        <!-- Digital Timer -->
+        <div class="att-digital-timer">
+          <div class="timer-top-meta">
+            @if (todayRecord()?.checkIn && !todayRecord()?.checkOut) {
+              <span class="timer-badge is-active">
+                <span class="live-pulse-dot"></span>
+                <span>Active Session</span>
+              </span>
+            } @else if (todayRecord()?.checkOut) {
+              <span class="timer-badge is-complete">
+                <app-icon name="check-circle" [size]="12"></app-icon>
+                <span>Shift Done</span>
+              </span>
+            } @else {
+              <span class="timer-badge is-idle">
+                <app-icon name="clock" [size]="12"></app-icon>
+                <span>Live Clock</span>
+              </span>
+            }
+          </div>
+
+          <div class="timer-clock-digits">
+            @if (todayRecord()?.checkIn && !todayRecord()?.checkOut && elapsedTimeFormatted()) {
+              {{ elapsedTimeFormatted() }}
+            } @else {
+              {{ currentTimeFormatted() }}
+            }
+          </div>
+
+          <div class="timer-bottom-sub">
+            @if (todayRecord()?.checkIn && !todayRecord()?.checkOut) {
+              Clock: {{ currentTimeFormatted() }}
+            } @else if (todayRecord()?.checkOut && totalWorkedFormatted()) {
+              Total: {{ totalWorkedFormatted() }}
+            } @else {
+              {{ todayDate | date: 'EEEE, dd MMM' }}
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="att-btn-row">
+        <button
+          *appHasPermission="Permission.ATTENDANCE_CHECK_IN"
+          type="button"
+          class="btn-att-primary"
+          [disabled]="isCheckingInOut() || !!todayRecord()?.checkIn"
+          (click)="onQuickCheckIn()"
+        >
+          <app-icon name="log-in" [size]="16"></app-icon>
+          <span>{{ isCheckingInOut() && !todayRecord()?.checkIn ? 'Checking In...' : 'Check In' }}</span>
+        </button>
+
+        <button
+          *appHasPermission="Permission.ATTENDANCE_CHECK_OUT"
+          type="button"
+          class="btn-att-secondary"
+          [disabled]="isCheckingInOut() || !todayRecord()?.checkIn || !!todayRecord()?.checkOut"
+          (click)="onQuickCheckOut()"
+        >
+          <app-icon name="log-out" [size]="16"></app-icon>
+          <span>{{ isCheckingInOut() && todayRecord()?.checkIn && !todayRecord()?.checkOut ? 'Checking Out...' : 'Check Out' }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Summary Card -->
+    <div class="dash-card summary-card">
+      <div class="card-head-row">
+        <div class="head-left-title">
+          <app-icon name="file-text" [size]="18" customClass="head-icon"></app-icon>
+          <h3 class="card-heading">Quick Summary</h3>
+        </div>
+        <a routerLink="/services" class="card-head-link">
+          <span>View all</span>
+          <app-icon name="arrow-right" [size]="14"></app-icon>
+        </a>
+      </div>
+
+      <div class="summary-kpis-grid">
+        <!-- Attendance KPI -->
+        <div class="kpi-mini-item">
+          <div class="kpi-mini-icon">
+            <app-icon name="calendar" [size]="18"></app-icon>
+          </div>
+          <div class="kpi-mini-text">
+            <span class="kpi-mini-label">Attendance</span>
+            <span class="kpi-mini-value">{{ attendanceSummary()?.present ?? 0 }} days</span>
+          </div>
+        </div>
+
+        <!-- Leave Balance KPI -->
+        <div class="kpi-mini-item">
+          <div class="kpi-mini-icon">
+            <app-icon name="archive" [size]="18"></app-icon>
+          </div>
+          <div class="kpi-mini-text">
+            <span class="kpi-mini-label">Leave Balance</span>
+            <span class="kpi-mini-value">{{ totalAvailableLeave() }} days</span>
+          </div>
+        </div>
+
+        <!-- Policy Compliance KPI -->
+        <div class="kpi-mini-item">
+          <div class="kpi-mini-icon">
+            <app-icon name="shield" [size]="18"></app-icon>
+          </div>
+          <div class="kpi-mini-text">
+            <span class="kpi-mini-label">Policy Compliance</span>
+            <span class="kpi-mini-value">
+              {{ pendingPolicies().length === 0 ? 'Up to date' : pendingPolicies().length + ' Pending' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Pending Requests KPI -->
+        <div class="kpi-mini-item">
+          <div class="kpi-mini-icon">
+            <app-icon name="clock" [size]="18"></app-icon>
+          </div>
+          <div class="kpi-mini-text">
+            <span class="kpi-mini-label">Pending Requests</span>
+            <span class="kpi-mini-value">{{ pendingLeaveCount() }} pending</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Quick Actions Card ─────────────────────────────────────────────── -->
+  <div class="dash-card quick-actions-card">
+    <div class="qa-head-row">
+      <div class="qa-icon-wrap">
+        <app-icon name="activity" [size]="18"></app-icon>
+      </div>
+      <div class="qa-title-wrap">
+        <h3 class="card-heading">Quick Actions</h3>
+        <p class="card-subheading">Frequently used services</p>
+      </div>
+    </div>
+
+    <div class="quick-actions-grid">
+      @for (item of visibleShortcuts(); track item.route) {
+        <a [routerLink]="item.route" class="qa-service-item">
+          <div class="qa-service-left">
+            <div class="qa-item-icon">
+              <app-icon [name]="item.icon" [size]="18"></app-icon>
+            </div>
+            <div class="qa-item-text">
+              <span class="qa-item-title">{{ item.label }}</span>
+              <span class="qa-item-desc">{{ item.subtitle }}</span>
+            </div>
+          </div>
+          <app-icon name="chevron-right" [size]="16" customClass="qa-chevron"></app-icon>
+        </a>
+      }
+    </div>
+  </div>
+
+  <!-- ── Bottom Row: My Leave & Recent Attendance ───────────────────────── -->
+  <div class="bottom-cards-row">
+    <!-- My Leave Card -->
+    <div class="dash-card activity-card">
+      <div class="card-head-row">
+        <div class="head-left-title">
+          <div class="act-icon-wrap">
+            <app-icon name="calendar" [size]="18"></app-icon>
+          </div>
+          <div>
+            <h3 class="card-heading">My Leave</h3>
+            <p class="card-subheading">Leave balance and recent applications</p>
+          </div>
+        </div>
+        <a
+          *appHasPermission="Permission.LEAVE_VIEW"
+          routerLink="/leaves"
+          class="card-head-link"
+        >
+          <span>View details</span>
+          <app-icon name="arrow-right" [size]="14"></app-icon>
+        </a>
+      </div>
+
+      <div class="activity-content">
+        @if (recentLeaves().length > 0) {
+          <div class="activity-list">
+            @for (lv of recentLeaves(); track lv.id) {
+              <div class="activity-list-item">
+                <div class="act-item-left">
+                  <span class="act-primary">{{ lv.leaveType }} LEAVE ({{ lv.numberOfDays }}d)</span>
+                  <span class="act-sub">{{ lv.startDate | date: 'dd MMM' }} – {{ lv.endDate | date: 'dd MMM yyyy' }}</span>
+                </div>
+                <app-badge [variant]="lv.status.toLowerCase()">{{ lv.status }}</app-badge>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="card-empty-state">
+            <div class="empty-state-icon">
+              <app-icon name="calendar" [size]="22"></app-icon>
+            </div>
+            <span class="empty-state-msg">No leave data available yet.</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Recent Attendance Card -->
+    <div class="dash-card activity-card">
+      <div class="card-head-row">
+        <div class="head-left-title">
+          <div class="act-icon-wrap">
+            <app-icon name="clock" [size]="18"></app-icon>
+          </div>
+          <div>
+            <h3 class="card-heading">Recent Attendance</h3>
+            <p class="card-subheading">Today's status and recent logs</p>
+          </div>
+        </div>
+        <a
+          *appHasPermission="Permission.ATTENDANCE_VIEW"
+          routerLink="/attendance"
+          class="card-head-link"
+        >
+          <span>View logs</span>
+          <app-icon name="arrow-right" [size]="14"></app-icon>
+        </a>
+      </div>
+
+      <div class="activity-content">
+        @if (recentAttendance().length > 0) {
+          <div class="activity-list">
+            @for (att of recentAttendance(); track att.id) {
+              <div class="activity-list-item">
+                <div class="act-item-left">
+                  <span class="act-primary">{{ att.attendanceDate | date: 'EEE, dd MMM yyyy' }}</span>
+                  <span class="act-sub">
+                    @if (att.checkIn) {
+                      In: {{ att.checkIn | date: 'shortTime' }}
+                      @if (att.checkOut) {
+                        • Out: {{ att.checkOut | date: 'shortTime' }} ({{ att.workingHours || 0 }}h)
+                      }
+                    } @else {
+                      No check-in record
+                    }
+                  </span>
+                </div>
+                <app-badge [variant]="att.status.toLowerCase()">{{ att.status }}</app-badge>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="card-empty-state">
+            <div class="empty-state-icon">
+              <app-icon name="clock" [size]="22"></app-icon>
+            </div>
+            <span class="empty-state-msg">No attendance data available yet.</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

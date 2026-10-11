@@ -1,0 +1,119 @@
+@if (isOpen() && loan()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="loan-disburse-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close modal backdrop"></button>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 id="loan-disburse-modal-title" class="modal-title">Disburse Loan (Mark as Paid)</h3>
+          <p class="modal-subtitle">Confirm fund disbursement and attach payment receipt / transaction voucher.</p>
+        </div>
+        <button class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <!-- Overview Box -->
+      <div class="disburse-summary">
+        <div class="summary-col">
+          <span class="label">Beneficiary Employee:</span>
+          <span class="val">{{ loan()?.employee?.firstName }} {{ loan()?.employee?.lastName }} ({{ loan()?.employee?.employeeCode }})</span>
+        </div>
+        <div class="summary-col">
+          <span class="label">Approved Amount:</span>
+          <span class="val highlight">₹{{ (loan()?.approvedAmount || loan()?.amount) | number:'1.2-2' }}</span>
+        </div>
+        <div class="summary-col">
+          <span class="label">Tenure:</span>
+          <span class="val">{{ loan()?.tenureMonths }} Months</span>
+        </div>
+      </div>
+
+      @if (errorMessage()) {
+        <div class="alert-error" role="alert">
+          <app-icon name="alert-circle" [size]="16"></app-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-body">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label" for="disbursedAt">Disbursement Date <span class="required">*</span></label>
+            <input
+              id="disbursedAt"
+              type="date"
+              class="form-control"
+              formControlName="disbursedAt"
+            />
+          </div>
+
+          <div class="form-group flex-1">
+            <label class="form-label" for="disbursementReference">Payment Reference / UTR / Cheque # <span class="required">*</span></label>
+            <input
+              id="disbursementReference"
+              type="text"
+              class="form-control"
+              formControlName="disbursementReference"
+              placeholder="e.g. UTR-9821387612"
+            />
+          </div>
+        </div>
+
+        <!-- Receipt File Upload -->
+        <div class="form-group">
+          <label class="form-label" for="receiptFile">Payment Receipt / Disbursement Proof <span class="optional">(PDF, PNG, JPG)</span></label>
+          <div class="upload-zone">
+            <input
+              id="receiptFile"
+              type="file"
+              class="file-input"
+              accept=".pdf,.png,.jpg,.jpeg"
+              (change)="onFileSelected($event)"
+              [disabled]="uploadingFile()"
+            />
+            <div class="upload-content">
+              @if (uploadingFile()) {
+                <span class="spinner-blue"></span>
+                <span>Uploading receipt document...</span>
+              } @else if (uploadedReceiptUrl()) {
+                <app-icon name="check-circle" [size]="20" class="text-success"></app-icon>
+                <span class="uploaded-filename">{{ selectedFileName() }}</span>
+                <span class="text-success-badge">Uploaded</span>
+              } @else {
+                <app-icon name="receipt" [size]="20" class="text-muted"></app-icon>
+                <span>Click to browse and upload company payment voucher / receipt</span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+          <label class="form-label" for="disburseNotes">Disbursement Remarks <span class="optional">(Optional)</span></label>
+          <input
+            id="disburseNotes"
+            type="text"
+            class="form-control"
+            formControlName="notes"
+            placeholder="e.g. Disbursed via ICICI Corporate Banking account"
+          />
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="onCancel()" [disabled]="submitting() || uploadingFile()">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="submitting() || uploadingFile()">
+            @if (submitting()) {
+              <span class="spinner"></span>
+              <span>Recording Disbursement...</span>
+            } @else {
+              <app-icon name="dollar" [size]="16"></app-icon>
+              <span>Confirm Disbursement & Mark Paid</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

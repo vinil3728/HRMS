@@ -1,0 +1,339 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-info">
+      <div class="title-row">
+        <h1 class="page-title">Branches</h1>
+      </div>
+      <p class="page-subtitle">Manage regional company offices, locations, and subordinate departments.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        *appHasPermission="Permission.BRANCH_CREATE"
+        type="button"
+        class="btn btn-primary"
+        (click)="openAddModal()"
+      >
+        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+        <span>Add Branch</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+  <div class="content-card">
+    <!-- Toolbar Section: Left Tabs, Right Filters (Option 2) -->
+    <div class="toolbar-section">
+      <!-- Tabs Navigation (Left) -->
+      <div class="tabs-nav">
+        <button
+          type="button"
+          class="tab-btn active"
+        >
+          <app-icon name="map-pin" [size]="16"></app-icon>
+          <span>All Branch Offices</span>
+        </button>
+      </div>
+
+      <!-- Filters Wrap (Right) -->
+      <div class="filters-wrap">
+        <!-- Search Input -->
+        <div class="search-input-wrap">
+          <app-icon name="search" [size]="16" customClass="filter-search-icon"></app-icon>
+          <input
+            type="text"
+            class="filter-search-input"
+            placeholder="Search branches..."
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+          />
+        </div>
+
+        <!-- Status Filter -->
+        <div class="filter-item">
+          <app-select
+            [options]="statusOptions"
+            [value]="statusFilter()"
+            placeholder="All Statuses"
+            minWidth="150px"
+            (valueChange)="onStatusFilterChange($event)"
+          ></app-select>
+        </div>
+
+        <!-- Reset Filter Button -->
+        @if (hasActiveFilters()) {
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="resetFilters()"
+            title="Reset Filters"
+          >
+            <app-icon name="activity" [size]="16"></app-icon>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ── Table Block (Table & Pagination in Single Block with Border) ── -->
+    <div class="table-block">
+      <div
+        class="table-container"
+        [class.no-scroll]="loading() || displayedBranches().length === 0"
+      >
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="cursor-pointer" (click)="setSort('code')">
+                <span class="th-content">
+                  <span>CODE</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="cursor-pointer" (click)="setSort('name')">
+                <span class="th-content">
+                  <span>BRANCH NAME</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th>
+                <span class="th-content">
+                  <span>LOCATION</span>
+                </span>
+              </th>
+              <th>
+                <span class="th-content">
+                  <span>CONTACT</span>
+                </span>
+              </th>
+              <th>
+                <span class="th-content">
+                  <span>DEPARTMENTS</span>
+                </span>
+              </th>
+              <th class="cursor-pointer" (click)="setSort('isActive')">
+                <span class="th-content">
+                  <span>STATUS</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="text-right">
+                <span class="th-content">
+                  <span>ACTIONS</span>
+                </span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (loading()) {
+              <tr>
+                <td colspan="7" class="empty-table-cell">
+                  <div class="table-loading">
+                    <span class="spinner"></span>
+                    <span>Loading branch offices...</span>
+                  </div>
+                </td>
+              </tr>
+            } @else if (displayedBranches().length === 0) {
+              <tr>
+                <td colspan="7" class="empty-table-cell">
+                  <div class="table-empty">
+                    <div class="empty-icon-wrap">
+                      <app-icon [name]="hasActiveFilters() ? 'search' : 'map-pin'" [size]="28"></app-icon>
+                    </div>
+                    <h3 class="empty-title">
+                      {{
+                        hasActiveFilters()
+                          ? 'No matching results found on your filter'
+                          : 'No branches found'
+                      }}
+                    </h3>
+                    @if (hasActiveFilters()) {
+                      <button
+                        type="button"
+                        class="btn btn-outline btn-sm"
+                        (click)="resetFilters()"
+                      >
+                        Reset Filters
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @else {
+              @for (branch of displayedBranches(); track branch.id) {
+                <tr class="table-row">
+                  <!-- CODE -->
+                  <td class="code-cell">
+                    {{ branch.code }}
+                  </td>
+
+                  <!-- BRANCH NAME -->
+                  <td>
+                    <div class="branch-name-wrap cursor-pointer" (click)="openDetailModal(branch)">
+                      <span class="primary-name">{{ branch.name }}</span>
+                      <span class="sub-country">{{ branch.country }}</span>
+                    </div>
+                  </td>
+
+                  <!-- LOCATION -->
+                  <td>
+                    @if (branch.city || branch.state) {
+                      <span class="cell-text">
+                        {{ branch.city || '' }}{{ branch.city && branch.state ? ', ' : '' }}{{ branch.state || '' }}
+                      </span>
+                    } @else {
+                      <span class="cell-text text-muted">Not specified</span>
+                    }
+                  </td>
+
+                  <!-- CONTACT -->
+                  <td>
+                    <div class="contact-info">
+                      @if (branch.email) {
+                        <span class="contact-line">
+                          <app-icon name="mail" [size]="12"></app-icon>
+                          <span>{{ branch.email }}</span>
+                        </span>
+                      }
+                      @if (branch.phone) {
+                        <span class="contact-line">
+                          <app-icon name="phone" [size]="12"></app-icon>
+                          <span>{{ branch.phone }}</span>
+                        </span>
+                      }
+                      @if (!branch.email && !branch.phone) {
+                        <span class="cell-text text-muted">-</span>
+                      }
+                    </div>
+                  </td>
+
+                  <!-- DEPARTMENTS -->
+                  <td>
+                    <button
+                      type="button"
+                      class="dept-count-badge"
+                      (click)="openDetailModal(branch)"
+                      [title]="'View all ' + (branch.departments?.length || 0) + ' departments under ' + branch.name"
+                    >
+                      <app-icon name="building" [size]="13"></app-icon>
+                      <span>{{ branch.departments?.length || 0 }} {{ (branch.departments?.length === 1) ? 'Department' : 'Departments' }}</span>
+                    </button>
+                  </td>
+
+                  <!-- STATUS -->
+                  <td>
+                    <app-badge [variant]="branch.isActive ? 'active' : 'inactive'">
+                      {{ branch.isActive ? 'Active' : 'Inactive' }}
+                    </app-badge>
+                  </td>
+
+                  <!-- ACTIONS -->
+                  <td class="text-right">
+                    <div class="action-buttons">
+                      <button
+                        type="button"
+                        *appHasPermission="Permission.BRANCH_VIEW"
+                        class="action-icon-btn"
+                        (click)="openDetailModal(branch)"
+                        title="View Branch Details & Departments"
+                        aria-label="View Details"
+                      >
+                        <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+                      <button
+                        *appHasPermission="Permission.BRANCH_UPDATE"
+                        type="button"
+                        class="action-icon-btn"
+                        (click)="openEditModal(branch)"
+                        title="Edit Branch"
+                        aria-label="Edit Branch"
+                      >
+                        <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+                      @if (branch.isActive) {
+                        <button
+                          *appHasPermission="Permission.BRANCH_DEACTIVATE"
+                          type="button"
+                          class="action-btn danger"
+                          (click)="toggleStatus(branch)"
+                          title="Deactivate Branch"
+                        >
+                          <app-icon name="x" [size]="15"></app-icon>
+                          <span>Deactivate</span>
+                        </button>
+                      } @else {
+                        <button
+                          *appHasPermission="Permission.BRANCH_ACTIVATE"
+                          type="button"
+                          class="action-btn success"
+                          (click)="toggleStatus(branch)"
+                          title="Activate Branch"
+                        >
+                          <app-icon name="check" [size]="15"></app-icon>
+                          <span>Activate</span>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Integrated Card Bottom Pagination -->
+      @if (!loading() && filteredBranches().length > 0) {
+        <div class="table-pagination-footer">
+          <span class="pagination-count">
+            Showing <strong>{{ displayedBranches().length }}</strong> of {{ filteredBranches().length }} branches
+          </span>
+
+          <div class="pagination-nav">
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() <= 1 || loading()"
+              (click)="goToPage(currentPage() - 1)"
+              title="Previous Page"
+              aria-label="Previous Page"
+            >
+              <app-icon name="chevron-left" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+            <span class="page-indicator">{{ currentPage() }} / {{ totalPages() }}</span>
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() >= totalPages() || loading()"
+              (click)="goToPage(currentPage() + 1)"
+              title="Next Page"
+              aria-label="Next Page"
+            >
+              <app-icon name="chevron-right" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Branch Form Modal -->
+@if (isFormModalOpen()) {
+  <app-branch-form-modal
+    [isOpen]="isFormModalOpen()"
+    [branch]="selectedBranch()"
+    (closeModal)="closeFormModal()"
+    (saved)="onBranchSaved($event)"
+  ></app-branch-form-modal>
+}
+
+<!-- Branch Detail Modal -->
+@if (isDetailModalOpen()) {
+  <app-branch-detail-modal
+    [isOpen]="isDetailModalOpen()"
+    [branch]="selectedBranch()"
+    (closeModal)="closeDetailModal()"
+  ></app-branch-detail-modal>
+}

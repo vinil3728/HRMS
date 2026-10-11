@@ -1,0 +1,453 @@
+<div class="page-container">
+  <!-- ── Page Header ──────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-info">
+      <h1 class="page-title">Attendance Management</h1>
+      <p class="page-subtitle">
+        Track daily attendance, check-ins, check-outs, and work hours.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      @if (canCreateRegularization() && hasPersonalProfile()) {
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="openRegularizeModal()"
+          [disabled]="!myEmployeeId()"
+        >
+          <app-icon name="plus" [size]="16"></app-icon>
+          <span>Request Regularization</span>
+        </button>
+      }
+
+      @if (canCreateForTarget()) {
+        <button
+          *appHasPermission="Permission.ATTENDANCE_CREATE"
+          type="button"
+          class="btn btn-secondary"
+          (click)="openAddModal()"
+          [disabled]="!activeTargetEmployeeId()"
+        >
+          <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+          <span>Log Attendance</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+  <div class="content-card">
+    <!-- Toolbar Section: Left Tabs, Right Filters (Option 2) -->
+    <div class="toolbar-section">
+      <!-- Tabs Navigation (Left) -->
+      <div class="tabs-nav">
+        @if (hasPersonalProfile()) {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeTab() === 'self-logs'"
+            (click)="switchTab('self-logs')"
+          >
+            <app-icon name="clock" [size]="16"></app-icon>
+            <span>Self Attendance Logs</span>
+          </button>
+        }
+
+        @if (canViewTeamOrOrgTab()) {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeTab() === 'team-logs'"
+            (click)="switchTab('team-logs')"
+          >
+            <app-icon name="users" [size]="16"></app-icon>
+            <span>{{ teamTabLabel() }}</span>
+          </button>
+        }
+
+        @if (hasPersonalProfile() && canViewRegularization()) {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeTab() === 'self-regularizations'"
+            (click)="switchTab('self-regularizations')"
+          >
+            <app-icon name="edit" [size]="16"></app-icon>
+            <span>Self Regularization Requests</span>
+          </button>
+        }
+
+        @if (canViewTeamOrOrgTab() && canViewRegularization()) {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeTab() === 'team-regularizations'"
+            (click)="switchTab('team-regularizations')"
+          >
+            <app-icon name="file-text" [size]="16"></app-icon>
+            <span>{{ teamRegularizationTabLabel() }}</span>
+          </button>
+        }
+      </div>
+
+      <!-- Filters Wrap (Right) -->
+      @if (activeSection() === 'logs') {
+        <div class="filters-wrap">
+          @if (viewMode() === 'team') {
+            <app-select
+              [options]="employeeOptions()"
+              [value]="selectedEmployeeId()"
+              placeholder="Select Employee"
+              minWidth="220px"
+              (valueChange)="onEmployeeChange($event)"
+            ></app-select>
+          }
+
+          <!-- Status Filter -->
+          <app-select
+            [options]="statusOptions"
+            [value]="statusFilter()"
+            placeholder="All Statuses"
+            minWidth="160px"
+            (valueChange)="onStatusFilterChange($event)"
+          ></app-select>
+
+          <!-- Custom Shared Date Picker (Range Selection) -->
+          <app-date-picker
+            mode="range"
+            [fromDate]="fromDate()"
+            [toDate]="toDate()"
+            placeholder="Select date range"
+            minWidth="250px"
+            (rangeChange)="onDateRangeChange($event)"
+            (clear)="onDateRangeChange({ fromDate: '', toDate: '' })"
+          ></app-date-picker>
+
+          <!-- Reset Filter Icon Button -->
+          @if (hasActiveFilters()) {
+            <button
+              type="button"
+              class="btn-icon"
+              (click)="resetFilters()"
+              title="Reset Filters"
+            >
+              <app-icon name="close" [size]="16"></app-icon>
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="filters-wrap">
+          @if (viewMode() === 'team') {
+            <app-select
+              [options]="employeeOptions()"
+              [value]="selectedEmployeeId()"
+              placeholder="Select Employee"
+              minWidth="220px"
+              (valueChange)="onEmployeeChange($event)"
+            ></app-select>
+          }
+
+          <!-- Status Filter -->
+          <app-select
+            [options]="regularizationStatusOptions"
+            [value]="regularizationStatusFilter()"
+            placeholder="All Statuses"
+            minWidth="175px"
+            (valueChange)="onRegularizationStatusChange($event)"
+          ></app-select>
+        </div>
+      }
+    </div>
+
+    <!-- ── Card Content: Logs or Regularizations ──────────────────────── -->
+    @if (activeSection() === 'logs') {
+      <!-- ── Self Attendance Metrics / Summary Cards (Below Toolbar, Above Table) ── -->
+      @if (viewMode() === 'self') {
+        <div class="card-metrics-section">
+          <div class="attendance-metrics-grid">
+            <div class="att-metric-card">
+              <div class="att-metric-icon att-icon-blue">
+                <app-icon name="clock" [size]="20"></app-icon>
+              </div>
+              <div class="att-metric-info">
+                <span class="att-metric-value">{{ totalWorkHours() }} hrs</span>
+                <span class="att-metric-label">Total Working Hours</span>
+              </div>
+            </div>
+
+            <div class="att-metric-card">
+              <div class="att-metric-icon att-icon-green">
+                <app-icon name="check" [size]="20"></app-icon>
+              </div>
+              <div class="att-metric-info">
+                <span class="att-metric-value">{{ presentDaysCount() }}</span>
+                <span class="att-metric-label">Present Days</span>
+              </div>
+            </div>
+
+            <div class="att-metric-card">
+              <div class="att-metric-icon att-icon-amber">
+                <app-icon name="clock" [size]="20"></app-icon>
+              </div>
+              <div class="att-metric-info">
+                <span class="att-metric-value">{{ absentDaysCount() }}</span>
+                <span class="att-metric-label">Absent Days</span>
+              </div>
+            </div>
+
+            <div class="att-metric-card">
+              <div class="att-metric-icon att-icon-purple">
+                <app-icon name="calendar" [size]="20"></app-icon>
+              </div>
+              <div class="att-metric-info">
+                <span class="att-metric-value">{{ halfDayOrLeaveCount() }}</span>
+                <span class="att-metric-label">Half Day / On Leave</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── Card Body: Attendance Logs Table Block ───────────────────── -->
+      <div class="table-block">
+        <div
+          class="table-responsive"
+          [class.no-scroll]="loading() || displayedRecords().length === 0"
+        >
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="cursor-pointer" (click)="toggleSort('date')">
+                <span class="th-content">
+                  <span>DATE</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th>CHECK IN</th>
+              <th>CHECK OUT</th>
+              <th class="cursor-pointer" (click)="toggleSort('hours')">
+                <span class="th-content">
+                  <span>WORKING HOURS</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th>REMARKS</th>
+              <th class="cursor-pointer" (click)="toggleSort('status')">
+                <span class="th-content">
+                  <span>STATUS</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              @if (hasRowActions()) {
+                <th class="text-right">ACTIONS</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @if (loading()) {
+              <tr>
+                <td [attr.colspan]="hasRowActions() ? 7 : 6" class="empty-table-cell">
+                  <div class="table-loading">
+                    <span class="spinner"></span>
+                    <span>Loading attendance records...</span>
+                  </div>
+                </td>
+              </tr>
+            } @else if (displayedRecords().length === 0) {
+              <tr>
+                <td [attr.colspan]="hasRowActions() ? 7 : 6" class="empty-table-cell">
+                  <div class="table-empty">
+                    <div class="empty-icon-wrap">
+                      <app-icon [name]="hasActiveFilters() ? 'filter' : 'calendar'" [size]="28"></app-icon>
+                    </div>
+                    <h3 class="empty-title">
+                      {{
+                        hasActiveFilters()
+                          ? 'No matching results found on your filter'
+                          : isViewingSelf()
+                            ? 'No attendance records found'
+                            : 'No attendance records found for this employee'
+                      }}
+                    </h3>
+                    @if (hasActiveFilters()) {
+                      <button
+                        type="button"
+                        class="btn btn-outline btn-sm"
+                        (click)="resetFilters()"
+                      >
+                        Reset Filters
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @else {
+              @for (item of displayedRecords(); track item.id) {
+                <tr>
+                  <!-- DATE -->
+                  <td>
+                    <div class="date-meta">
+                      <span class="date-primary">{{ item.attendanceDate | date: 'dd MMM yyyy' }}</span>
+                      <span class="date-secondary">{{ item.attendanceDate | date: 'EEEE' }}</span>
+                    </div>
+                  </td>
+
+                  <!-- CHECK IN -->
+                  <td>
+                    <div class="time-cell">
+                      <span class="cell-text">{{ formatTime(item.checkIn) }}</span>
+                      @if (item.isLate) {
+                        <span class="late-tag">Late</span>
+                      }
+                    </div>
+                  </td>
+
+                  <!-- CHECK OUT -->
+                  <td>
+                    <div class="time-cell">
+                      <span class="cell-text">{{ formatTime(item.checkOut) }}</span>
+                      @if (item.isEarlyCheckout) {
+                        <span class="early-tag">Early</span>
+                      }
+                    </div>
+                  </td>
+
+                  <!-- WORKING HOURS -->
+                  <td>
+                    @if (item.workingHours) {
+                      <span class="cell-text">{{ item.workingHours }} hrs</span>
+                    } @else {
+                      <span class="text-muted">&mdash;</span>
+                    }
+                  </td>
+
+                  <!-- REMARKS -->
+                  <td class="cell-remarks">
+                    <span class="remarks-text" [title]="item.remarks || ''">
+                      {{ item.remarks || '&mdash;' }}
+                    </span>
+                  </td>
+
+                  <!-- STATUS -->
+                  <td>
+                    <app-badge [variant]="getStatusVariant(item.status)">
+                      {{ formatStatusLabel(item.status) }}
+                    </app-badge>
+                  </td>
+
+                  <!-- ACTIONS -->
+                  @if (hasRowActions()) {
+                    <td class="text-right">
+                      <div class="action-buttons justify-end">
+                        @if (!isViewingSelf()) {
+                          <button
+                            *appHasPermission="Permission.ATTENDANCE_UPDATE"
+                            type="button"
+                            class="action-icon-btn"
+                            (click)="openEditModal(item)"
+                            title="Edit Attendance"
+                            aria-label="Edit Attendance"
+                          >
+                            <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+
+                          <button
+                            *appHasPermission="Permission.ATTENDANCE_DELETE"
+                            type="button"
+                            class="action-icon-btn danger"
+                            (click)="deleteRecord(item)"
+                            title="Delete Attendance"
+                            aria-label="Delete Attendance"
+                          >
+                            <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+                        } @else if (canCreateRegularization()) {
+                          <button
+                            type="button"
+                            class="action-btn-reg"
+                            (click)="openRegularizeForRecord(item)"
+                            title="Request Regularization for this date"
+                          >
+                            <app-icon name="clock" [size]="13"></app-icon>
+                            <span>Regularize</span>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  }
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Integrated Card Bottom Pagination -->
+      @if (!loading() && attendanceRecords().length > 0) {
+        <div class="table-pagination-footer">
+          <span class="pagination-count">
+            Showing <strong>{{ displayedRecords().length }}</strong> of {{ totalRecords() }} records
+          </span>
+          <div class="pagination-nav">
+            <button
+              class="page-arrow-btn"
+              [disabled]="currentPage() <= 1 || loading()"
+              (click)="goToPage(currentPage() - 1)"
+              aria-label="Previous page"
+              title="Previous Page"
+            >
+              <app-icon name="chevron-left" [size]="16"></app-icon>
+            </button>
+            <span class="page-indicator">{{ currentPage() }} / {{ totalPages() }}</span>
+            <button
+              class="page-arrow-btn"
+              [disabled]="currentPage() >= totalPages()"
+              (click)="goToPage(currentPage() + 1)"
+              aria-label="Next page"
+              title="Next Page"
+            >
+              <app-icon name="chevron-right" [size]="16"></app-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+      <!-- ── Regularization Requests Section ──────────────────────────── -->
+      <div class="regularizations-wrapper">
+        <app-attendance-regularization-list
+          [employeeId]="activeTargetEmployeeId()"
+          [isViewingSelf]="isViewingSelf()"
+          [statusFilter]="regularizationStatusFilter()"
+          (requestNew)="openRegularizeModal()"
+          (countsChanged)="onRegularizationCountsChanged($event)"
+          (regularizationUpdated)="onRegularizationUpdated()"
+        ></app-attendance-regularization-list>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ── Form Modals ──────────────────────────────────────────────────── -->
+@if (isModalOpen() && activeTargetEmployeeId()) {
+  <app-attendance-form-modal
+    [isOpen]="isModalOpen()"
+    [attendance]="selectedRecord()"
+    [employeeId]="activeTargetEmployeeId()"
+    (closeModal)="closeModal()"
+    (saved)="onAttendanceSaved()"
+  ></app-attendance-form-modal>
+}
+
+@if (isRegularizationModalOpen()) {
+  <app-attendance-regularization-modal
+    [isOpen]="isRegularizationModalOpen()"
+    [employeeId]="myEmployeeId()"
+    [initialDate]="regularizationInitialDate()"
+    [initialCheckIn]="regularizationInitialCheckIn()"
+    [initialCheckOut]="regularizationInitialCheckOut()"
+    (closeModal)="closeRegularizeModal()"
+    (saved)="onRegularizationSaved()"
+  ></app-attendance-regularization-modal>
+}

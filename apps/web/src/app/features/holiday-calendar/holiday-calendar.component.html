@@ -1,0 +1,455 @@
+@if (!embedded()) {
+  <div class="page-container">
+    <!-- ── Page Header ──────────────────────────────────────────────────── -->
+    <div class="page-header">
+      <div class="header-info">
+        <h1 class="page-title">Company Holiday Calendar</h1>
+        <p class="page-subtitle">
+          Manage public, restricted, and company holidays in one calendar.
+        </p>
+      </div>
+
+      <div class="header-actions">
+        @if (canCreateHoliday()) {
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="openAddModal()"
+          >
+            <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+            <span>Add Holiday</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+    <div class="content-card">
+      <!-- Toolbar Section: Left Tabs, Right Filters (Option 2) -->
+      <div class="toolbar-section">
+        <!-- Tabs Navigation (Left) -->
+        <div class="tabs-nav">
+          <button
+            type="button"
+            class="tab-btn active"
+          >
+            <app-icon name="calendar" [size]="16"></app-icon>
+            <span>Company Holidays</span>
+          </button>
+        </div>
+
+        <!-- Filters Wrap (Right) -->
+        <div class="filters-wrap">
+          <div class="filter-item">
+            <app-select
+              [options]="holidayYearOptions"
+              [value]="holidayYear() + ''"
+              (valueChange)="onYearChange($event)"
+              minWidth="110px"
+            ></app-select>
+          </div>
+
+          <div class="filter-item">
+            <app-select
+              [options]="holidayTypeOptions"
+              [value]="holidayTypeFilter()"
+              (valueChange)="onTypeChange($event)"
+              minWidth="180px"
+            ></app-select>
+          </div>
+
+          @if (hasActiveFilters()) {
+            <button
+              type="button"
+              class="btn-icon"
+              (click)="resetFilters()"
+              title="Reset Filters"
+            >
+              <app-icon name="activity" [size]="16"></app-icon>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- ── Holiday Metrics / Summary Cards (Below Toolbar, Above Table) ── -->
+      <div class="card-metrics-section">
+        <div class="holiday-metrics-grid">
+          <div class="h-metric-card">
+            <div class="h-metric-icon h-icon-blue">
+              <app-icon name="calendar" [size]="20"></app-icon>
+            </div>
+            <div class="h-metric-info">
+              <span class="h-metric-value">{{ holidays().length }}</span>
+              <span class="h-metric-label">Total Holidays ({{ holidayYear() }})</span>
+            </div>
+          </div>
+
+          <div class="h-metric-card">
+            <div class="h-metric-icon h-icon-green">
+              <app-icon name="check" [size]="20"></app-icon>
+            </div>
+            <div class="h-metric-info">
+              <span class="h-metric-value">{{ gazettedHolidaysCount() }}</span>
+              <span class="h-metric-label">Gazetted / Public</span>
+            </div>
+          </div>
+
+          <div class="h-metric-card">
+            <div class="h-metric-icon h-icon-amber">
+              <app-icon name="clock" [size]="20"></app-icon>
+            </div>
+            <div class="h-metric-info">
+              <span class="h-metric-value">{{ restrictedHolidaysCount() }}</span>
+              <span class="h-metric-label">Restricted / Optional</span>
+            </div>
+          </div>
+
+          <div class="h-metric-card">
+            <div class="h-metric-icon h-icon-purple">
+              <app-icon name="bell" [size]="20"></app-icon>
+            </div>
+            <div class="h-metric-info">
+              <span class="h-metric-value">{{ upcomingHolidaysCount() }}</span>
+              <span class="h-metric-label">Upcoming This Year</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Table Block (Table & Pagination in Single Block with Border) ── -->
+      <div class="table-block">
+        <div class="table-container">
+          @if (loading()) {
+            <div class="loading-state">
+              <div class="spinner-large" aria-hidden="true"></div>
+              <p class="loading-text">Loading company holidays...</p>
+            </div>
+          } @else if (filteredHolidays().length === 0) {
+            <div class="empty-state">
+              <div class="empty-icon-wrap">
+                <app-icon name="calendar" [size]="36"></app-icon>
+              </div>
+              <h3 class="empty-title">No holidays found</h3>
+              <p class="empty-desc">No holidays match the selected filter criteria for {{ holidayYear() }}.</p>
+              @if (canCreateHoliday()) {
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  (click)="openAddModal()"
+                >
+                  + Add Holiday
+                </button>
+              }
+            </div>
+          } @else {
+            <table class="table">
+              <thead>
+                <tr>
+                  <th style="width: 170px;">DATE</th>
+                  <th style="width: 130px;">DAY</th>
+                  <th>HOLIDAY NAME</th>
+                  <th style="width: 150px;">CATEGORY</th>
+                  <th>DESCRIPTION</th>
+                  <th style="width: 130px;">STATUS</th>
+                  @if (canUpdateHoliday() || canDeleteHoliday()) {
+                    <th class="cell-actions" style="width: 160px;">ACTIONS</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (h of filteredHolidays(); track h.id) {
+                  <tr class="table-row">
+                    <td>
+                      <div class="holiday-date-col">
+                        <app-icon name="calendar" [size]="15" class="holiday-cal-icon"></app-icon>
+                        <span class="holiday-date-text">{{ h.date | date: 'dd MMM yyyy' }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="holiday-day-text">{{ h.dayOfWeek }}</span>
+                    </td>
+                    <td>
+                      <span class="holiday-name-cell">{{ h.name }}</span>
+                    </td>
+                    <td>
+                      <app-badge [variant]="h.type === 'GAZETTED' ? 'success' : (h.type === 'RESTRICTED' ? 'warning' : 'info')">
+                        {{ h.type }}
+                      </app-badge>
+                    </td>
+                    <td class="holiday-desc-cell">
+                      <span class="text-muted">{{ h.description || '—' }}</span>
+                    </td>
+                    <td>
+                      <app-badge [variant]="h.date < todayDateStr ? 'gray' : 'active'">
+                        {{ h.date < todayDateStr ? 'Completed' : 'Upcoming' }}
+                      </app-badge>
+                    </td>
+                    @if (canUpdateHoliday() || canDeleteHoliday()) {
+                      <td class="cell-actions">
+                        <div class="actions-group">
+                          @if (canUpdateHoliday()) {
+                            <button
+                              type="button"
+                              class="action-btn edit-btn"
+                              (click)="openEditModal(h)"
+                              title="Edit Holiday"
+                            >
+                              <app-icon name="edit" [size]="13"></app-icon>
+                              <span>Edit</span>
+                            </button>
+                          }
+                          @if (canDeleteHoliday()) {
+                            <button
+                              type="button"
+                              class="action-btn cancel-btn"
+                              (click)="onDelete(h)"
+                              title="Delete Holiday"
+                            >
+                              <app-icon name="trash" [size]="13"></app-icon>
+                              <span>Delete</span>
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+
+        <!-- Integrated Footer -->
+        @if (!loading() && filteredHolidays().length > 0) {
+          <div class="table-pagination-footer">
+            <span class="pagination-count">
+              Showing <strong>{{ filteredHolidays().length }}</strong> of {{ holidays().length }} holidays
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+} @else {
+  <!-- Embedded Mode (Inside Leave Management's Content Card) -->
+  <div class="holiday-embedded-content">
+    <!-- Toolbar Filters -->
+    <div class="toolbar-section embedded-toolbar">
+      <div class="toolbar-left-info">
+        <span class="embedded-heading">Holiday Schedule ({{ holidayYear() }})</span>
+      </div>
+
+      <div class="filters-wrap">
+        <div class="filter-item">
+          <span class="filter-label">Year:</span>
+          <app-select
+            [options]="holidayYearOptions"
+            [value]="holidayYear() + ''"
+            (valueChange)="onYearChange($event)"
+            minWidth="110px"
+          ></app-select>
+        </div>
+
+        <div class="filter-item">
+          <span class="filter-label">Category:</span>
+          <app-select
+            [options]="holidayTypeOptions"
+            [value]="holidayTypeFilter()"
+            (valueChange)="onTypeChange($event)"
+            minWidth="180px"
+          ></app-select>
+        </div>
+
+        @if (hasActiveFilters()) {
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="resetFilters()"
+            title="Reset Filters"
+          >
+            <app-icon name="activity" [size]="16"></app-icon>
+          </button>
+        }
+
+        @if (canCreateHoliday()) {
+          <button
+            type="button"
+            class="btn btn-primary btn-sm btn-add-h"
+            (click)="openAddModal()"
+          >
+            <app-icon name="plus" [size]="14"></app-icon>
+            <span>Add Holiday</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ── Holiday Metrics / Summary Cards (Below Toolbar, Above Table) ── -->
+    <div class="card-metrics-section">
+      <div class="holiday-metrics-grid">
+        <div class="h-metric-card">
+          <div class="h-metric-icon h-icon-blue">
+            <app-icon name="calendar" [size]="20"></app-icon>
+          </div>
+          <div class="h-metric-info">
+            <span class="h-metric-value">{{ holidays().length }}</span>
+            <span class="h-metric-label">Total Holidays ({{ holidayYear() }})</span>
+          </div>
+        </div>
+
+        <div class="h-metric-card">
+          <div class="h-metric-icon h-icon-green">
+            <app-icon name="check" [size]="20"></app-icon>
+          </div>
+          <div class="h-metric-info">
+            <span class="h-metric-value">{{ gazettedHolidaysCount() }}</span>
+            <span class="h-metric-label">Gazetted / Public</span>
+          </div>
+        </div>
+
+        <div class="h-metric-card">
+          <div class="h-metric-icon h-icon-amber">
+            <app-icon name="clock" [size]="20"></app-icon>
+          </div>
+          <div class="h-metric-info">
+            <span class="h-metric-value">{{ restrictedHolidaysCount() }}</span>
+            <span class="h-metric-label">Restricted / Optional</span>
+          </div>
+        </div>
+
+        <div class="h-metric-card">
+          <div class="h-metric-icon h-icon-purple">
+            <app-icon name="bell" [size]="20"></app-icon>
+          </div>
+          <div class="h-metric-info">
+            <span class="h-metric-value">{{ upcomingHolidaysCount() }}</span>
+            <span class="h-metric-label">Upcoming This Year</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Table Block (Table & Pagination in Single Block with Border) ── -->
+    <div class="table-block">
+      <div class="table-container">
+        @if (loading()) {
+          <div class="loading-state">
+            <div class="spinner-large" aria-hidden="true"></div>
+            <p class="loading-text">Loading company holidays...</p>
+          </div>
+        } @else if (filteredHolidays().length === 0) {
+          <div class="empty-state">
+            <div class="empty-icon-wrap">
+              <app-icon name="calendar" [size]="36"></app-icon>
+            </div>
+            <h3 class="empty-title">No holidays found</h3>
+            <p class="empty-desc">No holidays match the selected filter criteria for {{ holidayYear() }}.</p>
+            @if (canCreateHoliday()) {
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                (click)="openAddModal()"
+              >
+                + Add Holiday
+              </button>
+            }
+          </div>
+        } @else {
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width: 170px;">DATE</th>
+                <th style="width: 130px;">DAY</th>
+                <th>HOLIDAY NAME</th>
+                <th style="width: 150px;">CATEGORY</th>
+                <th>DESCRIPTION</th>
+                <th style="width: 130px;">STATUS</th>
+                @if (canUpdateHoliday() || canDeleteHoliday()) {
+                  <th class="cell-actions" style="width: 160px;">ACTIONS</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (h of filteredHolidays(); track h.id) {
+                <tr class="table-row">
+                  <td>
+                    <div class="holiday-date-col">
+                      <app-icon name="calendar" [size]="15" class="holiday-cal-icon"></app-icon>
+                      <span class="holiday-date-text">{{ h.date | date: 'dd MMM yyyy' }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="holiday-day-text">{{ h.dayOfWeek }}</span>
+                  </td>
+                  <td>
+                    <span class="holiday-name-cell">{{ h.name }}</span>
+                  </td>
+                  <td>
+                    <app-badge [variant]="h.type === 'GAZETTED' ? 'success' : (h.type === 'RESTRICTED' ? 'warning' : 'info')">
+                      {{ h.type }}
+                    </app-badge>
+                  </td>
+                  <td class="holiday-desc-cell">
+                    <span class="text-muted">{{ h.description || '—' }}</span>
+                  </td>
+                  <td>
+                    <app-badge [variant]="h.date < todayDateStr ? 'gray' : 'active'">
+                      {{ h.date < todayDateStr ? 'Completed' : 'Upcoming' }}
+                    </app-badge>
+                  </td>
+                  @if (canUpdateHoliday() || canDeleteHoliday()) {
+                    <td class="cell-actions">
+                      <div class="actions-group">
+                        @if (canUpdateHoliday()) {
+                          <button
+                            type="button"
+                            class="action-btn edit-btn"
+                            (click)="openEditModal(h)"
+                            title="Edit Holiday"
+                          >
+                            <app-icon name="edit" [size]="13"></app-icon>
+                            <span>Edit</span>
+                          </button>
+                        }
+                        @if (canDeleteHoliday()) {
+                          <button
+                            type="button"
+                            class="action-btn cancel-btn"
+                            (click)="onDelete(h)"
+                            title="Delete Holiday"
+                          >
+                            <app-icon name="trash" [size]="13"></app-icon>
+                            <span>Delete</span>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+
+      <!-- Integrated Footer -->
+      @if (!loading() && filteredHolidays().length > 0) {
+        <div class="table-pagination-footer">
+          <span class="pagination-count">
+            Showing <strong>{{ filteredHolidays().length }}</strong> of {{ holidays().length }} holidays
+          </span>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Form Modal -->
+@if (isModalOpen()) {
+  <app-holiday-form-modal
+    [isOpen]="isModalOpen()"
+    [holiday]="selectedHoliday()"
+    (closeModal)="closeModal()"
+    (saved)="onSaved($event)"
+  ></app-holiday-form-modal>
+}

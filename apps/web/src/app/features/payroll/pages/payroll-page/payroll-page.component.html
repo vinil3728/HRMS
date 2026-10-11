@@ -1,0 +1,678 @@
+<div class="page-container">
+  <!-- ── Page Header ──────────────────────────────────────────────────── -->
+  <header class="page-header">
+    <div class="header-info">
+      <h1 class="page-title">{{ isOrgView() ? 'Payroll Management' : 'My Payroll & Payslips' }}</h1>
+      <p class="page-subtitle">
+        {{
+          isOrgView()
+            ? 'Manage employee salaries, monthly payroll, payments, and payslips.'
+            : 'Manage payroll, salary payments, and digital payslips.'
+        }}
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="exportCurrentViewCsv()"
+        [disabled]="isLoading()"
+      >
+        <app-icon name="download" [size]="16"></app-icon>
+        <span>Export CSV</span>
+      </button>
+
+      @if (isOrgView()) {
+        <button
+          *appHasPermission="Permission.PAYROLL_CREATE"
+          type="button"
+          class="btn btn-secondary"
+          (click)="openAddStructureModal()"
+        >
+          <app-icon name="plus" [size]="16"></app-icon>
+          <span>Define Structure</span>
+        </button>
+
+        <button
+          *appHasPermission="Permission.PAYROLL_PROCESS"
+          type="button"
+          class="btn btn-primary"
+          (click)="openRunPayrollModal()"
+        >
+          <app-icon name="dollar" [size]="16"></app-icon>
+          <span>Run Monthly Payroll</span>
+        </button>
+      }
+    </div>
+  </header>
+
+  <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+  <div class="content-card">
+    <!-- Toolbar Section: Left Tabs, Right Filters (Option 2) -->
+    <div class="toolbar-section">
+      <!-- Tabs Navigation (Left) -->
+      <div class="tabs-nav">
+        @if (hasPersonalProfile()) {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="viewMode() === 'self' && activeTab() === 'payslips'"
+            (click)="switchTab('self', 'payslips')"
+          >
+            <app-icon name="dollar" [size]="16"></app-icon>
+            <span>My Payslips</span>
+          </button>
+
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="viewMode() === 'self' && activeTab() === 'structures'"
+            (click)="switchTab('self', 'structures')"
+          >
+            <app-icon name="users" [size]="16"></app-icon>
+            <span>My Compensation</span>
+          </button>
+        }
+
+        @if (canManageOrgPayroll()) {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="viewMode() === 'org' && activeTab() === 'runs'"
+            (click)="switchTab('org', 'runs')"
+          >
+            <app-icon name="calendar" [size]="16"></app-icon>
+            <span>Payroll Batches</span>
+          </button>
+
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="viewMode() === 'org' && activeTab() === 'payslips'"
+            (click)="switchTab('org', 'payslips')"
+          >
+            <app-icon name="users" [size]="16"></app-icon>
+            <span>Employee Payslips</span>
+          </button>
+
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="viewMode() === 'org' && activeTab() === 'structures'"
+            (click)="switchTab('org', 'structures')"
+          >
+            <app-icon name="pie-chart" [size]="16"></app-icon>
+            <span>Salary Structures</span>
+          </button>
+        }
+      </div>
+
+      <!-- Filters Wrap (Right) -->
+      @if (activeTab() === 'payslips') {
+        <div class="filters-wrap">
+          @if (isOrgView()) {
+            <div class="search-input-wrap">
+              <app-icon name="search" [size]="14" customClass="filter-search-icon"></app-icon>
+              <input
+                type="text"
+                class="filter-search-input"
+                placeholder="Search employee..."
+                [(ngModel)]="searchQuery"
+                (ngModelChange)="onPayslipSearchChange()"
+              />
+            </div>
+          }
+
+          <!-- Month Filter -->
+          <app-select
+            [options]="monthFilterOptions"
+            [value]="filterMonth ?? ''"
+            (valueChange)="onMonthFilterChange($event)"
+            minWidth="140px"
+          ></app-select>
+
+          <!-- Year Filter -->
+          <app-select
+            [options]="yearFilterOptions"
+            [value]="filterYear ?? ''"
+            (valueChange)="onYearFilterChange($event)"
+            minWidth="110px"
+          ></app-select>
+
+          <!-- Status Filter -->
+          <app-select
+            [options]="statusFilterOptions"
+            [value]="filterStatus"
+            (valueChange)="onStatusFilterChange($event)"
+            minWidth="140px"
+          ></app-select>
+
+          <!-- Reset Button -->
+          @if (hasPayslipFilters()) {
+            <button
+              type="button"
+              class="btn-icon"
+              (click)="resetPayslipFilters()"
+              title="Reset Filters"
+            >
+              <app-icon name="activity" [size]="16"></app-icon>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- ── Payroll Metrics / Summary Cards (Below Toolbar, Above Table) ── -->
+    <div class="card-metrics-section">
+      <div class="payroll-metrics-grid">
+        <div class="p-metric-card">
+          <div class="p-metric-icon p-icon-blue">
+            <app-icon name="dollar" [size]="20"></app-icon>
+          </div>
+          <div class="p-metric-info">
+            <span class="p-metric-value">₹ {{ kpiGrossPay() | number: '1.2-2' }}</span>
+            <span class="p-metric-label">{{ isOrgView() ? 'Monthly Gross Payroll' : 'Gross Earnings' }}</span>
+          </div>
+        </div>
+
+        <div class="p-metric-card">
+          <div class="p-metric-icon p-icon-green">
+            <app-icon name="check" [size]="20"></app-icon>
+          </div>
+          <div class="p-metric-info">
+            <span class="p-metric-value text-success">₹ {{ kpiNetPay() | number: '1.2-2' }}</span>
+            <span class="p-metric-label">{{ isOrgView() ? 'Net Disbursed Take-Home' : 'Net Take-Home Pay' }}</span>
+          </div>
+        </div>
+
+        <div class="p-metric-card">
+          <div class="p-metric-icon p-icon-amber">
+            <app-icon name="pie-chart" [size]="20"></app-icon>
+          </div>
+          <div class="p-metric-info">
+            <span class="p-metric-value text-amber">₹ {{ kpiDeductions() | number: '1.2-2' }}</span>
+            <span class="p-metric-label">Statutory Deductions</span>
+          </div>
+        </div>
+
+        <div class="p-metric-card">
+          <div class="p-metric-icon p-icon-purple">
+            <app-icon name="users" [size]="20"></app-icon>
+          </div>
+          <div class="p-metric-info">
+            <span class="p-metric-value">{{ kpiRecordCount() }}</span>
+            <span class="p-metric-label">{{ isOrgView() ? 'Active Records' : 'Generated Payslips' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feedback Alerts -->
+    @if (actionMessage()) {
+      <div class="alert-container">
+        <div class="alert alert-success">
+          <app-icon name="check" [size]="16"></app-icon>
+          <span>{{ actionMessage() }}</span>
+        </div>
+      </div>
+    }
+
+    @if (errorMessage()) {
+      <div class="alert-container">
+        <div class="alert alert-error">
+          <app-icon name="alert-circle" [size]="16"></app-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      </div>
+    }
+
+    <!-- ── TAB 1: PAYROLL RUNS BATCHES ──────────────────────────────────── -->
+    @if (activeTab() === 'runs') {
+      <div class="table-block">
+        <div class="table-container">
+          @if (isLoading()) {
+            <div class="table-loading">
+              <span class="spinner"></span>
+              <span>Loading payroll batches...</span>
+            </div>
+          } @else if (runs().length === 0) {
+            <div class="table-empty">
+              <div class="empty-icon-wrap">
+                <app-icon name="calendar" [size]="32"></app-icon>
+              </div>
+              <h3 class="empty-title">No payroll cycles created yet</h3>
+              <p class="empty-desc">Initiate a monthly payroll run to generate payslips for all active company employees.</p>
+              <button
+                *appHasPermission="Permission.PAYROLL_PROCESS"
+                type="button"
+                class="btn btn-primary btn-sm"
+                (click)="openRunPayrollModal()"
+              >
+                + Run Monthly Payroll
+              </button>
+            </div>
+          } @else {
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>PERIOD</th>
+                  <th>EMPLOYEES</th>
+                  <th>GROSS COMMITMENT</th>
+                  <th>TOTAL DEDUCTIONS</th>
+                  <th>NET DISBURSEMENT</th>
+                  <th>STATUS</th>
+                  <th>PROCESSED ON</th>
+                  <th class="text-right">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (run of runs(); track run.id) {
+                  <tr class="table-row">
+                    <td class="font-semibold text-dark">
+                      {{ getPeriodName(run.month, run.year) }}
+                    </td>
+                    <td>
+                      <span class="emp-count-badge">{{ run.totalEmployees }} Employees</span>
+                    </td>
+                    <td>₹ {{ run.totalGrossPay | number: '1.2-2' }}</td>
+                    <td class="text-danger">- ₹ {{ run.totalDeductions | number: '1.2-2' }}</td>
+                    <td class="font-bold text-success">₹ {{ run.totalNetPay | number: '1.2-2' }}</td>
+                    <td>
+                      <app-badge [variant]="getRunStatusVariant(run.status)">
+                        {{ run.status }}
+                      </app-badge>
+                    </td>
+                    <td class="text-muted">
+                      {{ (run.runDate || run.createdAt) ? ((run.runDate || run.createdAt) | date: 'dd MMM yyyy') : '—' }}
+                    </td>
+                    <td class="text-right">
+                      <div class="action-buttons justify-end">
+                        <button
+                          type="button"
+                          class="action-icon-btn"
+                          title="View batch payslips"
+                          (click)="viewRunPayslips(run)"
+                        >
+                          <app-icon name="eye" [size]="16"></app-icon>
+                        </button>
+
+                        @if (run.status === 'PROCESSING') {
+                          <button
+                            *appHasPermission="Permission.PAYROLL_APPROVE"
+                            type="button"
+                            class="action-icon-btn text-success"
+                            title="Approve payroll batch"
+                            (click)="onApproveRun(run)"
+                          >
+                            <app-icon name="check" [size]="16"></app-icon>
+                          </button>
+                        }
+
+                        @if (run.status === 'APPROVED') {
+                          <button
+                            *appHasPermission="Permission.PAYROLL_UPDATE"
+                            type="button"
+                            class="action-icon-btn text-primary"
+                            title="Record salary disbursement"
+                            (click)="openMarkRunPaid(run)"
+                          >
+                            <app-icon name="dollar" [size]="16"></app-icon>
+                          </button>
+                        }
+
+                        @if (run.status === 'DRAFT' || run.status === 'PROCESSING') {
+                          <button
+                            *appHasPermission="Permission.PAYROLL_DELETE"
+                            type="button"
+                            class="action-icon-btn text-danger"
+                            title="Delete payroll run"
+                            (click)="onDeleteRun(run)"
+                          >
+                            <app-icon name="trash" [size]="16"></app-icon>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ── TAB 2: EMPLOYEE PAYSLIPS ────────────────────────────────────── -->
+    @if (activeTab() === 'payslips') {
+      <div class="table-block">
+        <div class="table-container">
+          @if (isLoading()) {
+            <div class="table-loading">
+              <span class="spinner"></span>
+              <span>Loading payslips...</span>
+            </div>
+          } @else if (payslips().length === 0) {
+            <div class="table-empty">
+              <div class="empty-icon-wrap">
+                <app-icon name="dollar" [size]="32"></app-icon>
+              </div>
+              <h3 class="empty-title">No payslips found</h3>
+              <p class="empty-desc">
+                {{
+                  hasPayslipFilters()
+                    ? 'No payslips match your search or filter criteria.'
+                    : isOrgView()
+                      ? 'Process a payroll run to generate employee payslips.'
+                      : 'No monthly payslips have been generated for your account yet.'
+                }}
+              </p>
+              @if (hasPayslipFilters()) {
+                <button type="button" class="btn btn-outline btn-sm" (click)="resetPayslipFilters()">
+                  Clear Filters
+                </button>
+              }
+            </div>
+          } @else {
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>EMPLOYEE</th>
+                  <th>PERIOD</th>
+                  <th>BASIC SALARY</th>
+                  <th>GROSS EARNINGS</th>
+                  <th>DEDUCTIONS</th>
+                  <th>NET PAY</th>
+                  <th>STATUS</th>
+                  <th class="text-right">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (slip of displayedPayslips(); track slip.id) {
+                  <tr class="table-row">
+                    <td>
+                      <div class="employee-name-cell">
+                        <app-avatar
+                          [name]="(slip.employee?.firstName || '') + ' ' + (slip.employee?.lastName || '')"
+                          [size]="34"
+                        ></app-avatar>
+                        <div class="name-meta">
+                          <span class="emp-fullname font-semibold">
+                            {{ slip.employee?.firstName }} {{ slip.employee?.lastName }}
+                          </span>
+                          <span class="emp-code text-muted">
+                            {{ slip.employee?.employeeCode }} &bull; {{ slip.employee?.department?.name || 'General' }}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="period-text">{{ getPeriodName(slip.month, slip.year) }}</span>
+                    </td>
+                    <td>₹ {{ slip.basicSalary | number: '1.2-2' }}</td>
+                    <td class="font-semibold">₹ {{ slip.grossEarnings | number: '1.2-2' }}</td>
+                    <td class="text-danger">- ₹ {{ slip.totalDeductions | number: '1.2-2' }}</td>
+                    <td class="font-bold text-success text-md">₹ {{ slip.netPay | number: '1.2-2' }}</td>
+                    <td>
+                      <app-badge [variant]="getPayslipStatusVariant(slip.status)">
+                        {{ slip.status }}
+                      </app-badge>
+                    </td>
+                    <td class="text-right">
+                      <div class="action-buttons justify-end">
+                        <button
+                          type="button"
+                          class="action-icon-btn"
+                          title="View Salary Slip"
+                          (click)="openPayslipDetailModal(slip)"
+                        >
+                          <app-icon name="eye" [size]="16"></app-icon>
+                        </button>
+
+                        <button
+                          type="button"
+                          class="action-icon-btn text-primary"
+                          title="Download Payslip PDF"
+                          (click)="downloadPayslipPdf(slip)"
+                        >
+                          <app-icon name="download" [size]="16"></app-icon>
+                        </button>
+
+                        @if (isOrgView()) {
+                          @if (slip.status === 'DRAFT') {
+                            <button
+                              *appHasPermission="Permission.PAYROLL_UPDATE"
+                              type="button"
+                              class="action-icon-btn"
+                              title="Edit Payslip line items"
+                              (click)="openEditPayslipModal(slip)"
+                            >
+                              <app-icon name="edit" [size]="16"></app-icon>
+                            </button>
+                          }
+
+                          @if (slip.status === 'PROCESSED') {
+                            <button
+                              *appHasPermission="Permission.PAYROLL_APPROVE"
+                              type="button"
+                              class="action-icon-btn text-success"
+                              title="Approve Payslip"
+                              (click)="onApprovePayslip(slip)"
+                            >
+                              <app-icon name="check" [size]="16"></app-icon>
+                            </button>
+
+                            <button
+                              *appHasPermission="Permission.PAYROLL_REJECT"
+                              type="button"
+                              class="action-icon-btn text-danger"
+                              title="Reject / Hold Payslip"
+                              (click)="onRejectPayslip(slip)"
+                            >
+                              <app-icon name="x" [size]="16"></app-icon>
+                            </button>
+                          }
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+
+        <!-- Integrated Table Pagination Footer -->
+        @if (!isLoading() && payslips().length > 0) {
+          <div class="table-pagination-footer">
+            <span class="pagination-count">
+              Showing <strong>{{ startPayslipIndex() }}</strong> to <strong>{{ endPayslipIndex() }}</strong> of <strong>{{ totalPayslips() }}</strong> payslips
+            </span>
+
+            <div class="pagination-nav">
+              <button
+                type="button"
+                class="page-arrow-btn"
+                [disabled]="currentPayslipPage() <= 1"
+                (click)="goToPayslipPage(currentPayslipPage() - 1)"
+                title="Previous Page"
+              >
+                <app-icon name="chevron-left" [size]="16"></app-icon>
+              </button>
+
+              <span class="page-indicator">{{ currentPayslipPage() }} / {{ totalPayslipPages() }}</span>
+
+              <button
+                type="button"
+                class="page-arrow-btn"
+                [disabled]="currentPayslipPage() >= totalPayslipPages()"
+                (click)="goToPayslipPage(currentPayslipPage() + 1)"
+                title="Next Page"
+              >
+                <app-icon name="chevron-right" [size]="16"></app-icon>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ── TAB 3: SALARY STRUCTURES ────────────────────────────────────── -->
+    @if (activeTab() === 'structures') {
+      <div class="table-block">
+        <div class="table-container">
+          @if (isLoading()) {
+            <div class="table-loading">
+              <span class="spinner"></span>
+              <span>Loading salary structure...</span>
+            </div>
+          } @else if (structures().length === 0) {
+            <div class="table-empty">
+              <div class="empty-icon-wrap">
+                <app-icon name="dollar" [size]="32"></app-icon>
+              </div>
+              <h3 class="empty-title">{{ isOrgView() ? 'No salary structures configured' : 'Compensation structure not yet assigned' }}</h3>
+              <p class="empty-desc">
+                {{
+                  isOrgView()
+                    ? 'Define employee salary compensation packages to enable monthly payroll processing.'
+                    : 'Your compensation structure has not been configured by HR yet.'
+                }}
+              </p>
+              @if (isOrgView()) {
+                <button
+                  *appHasPermission="Permission.PAYROLL_CREATE"
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  (click)="openAddStructureModal()"
+                >
+                  + Define Salary Structure
+                </button>
+              }
+            </div>
+          } @else {
+            <table class="table">
+              <thead>
+                <tr>
+                  @if (isOrgView()) {
+                    <th>EMPLOYEE</th>
+                  }
+                  <th>ANNUAL CTC</th>
+                  <th>BASIC SALARY</th>
+                  <th>HRA</th>
+                  <th>SPECIAL ALLOWANCE</th>
+                  <th>PF (EMPLOYEE)</th>
+                  <th>TDS / TAX</th>
+                  <th>NET MONTHLY TAKE-HOME</th>
+                  <th>EFFECTIVE FROM</th>
+                  @if (isOrgView()) {
+                    <th class="text-right">ACTIONS</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (struct of structures(); track struct.id) {
+                  <tr class="table-row">
+                    @if (isOrgView()) {
+                      <td>
+                        <div class="employee-name-cell">
+                          <!-- <app-avatar
+                            [name]="(struct.employee?.firstName || '') + ' ' + (struct.employee?.lastName || '')"
+                            [size]="34"
+                          ></app-avatar> -->
+                          <div class="name-meta">
+                            <span class="emp-fullname font-semibold">
+                              {{ struct.employee?.firstName }} {{ struct.employee?.lastName }}
+                            </span>
+                            <span class="emp-code text-muted">
+                              {{ struct.employee?.employeeCode }}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                    }
+                    <td class="font-bold text-dark">₹ {{ struct.ctc | number: '1.2-2' }}</td>
+                    <td>₹ {{ struct.basicSalary | number: '1.2-2' }}</td>
+                    <td>₹ {{ struct.hra | number: '1.2-2' }}</td>
+                    <td>₹ {{ struct.specialAllowance | number: '1.2-2' }}</td>
+                    <td class="text-danger">- ₹ {{ struct.providentFund | number: '1.2-2' }}</td>
+                    <td class="text-danger">- ₹ {{ struct.tds | number: '1.2-2' }}</td>
+                    <td class="font-bold text-success text-md">
+                      ₹ {{ computeStructureNet(struct) | number: '1.2-2' }}
+                    </td>
+                    <td class="text-muted">
+                      {{ struct.effectiveFrom ? (struct.effectiveFrom | date: 'dd MMM yyyy') : '—' }}
+                    </td>
+                    @if (isOrgView()) {
+                      <td class="text-right">
+                        <div class="action-buttons justify-end">
+                          <button
+                            *appHasPermission="Permission.PAYROLL_UPDATE"
+                            type="button"
+                            class="action-icon-btn"
+                            title="Edit salary compensation structure"
+                            (click)="openEditStructureModal(struct)"
+                          >
+                            <app-icon name="edit" [size]="16"></app-icon>
+                          </button>
+                        </div>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ── Modals ─────────────────────────────────────────────────────────── -->
+@if (isRunModalOpen()) {
+  <app-payroll-run-modal
+    [isOpen]="isRunModalOpen()"
+    (closeModal)="closeRunModal()"
+    (saved)="onRunSaved($event)"
+  ></app-payroll-run-modal>
+}
+
+@if (isStructureModalOpen()) {
+  <app-salary-structure-modal
+    [isOpen]="isStructureModalOpen()"
+    [structure]="selectedStructure()"
+    (closeModal)="closeStructureModal()"
+    (structureSaved)="onStructureSaved()"
+  ></app-salary-structure-modal>
+}
+
+@if (isPayslipDetailModalOpen() && selectedPayslip()) {
+  <app-payslip-detail-modal
+    [isOpen]="isPayslipDetailModalOpen()"
+    [payslip]="selectedPayslip()!"
+    (closeModal)="closePayslipDetailModal()"
+    (editAdjustments)="openEditPayslipModal($event)"
+    (approve)="onApprovePayslip($event)"
+    (markPaid)="openMarkSlipPaid($event)"
+  ></app-payslip-detail-modal>
+}
+
+@if (isPayslipEditModalOpen() && selectedPayslip()) {
+  <app-payslip-edit-modal
+    [isOpen]="isPayslipEditModalOpen()"
+    [payslip]="selectedPayslip()!"
+    (closeModal)="closePayslipEditModal()"
+    (saved)="onPayslipUpdated($event)"
+  ></app-payslip-edit-modal>
+}
+
+@if (isMarkPaidModalOpen()) {
+  <app-mark-paid-modal
+    [isOpen]="isMarkPaidModalOpen()"
+    [run]="selectedRunForPayment()"
+    [payslip]="selectedPayslipForPayment()"
+    (closeModal)="closeMarkPaidModal()"
+    (paid)="onPaymentConfirmed($event)"
+  ></app-mark-paid-modal>
+}

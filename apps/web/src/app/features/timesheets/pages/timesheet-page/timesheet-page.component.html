@@ -1,0 +1,506 @@
+<div class="page-container">
+  <!-- Toast / Alerts -->
+  @if (successMessage()) {
+    <div class="alert alert-success" role="alert">
+      <div class="alert-content">
+        <app-icon name="check-circle" [size]="16"></app-icon>
+        <span>{{ successMessage() }}</span>
+      </div>
+      <button
+        type="button"
+        class="alert-close-btn"
+        (click)="clearMessages()"
+        aria-label="Close notification"
+      >
+        <app-icon name="x" [size]="15"></app-icon>
+      </button>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger" role="alert">
+      <div class="alert-content">
+        <app-icon name="alert-circle" [size]="16"></app-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+      <button
+        type="button"
+        class="alert-close-btn"
+        (click)="clearMessages()"
+        aria-label="Close error alert"
+      >
+        <app-icon name="x" [size]="15"></app-icon>
+      </button>
+    </div>
+  }
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-info">
+      <div class="title-row">
+        <h1 class="page-title">Timesheet Management</h1>
+      </div>
+      <p class="page-subtitle">
+        Track daily work hours, monitor project tasks, and manage approval workflows
+      </p>
+    </div>
+
+    <div class="header-actions">
+      @if ((viewMode() === 'self' && hasPersonalProfile()) || canManageAllTimesheets()) {
+        <button
+          *appHasPermission="Permission.TIMESHEET_CREATE"
+          type="button"
+          class="btn btn-primary"
+          (click)="openCreateModal()"
+          [disabled]="!activeTargetEmployeeId()"
+        >
+          <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+          <span>Log Time</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+  <div class="content-card">
+    <!-- Toolbar Section: Left Tabs, Right Filters (Option 2) -->
+    <div class="toolbar-section">
+      <!-- Tabs Navigation (Left) -->
+      <div class="tabs-nav">
+        @if (hasPersonalProfile()) {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="viewMode() === 'self'"
+            (click)="setViewMode('self')"
+          >
+            <app-icon name="clock" [size]="16"></app-icon>
+            <span>Self Timesheets</span>
+          </button>
+        }
+
+        @if (canViewTeamOrOrgTab()) {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="viewMode() === 'team'"
+            (click)="setViewMode('team')"
+          >
+            <app-icon name="users" [size]="16"></app-icon>
+            <span>{{ teamTabLabel() }}</span>
+          </button>
+        }
+      </div>
+
+      <!-- Filters Wrap (Right) -->
+      <div class="filters-wrap">
+        @if (viewMode() === 'team') {
+          <app-select
+            [options]="employeeOptions()"
+            [value]="selectedEmployeeId()"
+            placeholder="Select Employee"
+            minWidth="220px"
+            (valueChange)="onEmployeeChange($event)"
+          ></app-select>
+        }
+
+        <!-- Status Filter -->
+        <app-select
+          [options]="statusOptions"
+          [value]="filterStatus()"
+          placeholder="All Statuses"
+          minWidth="160px"
+          (valueChange)="onStatusChange($event)"
+        ></app-select>
+
+        <!-- Custom Shared Date Picker (Range Selection) -->
+        <app-date-picker
+          mode="range"
+          [fromDate]="fromDate()"
+          [toDate]="toDate()"
+          placeholder="Select date range"
+          minWidth="250px"
+          (rangeChange)="onDateRangeChange($event)"
+          (clear)="onDateRangeChange({ fromDate: '', toDate: '' })"
+        ></app-date-picker>
+
+        <!-- Reset Filter Icon Button -->
+        @if (hasActiveFilters()) {
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="resetFilters()"
+            title="Reset Filters"
+          >
+            <app-icon name="activity" [size]="16"></app-icon>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ── Self Timesheet Metrics / Summary Cards (Below Toolbar, Above Table) ── -->
+    @if (viewMode() === 'self') {
+      <div class="card-metrics-section">
+        <div class="timesheet-metrics-grid">
+          <div class="ts-metric-card">
+            <div class="ts-metric-icon ts-icon-blue">
+              <app-icon name="clock" [size]="20"></app-icon>
+            </div>
+            <div class="ts-metric-info">
+              <span class="ts-metric-value">{{ summary()?.totalHours || 0 }} hrs</span>
+              <span class="ts-metric-label">Total Logged Hours</span>
+            </div>
+          </div>
+
+          <div class="ts-metric-card">
+            <div class="ts-metric-icon ts-icon-green">
+              <app-icon name="check" [size]="20"></app-icon>
+            </div>
+            <div class="ts-metric-info">
+              <span class="ts-metric-value">{{ summary()?.approvedHours || 0 }} hrs</span>
+              <span class="ts-metric-label">Approved Hours</span>
+            </div>
+          </div>
+
+          <div class="ts-metric-card">
+            <div class="ts-metric-icon ts-icon-amber">
+              <app-icon name="clock" [size]="20"></app-icon>
+            </div>
+            <div class="ts-metric-info">
+              <span class="ts-metric-value">{{ summary()?.submittedHours || 0 }} hrs</span>
+              <span class="ts-metric-label">Pending Approval</span>
+            </div>
+          </div>
+
+          <div class="ts-metric-card">
+            <div class="ts-metric-icon ts-icon-purple">
+              <app-icon name="file-text" [size]="20"></app-icon>
+            </div>
+            <div class="ts-metric-info">
+              <span class="ts-metric-value">{{ summary()?.draftHours || 0 }} hrs</span>
+              <span class="ts-metric-label">Draft Hours</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Table Block (Single Block with Border) -->
+    <div class="table-block">
+      <!-- Table Container -->
+      <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="cursor-pointer" (click)="toggleSort('date')">
+              <span class="th-content">
+                <span>WORK DATE</span>
+                <app-icon name="arrow-up-down" [size]="12"></app-icon>
+              </span>
+            </th>
+            <th class="cursor-pointer" (click)="toggleSort('project')">
+              <span class="th-content">
+                <span>PROJECT</span>
+                <app-icon name="arrow-up-down" [size]="12"></app-icon>
+              </span>
+            </th>
+            <th class="cursor-pointer" (click)="toggleSort('hours')">
+              <span class="th-content">
+                <span>HOURS</span>
+                <app-icon name="arrow-up-down" [size]="12"></app-icon>
+              </span>
+            </th>
+            <th>TASK ACCOMPLISHMENTS</th>
+            <th>REVIEW DETAILS</th>
+            <th class="cursor-pointer" (click)="toggleSort('status')">
+              <span class="th-content">
+                <span>STATUS</span>
+                <app-icon name="arrow-up-down" [size]="12"></app-icon>
+              </span>
+            </th>
+            <th class="text-right">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (isLoading()) {
+            <tr>
+              <td colspan="7" class="empty-table-cell">
+                <div class="table-loading">
+                  <span class="spinner"></span>
+                  <span>Loading timesheet entries...</span>
+                </div>
+              </td>
+            </tr>
+          } @else if (displayedTimesheets().length === 0) {
+            <tr>
+              <td colspan="7" class="empty-table-cell">
+                <div class="table-empty">
+                  <div class="empty-icon-wrap">
+                    <app-icon [name]="hasActiveFilters() ? 'activity' : 'clock'" [size]="28"></app-icon>
+                  </div>
+                  <h3 class="empty-title">
+                    {{
+                      hasActiveFilters()
+                        ? 'No matching results found on your filter'
+                        : 'No timesheet records found'
+                    }}
+                  </h3>
+                  @if (hasActiveFilters()) {
+                    <button
+                      type="button"
+                      class="btn btn-outline btn-sm"
+                      (click)="resetFilters()"
+                    >
+                      Reset Filters
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @else {
+            @for (item of displayedTimesheets(); track item.id) {
+              <tr>
+                <!-- WORK DATE -->
+                <td>
+                  <div class="date-meta">
+                    <span class="date-primary">{{ item.workDate | date: 'dd MMM yyyy' }}</span>
+                    <span class="date-secondary">{{ item.workDate | date: 'EEEE' }}</span>
+                  </div>
+                </td>
+
+                <!-- PROJECT -->
+                <td>
+                  <span class="project-name">{{ item.project }}</span>
+                </td>
+
+                <!-- HOURS -->
+                <td>
+                  <span class="cell-text">{{ item.hours }} hrs</span>
+                </td>
+
+                <!-- TASK ACCOMPLISHMENTS -->
+                <td class="cell-remarks">
+                  <button
+                    type="button"
+                    class="desc-cell-btn"
+                    (click)="openDetailModal(item)"
+                    title="Click to view full description"
+                  >
+                    <span class="remarks-text">{{ item.description }}</span>
+                  </button>
+                </td>
+
+                <!-- REVIEW DETAILS -->
+                <td>
+                  @if (item.status === 'APPROVED') {
+                    <span class="review-text text-success">
+                      Approved{{ item.reviewedBy ? ' by ' + item.reviewedBy.firstName : '' }}
+                    </span>
+                  } @else if (item.status === 'REJECTED') {
+                    <span
+                      class="review-text text-danger truncate-reason"
+                      [title]="item.rejectionReason || 'Returned'"
+                    >
+                      Returned: {{ item.rejectionReason || 'Needs revision' }}
+                    </span>
+                  } @else if (item.status === 'SUBMITTED') {
+                    <span class="review-text text-warning">Pending Manager Review</span>
+                  } @else {
+                    <span class="text-muted">Unsubmitted Draft</span>
+                  }
+                </td>
+
+                <!-- STATUS -->
+                <td>
+                  <app-badge [variant]="item.status">{{ item.status }}</app-badge>
+                </td>
+
+                <!-- ACTIONS -->
+                <td class="cell-actions">
+                  <div class="actions-group">
+                    <!-- View Details Icon Button -->
+                    <button
+                      type="button"
+                      class="action-icon-btn"
+                      (click)="openDetailModal(item)"
+                      title="View Details"
+                      aria-label="View Details"
+                    >
+                      <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
+                    </button>
+
+                    @if (viewMode() === 'self' || isViewingSelf()) {
+                      @if (item.status === 'DRAFT') {
+                        <!-- Edit Icon Button -->
+                        <button
+                          *appHasPermission="Permission.TIMESHEET_UPDATE"
+                          type="button"
+                          class="action-icon-btn"
+                          (click)="openEditModal(item)"
+                          title="Edit Draft"
+                          aria-label="Edit Draft"
+                        >
+                          <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                        </button>
+
+                        <!-- Delete Icon Button -->
+                        <button
+                          *appHasPermission="Permission.TIMESHEET_DELETE"
+                          type="button"
+                          class="action-icon-btn"
+                          (click)="onDeleteTimesheet(item)"
+                          [disabled]="actionLoadingId() === item.id"
+                          title="Delete Draft"
+                          aria-label="Delete Draft"
+                        >
+                          <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
+                        </button>
+
+                        <!-- Submit Button (Kept as text button) -->
+                        <button
+                          *appHasPermission="Permission.TIMESHEET_SUBMIT"
+                          type="button"
+                          class="action-btn submit-btn"
+                          (click)="onSubmitTimesheet(item)"
+                          [disabled]="actionLoadingId() === item.id"
+                          title="Submit for Approval"
+                        >
+                          <app-icon name="send" [size]="13"></app-icon>
+                          <span>Submit</span>
+                        </button>
+                      }
+                    } @else {
+                      @if (item.status === 'SUBMITTED') {
+                        <button
+                          *appHasPermission="Permission.TIMESHEET_APPROVE"
+                          type="button"
+                          class="action-btn approve-btn"
+                          (click)="onApproveTimesheet(item)"
+                          [disabled]="actionLoadingId() === item.id"
+                          title="Approve Timesheet"
+                        >
+                          <app-icon name="check" [size]="13"></app-icon>
+                          <span>Approve</span>
+                        </button>
+
+                        <button
+                          *appHasPermission="Permission.TIMESHEET_REJECT"
+                          type="button"
+                          class="action-btn reject-btn"
+                          (click)="openRejectModal(item)"
+                          [disabled]="actionLoadingId() === item.id"
+                          title="Reject Timesheet"
+                        >
+                          <app-icon name="close" [size]="13"></app-icon>
+                          <span>Reject</span>
+                        </button>
+                      }
+
+                      @if (item.status === 'DRAFT' && canManageAllTimesheets()) {
+                        <!-- Edit Icon Button -->
+                        <button
+                          *appHasPermission="Permission.TIMESHEET_UPDATE"
+                          type="button"
+                          class="action-icon-btn"
+                          (click)="openEditModal(item)"
+                          title="Edit Draft"
+                          aria-label="Edit Draft"
+                        >
+                          <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                        </button>
+
+                        <!-- Delete Icon Button -->
+                        <button
+                          *appHasPermission="Permission.TIMESHEET_DELETE"
+                          type="button"
+                          class="action-icon-btn"
+                          (click)="onDeleteTimesheet(item)"
+                          [disabled]="actionLoadingId() === item.id"
+                          title="Delete Draft"
+                          aria-label="Delete Draft"
+                        >
+                          <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
+                        </button>
+
+                        <!-- Submit Button (Kept as text button) -->
+                        <button
+                          *appHasPermission="Permission.TIMESHEET_SUBMIT"
+                          type="button"
+                          class="action-btn submit-btn"
+                          (click)="onSubmitTimesheet(item)"
+                          [disabled]="actionLoadingId() === item.id"
+                          title="Submit for Approval"
+                        >
+                          <app-icon name="send" [size]="13"></app-icon>
+                          <span>Submit</span>
+                        </button>
+                      }
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Integrated Table Pagination Footer -->
+    @if (!isLoading() && total() > 0) {
+      <div class="table-pagination-footer">
+        <span class="pagination-count">
+          Showing <strong>{{ displayedTimesheets().length }}</strong> of {{ total() }} entries
+        </span>
+        <div class="pagination-nav">
+          <button
+            class="page-arrow-btn"
+            [disabled]="page() <= 1"
+            (click)="onPageChange(page() - 1)"
+            aria-label="Previous page"
+          >
+            <app-icon name="chevron-left" [size]="16"></app-icon>
+          </button>
+          <span class="page-indicator">{{ page() }} / {{ totalPages() }}</span>
+          <button
+            class="page-arrow-btn"
+            [disabled]="page() >= totalPages()"
+            (click)="onPageChange(page() + 1)"
+            aria-label="Next page"
+          >
+            <app-icon name="chevron-right" [size]="16"></app-icon>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+</div>
+
+<!-- Modals (Outside .page-container to prevent extra flex gap) -->
+@if (isFormOpen() && activeTargetEmployeeId()) {
+  <app-timesheet-form-modal
+    [isOpen]="isFormOpen()"
+    [timesheet]="activeTimesheet()"
+    [employeeId]="activeTargetEmployeeId()"
+    (closeModal)="closeFormModal()"
+    (saved)="onFormSaved($event)"
+  ></app-timesheet-form-modal>
+}
+
+@if (isRejectOpen() && activeTargetEmployeeId()) {
+  <app-timesheet-reject-modal
+    [isOpen]="isRejectOpen()"
+    [timesheet]="activeTimesheet()"
+    [employeeId]="activeTargetEmployeeId()"
+    (closeModal)="closeRejectModal()"
+    (rejected)="onRejected()"
+  ></app-timesheet-reject-modal>
+}
+
+@if (isDetailOpen()) {
+  <app-timesheet-detail-modal
+    [isOpen]="isDetailOpen()"
+    [timesheet]="activeTimesheet()"
+    (closeModal)="closeDetailModal()"
+  ></app-timesheet-detail-modal>
+}

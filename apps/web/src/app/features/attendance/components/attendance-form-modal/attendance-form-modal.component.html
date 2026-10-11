@@ -1,0 +1,105 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="att-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close modal backdrop"></button>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 id="att-modal-title" class="modal-title">
+            {{ isEditMode() ? 'Edit Attendance Record' : 'Log Attendance Entry' }}
+          </h3>
+          <p class="modal-subtitle">
+            {{ isEditMode() ? 'Modify time stamps, attendance status, or supervisor remarks.' : 'Manually record attendance for this employee.' }}
+          </p>
+        </div>
+        <button class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      @if (errorMessage()) {
+        <div class="alert-error" role="alert">
+          <app-icon name="shield" [size]="16"></app-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-body">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label">Date <span class="required">*</span></label>
+            <app-date-picker
+              formControlName="attendanceDate"
+              mode="single"
+              [fullWidth]="true"
+              placeholder="Select attendance date"
+            ></app-date-picker>
+            @if (isFieldInvalid('attendanceDate')) {
+              <span class="field-error">Attendance date is required</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <span class="form-label">Status <span class="required">*</span></span>
+            <app-select
+              [options]="statusOptions"
+              formControlName="status"
+              [fullWidth]="true"
+            ></app-select>
+            @if (isFieldInvalid('status')) {
+              <span class="field-error">Status is required</span>
+            }
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="attCheckIn">Check-in Time</label>
+            <input
+              id="attCheckIn"
+              type="time"
+              class="form-control"
+              formControlName="checkInTime"
+            />
+            <span class="field-hint">e.g. 09:30 AM</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="attCheckOut">Check-out Time</label>
+            <input
+              id="attCheckOut"
+              type="time"
+              class="form-control"
+              formControlName="checkOutTime"
+            />
+            <span class="field-hint">e.g. 06:30 PM</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="attRemarks">Remarks / Reason</label>
+          <textarea
+            id="attRemarks"
+            class="form-control"
+            rows="3"
+            formControlName="remarks"
+            placeholder="Add any additional notes, approved late arrival reason, or work notes..."
+          ></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="submitting()">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="submitting() || form.invalid">
+            @if (submitting()) {
+              <span class="spinner" aria-hidden="true"></span>
+              <span>Saving...</span>
+            } @else {
+              <span>{{ isEditMode() ? 'Save Changes' : 'Record Attendance' }}</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

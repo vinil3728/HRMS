@@ -1,0 +1,145 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="timesheet-form-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close dialog"></button>
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="header-title-wrap">
+          <div class="icon-wrap">
+            <app-icon name="clock" [size]="20"></app-icon>
+          </div>
+          <div>
+            <h2 id="timesheet-form-title" class="modal-title">
+              {{ isEditMode() ? 'Edit Timesheet Log' : 'Log Daily Work Hours' }}
+            </h2>
+            <p class="modal-subtitle">
+              Record billable tasks, project progress, and work duration
+            </p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="x" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-form">
+        <div class="modal-body">
+          @if (errorMessage()) {
+            <div class="alert alert-danger" role="alert">
+              <app-icon name="alert-circle" [size]="18"></app-icon>
+              <span>{{ errorMessage() }}</span>
+            </div>
+          }
+
+          <div class="form-row">
+            <!-- Work Date -->
+            <div class="form-group flex-1">
+              <label class="form-label required" for="timesheetDate">Work Date</label>
+              <input
+                id="timesheetDate"
+                type="date"
+                class="form-control"
+                [class.is-invalid]="isFieldInvalid('workDate')"
+                formControlName="workDate"
+                [max]="todayString"
+              />
+              @if (isFieldInvalid('workDate')) {
+                <div class="invalid-feedback">A valid work date is required.</div>
+              }
+            </div>
+
+            <!-- Hours -->
+            <div class="form-group hours-group">
+              <label class="form-label required" for="timesheetHours">Hours Logged</label>
+              <div class="input-with-suffix">
+                <input
+                  id="timesheetHours"
+                  type="number"
+                  step="0.25"
+                  min="0.25"
+                  max="24"
+                  class="form-control"
+                  [class.is-invalid]="isFieldInvalid('hours')"
+                  formControlName="hours"
+                  placeholder="8.0"
+                />
+                <span class="suffix-badge">hrs</span>
+              </div>
+              @if (isFieldInvalid('hours')) {
+                <div class="invalid-feedback">Hours must be between 0.25 and 24.</div>
+              }
+            </div>
+          </div>
+
+          <!-- Project Name / Selection -->
+          <div class="form-group">
+            <label class="form-label required" for="timesheetProject">Project / Assignment</label>
+            <input
+              id="timesheetProject"
+              type="text"
+              list="projectSuggestions"
+              class="form-control"
+              [class.is-invalid]="isFieldInvalid('project')"
+              formControlName="project"
+              placeholder="e.g. HRMS Portal v2 or Client Delivery"
+            />
+            <datalist id="projectSuggestions">
+              <option value="HRMS Portal v2"></option>
+              <option value="Fintech Core Engine"></option>
+              <option value="Cloud Migration"></option>
+              <option value="Mobile App API"></option>
+              <option value="Design System"></option>
+              <option value="DevOps Automation"></option>
+              <option value="Internal Operations"></option>
+              <option value="Client Delivery & Support"></option>
+            </datalist>
+            @if (isFieldInvalid('project')) {
+              <div class="invalid-feedback">Project name is required.</div>
+            }
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <label class="form-label required" for="timesheetDesc">Task Work Summary / Accomplishments</label>
+            <textarea
+              id="timesheetDesc"
+              rows="4"
+              class="form-control textarea"
+              [class.is-invalid]="isFieldInvalid('description')"
+              formControlName="description"
+              placeholder="Provide a detailed description of the tasks completed, tickets resolved, or deliverables worked on..."
+            ></textarea>
+            @if (isFieldInvalid('description')) {
+              <div class="invalid-feedback">Task summary is required.</div>
+            }
+          </div>
+
+          <!-- Submit Directly Option (only for new logs) -->
+          @if (!isEditMode()) {
+            <label class="checkbox-container">
+              <input type="checkbox" formControlName="submitDirectly" />
+              <span class="checkbox-label">
+                <strong>Submit directly for approval</strong>
+                <span class="checkbox-subtext">If unchecked, the entry will be saved as DRAFT so you can review or batch submit later.</span>
+              </span>
+            </label>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="submitting()">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="submitting() || form.invalid">
+            @if (submitting()) {
+              <app-icon name="clock" [size]="16" class="spin"></app-icon>
+              <span>Saving Entry...</span>
+            } @else {
+              <app-icon name="check" [size]="16"></app-icon>
+              <span>{{ isEditMode() ? 'Save Changes' : (form.get('submitDirectly')?.value ? 'Save & Submit' : 'Save as Draft') }}</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

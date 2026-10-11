@@ -1,0 +1,249 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="eval-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close modal backdrop"></button>
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-icon-badge">
+            <app-icon name="award" [size]="20"></app-icon>
+          </div>
+          <div>
+            <h2 id="eval-modal-title" class="modal-title">Performance Evaluation & Review</h2>
+            <p class="modal-subtitle">
+              {{ goal()?.title || 'Goal Appraisal' }}
+            </p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="x" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (errorMessage()) {
+          <div class="alert alert-danger" role="alert">
+            <app-icon name="alert-circle" [size]="18"></app-icon>
+            <span>{{ errorMessage() }}</span>
+          </div>
+        }
+
+        @if (successMessage()) {
+          <div class="alert alert-success" role="alert">
+            <app-icon name="check-circle" [size]="18"></app-icon>
+            <span>{{ successMessage() }}</span>
+          </div>
+        }
+
+        <!-- Goal Context Summary -->
+        @if (goal()) {
+          <div class="goal-summary-card">
+            <div class="summary-top">
+              <span class="goal-badge">{{ goal()?.status }}</span>
+              <span class="weight-pill">Weight: {{ goal()?.weight }}%</span>
+              <span class="progress-pill">Progress: {{ goal()?.progress }}%</span>
+            </div>
+            @if (goal()?.description) {
+              <p class="goal-desc">{{ goal()?.description }}</p>
+            }
+            @if (goal()?.target) {
+              <div class="target-row">
+                <span class="target-label">Target KPI:</span>
+                <span class="target-value">{{ goal()?.target }}</span>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Evaluation Tabs: Self vs Manager Review -->
+        <div class="eval-tabs">
+          <button
+            type="button"
+            class="eval-tab"
+            [class.active]="selectedTab() === 'SELF'"
+            (click)="selectTab('SELF')"
+          >
+            <div class="tab-title-line">
+              <span>Self Review</span>
+              <span
+                class="status-dot"
+                [class.submitted]="selfEvaluation()?.status === 'SUBMITTED'"
+                [class.draft]="selfEvaluation()?.status === 'DRAFT'"
+              ></span>
+            </div>
+            <span class="tab-meta">
+              {{
+                selfEvaluation()?.status === 'SUBMITTED'
+                  ? '★ ' + selfEvaluation()?.rating + ' (Submitted)'
+                  : (selfEvaluation()?.status === 'DRAFT' ? 'In Draft' : 'Not started')
+              }}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="eval-tab"
+            [class.active]="selectedTab() === 'MANAGER'"
+            (click)="selectTab('MANAGER')"
+          >
+            <div class="tab-title-line">
+              <span>Manager Review</span>
+              <span
+                class="status-dot"
+                [class.submitted]="managerEvaluation()?.status === 'SUBMITTED'"
+                [class.draft]="managerEvaluation()?.status === 'DRAFT'"
+              ></span>
+            </div>
+            <span class="tab-meta">
+              {{
+                managerEvaluation()?.status === 'SUBMITTED'
+                  ? '★ ' + managerEvaluation()?.rating + ' (Submitted)'
+                  : (managerEvaluation()?.status === 'DRAFT' ? 'In Draft' : 'Not started')
+              }}
+            </span>
+          </button>
+        </div>
+
+        <!-- Loading State -->
+        @if (loading()) {
+          <div class="loading-state">
+            <app-icon name="clock" [size]="24" class="spin"></app-icon>
+            <span>Loading evaluation details...</span>
+          </div>
+        }
+
+        <!-- Evaluation Content -->
+        @if (!loading()) {
+          <div class="eval-pane">
+            <!-- If evaluation is already SUBMITTED -->
+            @if (currentEval()?.status === 'SUBMITTED') {
+              <div class="submitted-view">
+                <div class="submitted-banner">
+                  <app-icon name="check-circle" [size]="20"></app-icon>
+                  <div>
+                    <strong>Evaluation Submitted</strong>
+                    <p>This appraisal review has been finalized and locked.</p>
+                  </div>
+                </div>
+
+                <div class="review-details">
+                  <div class="detail-block">
+                    <span class="block-label">Assigned Rating</span>
+                    <div class="rating-display">
+                      <span class="stars-gold">
+                        @for (s of [1,2,3,4,5]; track s) {
+                          <span [class.active-star]="(currentEval()?.rating || 0) >= s">★</span>
+                        }
+                      </span>
+                      <span class="rating-score">{{ currentEval()?.rating }} / 5</span>
+                    </div>
+                  </div>
+
+                  <div class="detail-block">
+                    <span class="block-label">Feedback & Comments</span>
+                    <div class="comments-box">
+                      {{ currentEval()?.comments || 'No feedback comments entered.' }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- If evaluation can be edited/created by the current user -->
+            @if (canEditCurrentTab()) {
+              <div class="editable-view">
+                <div class="form-group">
+                  <span class="form-label required">Rating (1 to 5 Stars)</span>
+                  <div class="star-rating-selector">
+                    @for (star of [1, 2, 3, 4, 5]; track star) {
+                      <button
+                        type="button"
+                        class="star-btn"
+                        [class.selected]="selectedRating() >= star"
+                        (click)="setRating(star)"
+                      >
+                        ★
+                      </button>
+                    }
+                    @if (selectedRating() > 0) {
+                      <span class="rating-text">
+                        {{ getRatingLabel(selectedRating()) }} ({{ selectedRating() }} / 5)
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label required" for="evalComments">
+                    Feedback Comments & Review Notes
+                  </label>
+                  <textarea
+                    id="evalComments"
+                    class="form-control"
+                    rows="4"
+                    [value]="evalComments()"
+                    (input)="onCommentsInput($event)"
+                    placeholder="Provide constructive assessment, evidence of achievements, and feedback..."
+                  ></textarea>
+                  <span class="field-hint">
+                    * Comments and rating are required before submitting.
+                  </span>
+                </div>
+
+                <div class="eval-actions">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    (click)="saveDraft()"
+                    [disabled]="submitting() || selectedRating() === 0"
+                  >
+                    @if (submitting()) {
+                      <app-icon name="clock" [size]="14" class="spin"></app-icon>
+                    }
+                    <span>Save Draft</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    (click)="submitReview()"
+                    [disabled]="submitting() || selectedRating() === 0 || !evalComments().trim()"
+                  >
+                    @if (submitting()) {
+                      <app-icon name="clock" [size]="14" class="spin"></app-icon>
+                    } @else {
+                      <app-icon name="send" [size]="14"></app-icon>
+                    }
+                    <span>Submit Evaluation</span>
+                  </button>
+                </div>
+              </div>
+            } @else if (currentEval()?.status !== 'SUBMITTED') {
+              <div class="submitted-view">
+                <div class="submitted-banner" style="background: #f8fafc; border-color: #e2e8f0; color: #475569;">
+                  <app-icon name="clock" [size]="20"></app-icon>
+                  <div>
+                    <strong>
+                      {{ selectedTab() === 'MANAGER' ? 'Pending Manager Evaluation' : 'Pending Self Evaluation' }}
+                    </strong>
+                    <p>
+                      {{
+                        selectedTab() === 'MANAGER'
+                          ? 'The reporting manager has not submitted a review for this goal yet.'
+                          : 'The employee has not submitted their self-review for this goal yet.'
+                      }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="onCancel()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+}

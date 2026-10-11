@@ -1,0 +1,178 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="branch-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close modal backdrop"></button>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 id="branch-modal-title" class="modal-title">
+            {{ isEditMode() ? 'Edit Branch Office' : 'Add New Branch Office' }}
+          </h3>
+          <p class="modal-subtitle">
+            {{ isEditMode() ? 'Update the details and location of this branch.' : 'Define a new branch office to host organizational departments.' }}
+          </p>
+        </div>
+        <button class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      @if (errorMessage()) {
+        <div class="alert-error" role="alert">
+          <app-icon name="shield" [size]="16"></app-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-body">
+        <!-- Row 1: Branch Name, Branch Code, Work Email -->
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label" for="branchName">Branch Name <span class="required">*</span></label>
+            <input
+              id="branchName"
+              type="text"
+              class="form-control"
+              formControlName="name"
+              placeholder="e.g. Head Office Bengaluru"
+              [class.invalid]="isFieldInvalid('name')"
+            />
+            @if (isFieldInvalid('name')) {
+              <span class="field-error">Branch name is required (min 2 chars)</span>
+            }
+          </div>
+
+          <div class="form-group flex-1">
+            <label class="form-label" for="branchCode">Branch Code <span class="required">*</span></label>
+            <input
+              id="branchCode"
+              type="text"
+              class="form-control"
+              formControlName="code"
+              placeholder="e.g. HQ-BLR"
+              (input)="onCodeInput($event)"
+              [class.invalid]="isFieldInvalid('code')"
+            />
+            @if (isFieldInvalid('code')) {
+              <span class="field-error">Code is required (min 2 chars)</span>
+            }
+          </div>
+
+          <div class="form-group flex-1">
+            <label class="form-label" for="branchEmail">Work Email</label>
+            <input
+              id="branchEmail"
+              type="email"
+              class="form-control"
+              formControlName="email"
+              placeholder="e.g. branch.blr@iprotechs.com"
+              [class.invalid]="isFieldInvalid('email')"
+            />
+            @if (isFieldInvalid('email')) {
+              <span class="field-error">Enter a valid email address</span>
+            }
+          </div>
+        </div>
+
+        <!-- Row 2: Phone Number, City, State / Province -->
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label" for="branchPhone">Phone Number</label>
+            <input
+              id="branchPhone"
+              type="text"
+              class="form-control"
+              formControlName="phone"
+              placeholder="e.g. +91 80 1234 5678"
+            />
+          </div>
+
+          <div class="form-group flex-1">
+            <label class="form-label" for="branchCity">City</label>
+            <input
+              id="branchCity"
+              type="text"
+              class="form-control"
+              formControlName="city"
+              placeholder="e.g. Bengaluru"
+            />
+          </div>
+
+          <div class="form-group flex-1">
+            <label class="form-label" for="branchState">State / Province</label>
+            <input
+              id="branchState"
+              type="text"
+              class="form-control"
+              formControlName="state"
+              placeholder="e.g. Karnataka"
+            />
+          </div>
+        </div>
+
+        <!-- Row 3: Country, Postal Code, Street Address -->
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label" for="branchCountry">Country</label>
+            <input
+              id="branchCountry"
+              type="text"
+              class="form-control"
+              formControlName="country"
+              placeholder="India"
+            />
+          </div>
+
+          <div class="form-group flex-1">
+            <label class="form-label" for="branchPostal">Postal Code</label>
+            <input
+              id="branchPostal"
+              type="text"
+              class="form-control"
+              formControlName="postalCode"
+              placeholder="e.g. 560103"
+            />
+          </div>
+
+          <div class="form-group flex-1">
+            <label class="form-label" for="branchAddress">Street Address</label>
+            <input
+              id="branchAddress"
+              type="text"
+              class="form-control"
+              formControlName="address"
+              placeholder="e.g. Prestige Tech Park, Outer Ring Rd"
+            />
+          </div>
+        </div>
+
+        <div class="form-group status-toggle-group">
+          <label class="toggle-container" for="branchStatus">
+            <input
+              id="branchStatus"
+              type="checkbox"
+              formControlName="isActive"
+              class="toggle-checkbox"
+            />
+            <span class="toggle-slider"></span>
+            <span class="toggle-label">Active Branch Office</span>
+          </label>
+          <span class="field-hint">Inactive branches cannot host new departments or employee relocations</span>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="submitting()">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="submitting() || form.invalid">
+            @if (submitting()) {
+              <span class="spinner" aria-hidden="true"></span>
+              <span>Saving...</span>
+            } @else {
+              <span>{{ isEditMode() ? 'Save Changes' : 'Create Branch' }}</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

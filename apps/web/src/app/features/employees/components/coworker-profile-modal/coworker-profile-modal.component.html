@@ -1,0 +1,195 @@
+<div class="modal-backdrop" (click)="closeModal.emit()" (keydown.escape)="closeModal.emit()" tabindex="0">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <!-- Banner Header -->
+    <div class="modal-header-banner">
+      <button
+        type="button"
+        class="close-btn"
+        (click)="closeModal.emit()"
+        aria-label="Close modal"
+      >
+        <app-icon name="close" [size]="18"></app-icon>
+      </button>
+
+      <div class="banner-avatar-wrap">
+        <app-avatar
+          [name]="fullName"
+          [size]="64"
+          customClass="banner-avatar"
+        ></app-avatar>
+      </div>
+    </div>
+
+    <!-- Core Identity Header -->
+    <div class="identity-section">
+      <h2 class="employee-name">{{ fullName }}</h2>
+      <p class="employee-title">
+        {{ employee().designation?.name || 'Team Member' }}
+      </p>
+
+      <div class="badges-row">
+        <span class="dept-pill">
+          <app-icon name="building" [size]="13"></app-icon>
+          <span>{{ employee().department?.name || 'General' }}</span>
+        </span>
+        <span class="code-pill">{{ employee().employeeCode }}</span>
+        <app-badge
+          [variant]="employee().status === 'ACTIVE' ? 'success' : 'default'"
+          size="sm"
+        >
+          {{ employee().status }}
+        </app-badge>
+      </div>
+    </div>
+
+    <!-- Details Body -->
+    <div class="modal-body">
+      <!-- Contact Information Section -->
+      <div class="info-group">
+        <h4 class="group-heading">
+          <app-icon name="mail" [size]="14"></app-icon>
+          <span>Work Contact Details</span>
+        </h4>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Corporate Email</span>
+            <div class="info-val-action-wrap">
+              <a
+                [href]="'mailto:' + employee().email"
+                class="contact-link"
+              >
+                {{ employee().email }}
+              </a>
+              <button
+                type="button"
+                class="copy-btn"
+                (click)="copyToClipboard(employee().email, 'email')"
+                [title]="copiedField() === 'email' ? 'Copied!' : 'Copy email'"
+              >
+                <app-icon
+                  [name]="copiedField() === 'email' ? 'check' : 'copy'"
+                  [size]="13"
+                ></app-icon>
+                <span>{{ copiedField() === 'email' ? 'Copied' : 'Copy' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Direct Phone</span>
+            <div class="info-val-action-wrap">
+              @if (employee().phone) {
+                <a
+                  [href]="'tel:' + employee().phone"
+                  class="contact-link"
+                >
+                  {{ employee().phone }}
+                </a>
+                <button
+                  type="button"
+                  class="copy-btn"
+                  (click)="copyToClipboard(employee().phone, 'phone')"
+                  [title]="copiedField() === 'phone' ? 'Copied!' : 'Copy phone'"
+                >
+                  <app-icon
+                    [name]="copiedField() === 'phone' ? 'check' : 'copy'"
+                    [size]="13"
+                  ></app-icon>
+                  <span>{{ copiedField() === 'phone' ? 'Copied' : 'Copy' }}</span>
+                </button>
+              } @else {
+                <span class="text-muted">Not specified</span>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Organizational Placement Section -->
+      <div class="info-group">
+        <h4 class="group-heading">
+          <app-icon name="briefcase" [size]="14"></app-icon>
+          <span>Organizational Placement</span>
+        </h4>
+
+        <div class="info-grid two-cols">
+          <div class="info-item">
+            <span class="info-label">Department</span>
+            <span class="info-val font-semibold">
+              {{ employee().department?.name || '—' }}
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Job Designation</span>
+            <span class="info-val font-semibold">
+              {{ employee().designation?.name || '—' }}
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Date of Joining</span>
+            <span class="info-val">
+              {{ (employee().dateOfJoining | date: 'dd MMMM yyyy') || '—' }}
+            </span>
+          </div>
+
+          @if (employee().profileDetails?.gender) {
+            <div class="info-item">
+              <span class="info-label">Gender</span>
+              <span class="info-val capitalize">
+                {{ employee().profileDetails?.gender }}
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Reporting Manager Section -->
+      <div class="info-group">
+        <h4 class="group-heading">
+          <app-icon name="users" [size]="14"></app-icon>
+          <span>Reporting Manager</span>
+        </h4>
+
+        @if (employee().manager) {
+          <div class="manager-card">
+            <app-avatar
+              [name]="(employee().manager?.firstName || '') + ' ' + (employee().manager?.lastName || '')"
+              [size]="36"
+            ></app-avatar>
+            <div class="manager-meta">
+              <span class="manager-name">
+                {{ employee().manager?.firstName }} {{ employee().manager?.lastName }}
+              </span>
+              @if (employee().manager?.email) {
+                <a
+                  [href]="'mailto:' + employee().manager?.email"
+                  class="manager-email"
+                >
+                  {{ employee().manager?.email }}
+                </a>
+              }
+            </div>
+          </div>
+        } @else {
+          <div class="no-manager-box">
+            <span class="text-muted">No reporting manager assigned (Executive / Top Level).</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <button
+        type="button"
+        class="btn btn-secondary btn-sm"
+        (click)="closeModal.emit()"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+</div>

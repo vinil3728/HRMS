@@ -1,0 +1,266 @@
+/* ── Regularizations Component Host & Container ── */
+:host {
+  display: block;
+}
+
+.regularizations-container {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Table Card ── */
+.table-card {
+  background-color: #ffffff;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  max-height: 560px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.table thead th {
+  height: 44px;
+  padding: 12px 18px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background-color: #f9fafb;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+}
+
+.table tbody td {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+  color: #1f2937;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table-row {
+  transition: background-color 0.15s ease;
+}
+
+.table-row:hover {
+  background-color: #f8fafc;
+}
+
+/* ── Cells & Content ── */
+.cell-date-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.date-main {
+  font-weight: 600;
+  color: #111827;
+  font-size: 13px;
+}
+
+.date-sub {
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+.punch-time {
+  font-weight: 500;
+  color: #374151;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cell-remarks {
+  max-width: 240px;
+}
+
+.remarks-text {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.italic-note {
+  font-style: italic;
+  font-size: 12px;
+}
+
+.text-danger {
+  color: #dc2626;
+}
+
+.text-muted {
+  color: #9ca3af;
+}
+
+.text-right {
+  text-align: right;
+}
+
+/* ── Actions ── */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.approve-btn {
+  background-color: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+.approve-btn:hover {
+  background-color: #d1fae5;
+}
+
+.reject-btn {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.reject-btn:hover {
+  background-color: #fee2e2;
+}
+
+.cancel-btn {
+  background-color: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.cancel-btn:hover {
+  background-color: #e5e7eb;
+}
+
+/* ── Loading & Empty States ── */
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.spinner-large {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  color: #6b7280;
+  font-size: 13.5px;
+  margin: 0;
+}
+
+.empty-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.empty-title {
+  font-size: 14px;
+  color: #344054;
+  margin-bottom: 16px;
+}
+
+.empty-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 16px 0;
+  max-width: 400px;
+}

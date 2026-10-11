@@ -1,0 +1,407 @@
+<div class="page-container">
+  <!-- ── Page Header ──────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="title-row">
+        <h1 class="page-title">Company Loans & Advances</h1>
+      </div>
+      <p class="page-subtitle">
+        Manage employee loans, approvals, disbursements, and repayment schedules.
+      </p>
+    </div>
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="openApplyModal()"
+        *appHasPermission="'LOAN_APPLY'"
+      >
+        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+        <span>Apply for Loan</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+  <div class="content-card">
+    <!-- Toolbar Section: Left Tabs, Right Filters (Option 2) -->
+    <div class="toolbar-section">
+      <div class="tabs-nav">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'my-loans'"
+          (click)="switchTab('my-loans')"
+        >
+          <app-icon name="id-card" [size]="16"></app-icon>
+          <span>My Loans</span>
+          <span class="badge">{{ myLoans().length }}</span>
+        </button>
+
+        @if (isHrUser()) {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeTab() === 'all-loans'"
+            (click)="switchTab('all-loans')"
+            *appHasPermission="'LOAN_VIEW_ALL'"
+          >
+            <app-icon name="briefcase" [size]="16"></app-icon>
+            <span>All Loan Applications</span>
+            <span class="badge">{{ allLoans().length }}</span>
+          </button>
+        }
+      </div>
+
+      <div class="filters-wrap">
+        <!-- Search Input -->
+        <div class="search-input-wrap">
+          <app-icon name="search" [size]="16" customClass="filter-search-icon"></app-icon>
+          <input
+            type="text"
+            class="filter-search-input"
+            placeholder="Search loans, employees..."
+            [ngModel]="searchQuery()"
+            (ngModelChange)="onSearchChange($event)"
+          />
+        </div>
+
+        <!-- Status Filter -->
+        <app-select
+          [options]="statusOptions"
+          [value]="statusFilter()"
+          placeholder="All Statuses"
+          minWidth="175px"
+          (valueChange)="onStatusChange($event)"
+        ></app-select>
+
+        <!-- Reset Filter Button -->
+        @if (hasActiveFilters()) {
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="resetFilters()"
+            title="Reset Filters"
+          >
+            <app-icon name="activity" [size]="16"></app-icon>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ── KPI Overview Metrics (Below Toolbar, Above Table) ─────────────── -->
+    @if (metrics()) {
+      <div class="card-metrics-section">
+        <div class="loan-metrics-grid">
+          <div class="l-metric-card">
+            <div class="l-metric-icon l-icon-blue">
+              <app-icon name="dollar" [size]="20"></app-icon>
+            </div>
+            <div class="l-metric-info">
+              <span class="l-metric-value">₹{{ metrics()?.totalDisbursed | number:'1.2-2' }}</span>
+              <span class="l-metric-label">Total Disbursed</span>
+            </div>
+          </div>
+
+          <div class="l-metric-card">
+            <div class="l-metric-icon l-icon-green">
+              <app-icon name="trending-up" [size]="20"></app-icon>
+            </div>
+            <div class="l-metric-info">
+              <span class="l-metric-value text-green">₹{{ metrics()?.totalRepaid | number:'1.2-2' }}</span>
+              <span class="l-metric-label">Recovered</span>
+            </div>
+          </div>
+
+          <div class="l-metric-card">
+            <div class="l-metric-icon l-icon-amber">
+              <app-icon name="bar-chart" [size]="20"></app-icon>
+            </div>
+            <div class="l-metric-info">
+              <span class="l-metric-value text-amber">₹{{ metrics()?.outstandingBalance | number:'1.2-2' }}</span>
+              <span class="l-metric-label">Outstanding</span>
+            </div>
+          </div>
+
+          <div class="l-metric-card">
+            <div class="l-metric-icon l-icon-purple">
+              <app-icon name="users" [size]="20"></app-icon>
+            </div>
+            <div class="l-metric-info">
+              <span class="l-metric-value">{{ metrics()?.activeLoansCount }} Active</span>
+              <span class="l-metric-label">Active Loans</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ── Table & Integrated Bottom Pagination (Single Block) ──────────── -->
+    <div class="table-block">
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              @if (activeTab() === 'all-loans') {
+                <th>Employee</th>
+              }
+              <th>Loan Type</th>
+              <th>Requested / Approved</th>
+              <th>Repayment Mode</th>
+              <th>Tenure</th>
+              <th>Total Repaid</th>
+              <th>Remaining Balance</th>
+              <th>Status</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (filteredLoans().length === 0) {
+              <tr>
+                <td [attr.colspan]="activeTab() === 'all-loans' ? 9 : 8" class="empty-table-cell">
+                  <div class="empty-state">
+                    <div class="empty-icon-wrap">
+                      <app-icon name="file-text" [size]="40"></app-icon>
+                    </div>
+                    <h3>No Loan Applications Found</h3>
+                    @if (hasActiveFilters()) {
+                      <button type="button" class="btn btn-outline btn-sm" (click)="resetFilters()">
+                        Reset Filters
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @else {
+              @for (loan of displayedLoans(); track loan.id) {
+                <tr class="table-row">
+                  @if (activeTab() === 'all-loans') {
+                    <td>
+                      <div class="emp-cell">
+                        <span class="emp-fullname">
+                          {{ loan.employee?.firstName }} {{ loan.employee?.lastName }}
+                        </span>
+                        <span class="emp-tag">{{ loan.employee?.employeeCode }}</span>
+                      </div>
+                    </td>
+                  }
+                  <td>
+                    <span class="type-pill">{{ loan.loanType }}</span>
+                  </td>
+                  <td>
+                    <div class="amount-cell">
+                      <span class="amt-primary">₹{{ (loan.approvedAmount || loan.amount) | number:'1.2-2' }}</span>
+                      @if (loan.approvedAmount && loan.approvedAmount !== loan.amount) {
+                        <span class="amt-secondary">Req: ₹{{ loan.amount | number:'1.2-2' }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <span class="mode-badge mode-{{ (loan.repaymentMode || 'PENDING').toLowerCase() }}">
+                      @if (loan.repaymentMode === 'SPLIT') {
+                        Split (Cash + Salary)
+                      } @else if (loan.repaymentMode === 'SALARY_DEDUCTION') {
+                        Salary Deduction
+                      } @else if (loan.repaymentMode === 'CASH') {
+                        Cash Deposit
+                      } @else {
+                        Pending Config
+                      }
+                    </span>
+                  </td>
+                  <td>{{ loan.tenureMonths }} mos</td>
+                  <td>
+                    <span class="text-green font-semibold">
+                      ₹{{ (loan.totalRepaid || 0) | number:'1.2-2' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="text-danger font-semibold">
+                      ₹{{ (loan.remainingBalance || 0) | number:'1.2-2' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="status-badge status-{{ loan.status.toLowerCase() }}">
+                      {{ loan.status }}
+                    </span>
+                  </td>
+                  <td class="text-right">
+                    <div class="action-buttons">
+                      <!-- View Detail Button -->
+                      <button
+                        type="button"
+                        class="action-icon-btn"
+                        (click)="openDetailModal(loan)"
+                        title="View Loan & Repayment Schedule"
+                        aria-label="View Loan"
+                      >
+                        <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+
+                      <!-- HR Specific Action Buttons -->
+                      @if (isHrUser()) {
+                        <!-- Approve Button (when PENDING) -->
+                        @if (loan.status === 'PENDING') {
+                          <button
+                            type="button"
+                            class="action-icon-btn text-success"
+                            (click)="openApproveModal(loan)"
+                            *appHasPermission="'LOAN_APPROVE'"
+                            title="Approve Loan Application"
+                            aria-label="Approve Loan"
+                          >
+                            <app-icon name="check" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+
+                          <!-- Reject Button (when PENDING) -->
+                          <button
+                            type="button"
+                            class="action-icon-btn text-danger"
+                            (click)="openRejectModal(loan)"
+                            *appHasPermission="'LOAN_REJECT'"
+                            title="Reject Loan Application"
+                            aria-label="Reject Loan"
+                          >
+                            <app-icon name="close" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+                        }
+
+                        <!-- Disburse Button (when APPROVED) -->
+                        @if (loan.status === 'APPROVED') {
+                          <button
+                            type="button"
+                            class="action-icon-btn text-indigo"
+                            (click)="openDisburseModal(loan)"
+                            *appHasPermission="'LOAN_DISBURSE'"
+                            title="Disburse Funds & Upload Receipt"
+                            aria-label="Disburse Funds"
+                          >
+                            <app-icon name="dollar" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+                        }
+
+                        <!-- Configure Repayment Button (when DISBURSED or ACTIVE) -->
+                        @if (loan.status === 'DISBURSED' || loan.status === 'REPAYMENT_INITIATED' || loan.status === 'ACTIVE') {
+                          <button
+                            type="button"
+                            class="action-icon-btn"
+                            (click)="openRepaymentConfigModal(loan)"
+                            *appHasPermission="'LOAN_CONFIGURE_REPAYMENT'"
+                            title="Configure Repayment Split Options"
+                            aria-label="Configure Repayment"
+                          >
+                            <app-icon name="settings" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+                        }
+
+                        <!-- Start Repayment (when REPAYMENT_INITIATED) -->
+                        @if (loan.status === 'REPAYMENT_INITIATED') {
+                          <button
+                            type="button"
+                            class="action-icon-btn text-info"
+                            (click)="startRepayment(loan)"
+                            *appHasPermission="'LOAN_CONFIGURE_REPAYMENT'"
+                            title="Start Repayment (Set Active)"
+                            aria-label="Start Repayment"
+                          >
+                            <app-icon name="trending-up" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+                        }
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Integrated Card Bottom Pagination -->
+      @if (filteredLoans().length > 0) {
+        <div class="table-pagination-footer">
+          <span class="pagination-count">
+            Showing <strong>{{ displayedLoans().length }}</strong> of {{ filteredLoans().length }} loans
+          </span>
+
+          <div class="pagination-nav">
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() <= 1 || loading()"
+              (click)="goToPage(currentPage() - 1)"
+              title="Previous Page"
+              aria-label="Previous Page"
+            >
+              <app-icon name="chevron-left" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+            <span class="page-indicator">{{ currentPage() }} / {{ totalPages() }}</span>
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() >= totalPages() || loading()"
+              (click)="goToPage(currentPage() + 1)"
+              title="Next Page"
+              aria-label="Next Page"
+            >
+              <app-icon name="chevron-right" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- All Modal Dialogs -->
+<app-loan-apply-modal
+  [isOpen]="showApplyModal()"
+  (closeModal)="showApplyModal.set(false)"
+  (loanApplied)="onLoanActionSuccess($event)"
+></app-loan-apply-modal>
+
+<app-loan-approve-modal
+  [isOpen]="showApproveModal()"
+  [loan]="selectedLoan()"
+  (closeModal)="showApproveModal.set(false)"
+  (loanApproved)="onLoanActionSuccess($event)"
+></app-loan-approve-modal>
+
+<app-loan-reject-modal
+  [isOpen]="showRejectModal()"
+  [loan]="selectedLoan()"
+  (closeModal)="showRejectModal.set(false)"
+  (loanRejected)="onLoanActionSuccess($event)"
+></app-loan-reject-modal>
+
+<app-loan-disburse-modal
+  [isOpen]="showDisburseModal()"
+  [loan]="selectedLoan()"
+  (closeModal)="showDisburseModal.set(false)"
+  (loanDisbursed)="onLoanActionSuccess($event)"
+></app-loan-disburse-modal>
+
+<app-loan-repayment-config-modal
+  [isOpen]="showRepayConfigModal()"
+  [loan]="selectedLoan()"
+  (closeModal)="showRepayConfigModal.set(false)"
+  (repaymentConfigured)="onLoanActionSuccess($event)"
+></app-loan-repayment-config-modal>
+
+<app-loan-record-payment-modal
+  [isOpen]="showRecordPaymentModal()"
+  [loan]="selectedLoan()"
+  [repayment]="selectedRepayment()"
+  (closeModal)="showRecordPaymentModal.set(false)"
+  (paymentRecorded)="onLoanActionSuccess($event)"
+></app-loan-record-payment-modal>
+
+<app-loan-detail-modal
+  [isOpen]="showDetailModal()"
+  [loan]="selectedLoan()"
+  [isHr]="isHrUser()"
+  (closeModal)="showDetailModal.set(false)"
+  (openRepaymentConfig)="openRepaymentConfigModal($event)"
+  (openRecordPayment)="openRecordPaymentModal($event)"
+  (loanUpdated)="onLoanActionSuccess($event)"
+></app-loan-detail-modal>

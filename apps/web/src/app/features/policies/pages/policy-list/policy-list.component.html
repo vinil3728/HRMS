@@ -1,0 +1,414 @@
+<div class="page-container">
+  <!-- ── Page Header ──────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="title-row">
+        <h1 class="page-title">Company Policies & Compliance</h1>
+      </div>
+      <p class="page-subtitle">
+        Manage company policies and track employee acknowledgements.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="exportCsv()"
+        [disabled]="filteredPolicies().length === 0"
+      >
+        <app-icon name="download" [size]="16" [strokeWidth]="2"></app-icon>
+        <span>Export Policies</span>
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        *appHasPermission="Permission.POLICY_CREATE"
+        (click)="openCreateModal()"
+      >
+        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+        <span>New Policy</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+  <div class="content-card">
+    <!-- Toolbar Section: Left Tabs, Right Filters (Option 2) -->
+    <div class="toolbar-section">
+      <!-- Tabs Navigation (Left) -->
+      <div class="tabs-nav">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="viewMode() === 'ALL'"
+          (click)="setViewMode('ALL')"
+        >
+          <app-icon name="file-text" [size]="16"></app-icon>
+          <span>All Policies</span>
+        </button>
+
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="viewMode() === 'MY_PENDING'"
+          (click)="setViewMode('MY_PENDING')"
+        >
+          <app-icon name="alert-circle" [size]="16"></app-icon>
+          <span>Needs Acknowledgement</span>
+          @if (myPendingCount() > 0) {
+            <span class="badge">{{ myPendingCount() }}</span>
+          }
+        </button>
+
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="viewMode() === 'MY_ACKNOWLEDGED'"
+          (click)="setViewMode('MY_ACKNOWLEDGED')"
+        >
+          <app-icon name="check-circle" [size]="16"></app-icon>
+          <span>Acknowledged</span>
+        </button>
+      </div>
+
+      <!-- Filters Wrap (Right) -->
+      <div class="filters-wrap">
+        <!-- Search Input -->
+        <div class="search-input-wrap">
+          <app-icon name="search" [size]="16" customClass="filter-search-icon"></app-icon>
+          <input
+            type="text"
+            class="filter-search-input"
+            placeholder="Search policies..."
+            [value]="searchTerm()"
+            (input)="onSearchInput($event)"
+          />
+        </div>
+
+        <!-- Status Filter -->
+        @if (canManagePolicies()) {
+          <div class="filter-item">
+            <app-select
+              [options]="statusOptions"
+              [value]="statusFilter()"
+              placeholder="All Statuses"
+              minWidth="150px"
+              (valueChange)="onStatusFilterChange($event)"
+            ></app-select>
+          </div>
+        }
+
+        <!-- Reset Filter Button -->
+        @if (hasActiveFilters()) {
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="resetFilters()"
+            title="Reset Filters"
+          >
+            <app-icon name="activity" [size]="16"></app-icon>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ── Metrics Grid (Summary Cards) ─────────────────────────────────── -->
+    <div class="card-metrics-section">
+      <div class="policy-metrics-grid">
+        <div class="p-metric-card">
+          <div class="p-metric-icon p-icon-blue">
+            <app-icon name="file-text" [size]="20"></app-icon>
+          </div>
+          <div class="p-metric-info">
+            <span class="p-metric-value">{{ totalPolicies() }}</span>
+            <span class="p-metric-label">Total Documents</span>
+          </div>
+        </div>
+
+        <div class="p-metric-card">
+          <div class="p-metric-icon p-icon-green">
+            <app-icon name="check" [size]="20"></app-icon>
+          </div>
+          <div class="p-metric-info">
+            <span class="p-metric-value">{{ publishedCount() }}</span>
+            <span class="p-metric-label">Published & Active</span>
+          </div>
+        </div>
+
+        <div class="p-metric-card">
+          <div class="p-metric-icon" [class.p-icon-amber]="myPendingCount() > 0" [class.p-icon-green]="myPendingCount() === 0">
+            <app-icon name="shield" [size]="20"></app-icon>
+          </div>
+          <div class="p-metric-info">
+            <span class="p-metric-value" [class.text-amber]="myPendingCount() > 0">
+              {{ myPendingCount() }}
+            </span>
+            <span class="p-metric-label">Pending My Review</span>
+          </div>
+        </div>
+
+        <div class="p-metric-card">
+          <div class="p-metric-icon p-icon-purple">
+            <app-icon [name]="canManagePolicies() ? 'archive' : 'check-circle'" [size]="20"></app-icon>
+          </div>
+          <div class="p-metric-info">
+            <span class="p-metric-value">{{ canManagePolicies() ? archivedCount() : myAcknowledgedCount() }}</span>
+            <span class="p-metric-label">{{ canManagePolicies() ? 'Archived Policies' : 'Signed by Me' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Table & Integrated Bottom Pagination ──────────────────────────── -->
+    <div class="table-block">
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="spinner-large" aria-hidden="true"></div>
+          <p>Loading company policies and compliance records...</p>
+        </div>
+      }
+
+      @if (!loading() && filteredPolicies().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon-wrap">
+            <app-icon name="file-text" [size]="40"></app-icon>
+          </div>
+          <h3>No Policies Found</h3>
+          <p>
+            {{
+              hasActiveFilters()
+                ? 'No policies match your search query or selected filter criteria.'
+                : 'No company policy documents have been published yet.'
+            }}
+          </p>
+          @if (hasActiveFilters()) {
+            <button type="button" class="btn btn-secondary btn-sm" (click)="resetFilters()">
+              Clear Filters
+            </button>
+          } @else {
+            <button
+              *appHasPermission="Permission.POLICY_CREATE"
+              type="button"
+              class="btn btn-primary btn-sm"
+              (click)="openCreateModal()"
+            >
+              <app-icon name="plus" [size]="14"></app-icon>
+              <span>Create First Policy</span>
+            </button>
+          }
+        </div>
+      }
+
+      @if (!loading() && filteredPolicies().length > 0) {
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="col-code">Code</th>
+                <th class="col-title">Policy Title & Details</th>
+                <th class="col-version">Version</th>
+                <th class="col-status">Status</th>
+                <th class="col-effective">Effective Date</th>
+                <th class="col-compliance">My Compliance</th>
+                <th class="col-actions text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (policy of displayedPolicies(); track policy.id) {
+                <tr class="table-row">
+                  <td class="col-code">
+                    <span class="code-badge">{{ policy.code }}</span>
+                  </td>
+
+                  <td class="col-title">
+                    <div class="policy-info">
+                      <button
+                        type="button"
+                        class="policy-name-btn"
+                        (click)="openViewModal(policy)"
+                      >
+                        {{ policy.title }}
+                      </button>
+                      <span class="policy-preview">
+                        {{ (policy.content.length > 90 ? (policy.content.substring(0, 90) + '...') : policy.content) }}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td class="col-version">
+                    <span class="version-tag">{{ policy.version || 'v1.0' }}</span>
+                  </td>
+
+                  <td class="col-status">
+                    <app-badge [variant]="getStatusVariant(policy.status)">
+                      {{ policy.status }}
+                    </app-badge>
+                  </td>
+
+                  <td class="col-effective">
+                    <span class="date-text">
+                      {{ policy.effectiveDate ? (policy.effectiveDate | date:'mediumDate') : '&mdash;' }}
+                    </span>
+                  </td>
+
+                  <td class="col-compliance">
+                    @if (policy.status === 'PUBLISHED') {
+                      @if (isPolicyAcknowledgedByMe(policy.id)) {
+                        <div class="ack-tag ack-yes" title="Acknowledged">
+                          <app-icon name="check-circle" [size]="14"></app-icon>
+                          <span>Acknowledged</span>
+                        </div>
+                      } @else {
+                        <button
+                          type="button"
+                          class="btn-ack-pending"
+                          (click)="openViewModal(policy)"
+                          title="Click to read and acknowledge"
+                        >
+                          <app-icon name="alert-circle" [size]="14"></app-icon>
+                          <span>Pending Review</span>
+                        </button>
+                      }
+                    } @else {
+                      <span class="ack-na">&mdash;</span>
+                    }
+                  </td>
+
+                  <td class="col-actions text-right">
+                    <div class="action-buttons">
+                      <button
+                        type="button"
+                        class="action-icon-btn"
+                        title="Read Document & Acknowledge"
+                        (click)="openViewModal(policy)"
+                        aria-label="View Policy"
+                      >
+                        <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+
+                      <button
+                        type="button"
+                        class="action-icon-btn text-indigo"
+                        title="View Compliance Acknowledgements"
+                        *appHasPermission="Permission.POLICY_ACKNOWLEDGEMENT_POLICY_VIEW"
+                        (click)="openAuditModal(policy)"
+                        aria-label="Acknowledgements Audit"
+                      >
+                        <app-icon name="users" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+
+                      @if (policy.status === 'DRAFT') {
+                        <button
+                          type="button"
+                          class="action-icon-btn text-success"
+                          title="Publish Policy"
+                          *appHasPermission="Permission.POLICY_PUBLISH"
+                          (click)="onPublish(policy)"
+                          aria-label="Publish Policy"
+                        >
+                          <app-icon name="send" [size]="16" [strokeWidth]="1.8"></app-icon>
+                        </button>
+                      }
+
+                      @if (policy.status === 'PUBLISHED') {
+                        <button
+                          type="button"
+                          class="action-icon-btn text-warning"
+                          title="Archive Policy"
+                          *appHasPermission="Permission.POLICY_ARCHIVE"
+                          (click)="onArchive(policy)"
+                          aria-label="Archive Policy"
+                        >
+                          <app-icon name="archive" [size]="16" [strokeWidth]="1.8"></app-icon>
+                        </button>
+                      }
+
+                      <button
+                        type="button"
+                        class="action-icon-btn"
+                        title="Edit Policy"
+                        *appHasPermission="Permission.POLICY_UPDATE"
+                        [disabled]="policy.status === 'ARCHIVED'"
+                        (click)="openEditModal(policy)"
+                        aria-label="Edit Policy"
+                      >
+                        <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+
+                      <button
+                        type="button"
+                        class="action-icon-btn"
+                        title="Delete Policy"
+                        *appHasPermission="Permission.POLICY_DELETE"
+                        [disabled]="policy.status === 'PUBLISHED'"
+                        (click)="onDelete(policy)"
+                        aria-label="Delete Policy"
+                      >
+                        <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Integrated Card Bottom Pagination ────────────────────────── -->
+        <div class="table-pagination-footer">
+          <span class="pagination-count">
+            Showing <strong>{{ displayedPolicies().length }}</strong> of {{ filteredPolicies().length }} policies
+          </span>
+
+          <div class="pagination-nav">
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() <= 1 || loading()"
+              (click)="goToPage(currentPage() - 1)"
+              title="Previous Page"
+              aria-label="Previous Page"
+            >
+              <app-icon name="chevron-left" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+            <span class="page-indicator">{{ currentPage() }} / {{ totalPages() }}</span>
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() >= totalPages() || loading()"
+              (click)="goToPage(currentPage() + 1)"
+              title="Next Page"
+              aria-label="Next Page"
+            >
+              <app-icon name="chevron-right" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<app-policy-form-modal
+  [isOpen]="isFormModalOpen()"
+  [policy]="selectedPolicyToEdit()"
+  (closeModal)="closeFormModal()"
+  (saved)="onPolicySaved()"
+></app-policy-form-modal>
+
+<app-policy-view-modal
+  [isOpen]="isViewModalOpen()"
+  [policy]="selectedPolicyToView()"
+  [employeeId]="myEmployeeId()"
+  (closeModal)="closeViewModal()"
+  (acknowledged)="onPolicyAcknowledged($event)"
+></app-policy-view-modal>
+
+<app-policy-acknowledgements-modal
+  [isOpen]="isAckModalOpen()"
+  [policy]="selectedPolicyForAudit()"
+  (closeModal)="closeAuditModal()"
+></app-policy-acknowledgements-modal>

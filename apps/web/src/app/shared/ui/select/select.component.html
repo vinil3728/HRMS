@@ -1,0 +1,49 @@
+<div
+  class="custom-select-container"
+  [class.full-width]="fullWidth()"
+  [style.min-width]="fullWidth() ? '100%' : minWidth()"
+>
+  <button
+    type="button"
+    class="custom-select-trigger"
+    [class.open]="isOpen()"
+    [disabled]="isDisabled()"
+    (click)="toggleDropdown()"
+    aria-haspopup="listbox"
+    [attr.aria-expanded]="isOpen()"
+  >
+    <span class="selected-text">{{ selectedLabel() }}</span>
+    <app-icon
+      name="chevron-down"
+      [size]="15"
+      [strokeWidth]="2"
+      customClass="select-chevron"
+      [class.rotated]="isOpen()"
+    ></app-icon>
+  </button>
+
+  @if (isOpen()) {
+    <div
+      class="custom-select-menu"
+      [class.drop-up]="openUpward()"
+      [style.max-height.px]="menuMaxHeight()"
+      role="listbox"
+    >
+      @for (opt of options(); track opt.value) {
+        <button
+          type="button"
+          role="option"
+          class="custom-select-option"
+          [class.selected]="isSelected(opt.value)"
+          [attr.aria-selected]="isSelected(opt.value)"
+          (click)="selectOption(opt.value)"
+        >
+          <span class="option-label">{{ opt.label }}</span>
+          @if (isSelected(opt.value)) {
+            <app-icon name="check" [size]="14" [strokeWidth]="2.2"></app-icon>
+          }
+        </button>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,230 @@
+<div class="page-container">
+  <!-- ── Page Header ──────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-info">
+      <div class="title-row">
+        <h1 class="page-title">Employee Directory</h1>
+      </div>
+      <p class="page-subtitle">Find colleagues, view work contact details, and explore team structures.</p>
+    </div>
+  </div>
+
+  <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+  <div class="content-card">
+    <!-- Toolbar Section: Left Tabs, Right Filters & View Mode (Option 2) -->
+    <div class="toolbar-section">
+      <!-- Tabs Navigation (Left) -->
+      <div class="tabs-nav">
+        <button
+          type="button"
+          class="tab-btn active"
+        >
+          <app-icon name="users" [size]="16"></app-icon>
+          <span>All Colleagues</span>
+        </button>
+      </div>
+
+      <!-- Filters Wrap (Right) -->
+      <div class="filters-wrap">
+        <!-- Search Input -->
+        <div class="search-input-wrap">
+          <app-icon name="search" [size]="16" customClass="filter-search-icon"></app-icon>
+          <input
+            type="text"
+            class="filter-search-input"
+            placeholder="Search by name, email, code, designation..."
+            [value]="searchQuery()"
+            (input)="onSearchChange($event)"
+          />
+        </div>
+
+        <!-- Department Filter -->
+        <div class="filter-item">
+          <app-select
+            [options]="departmentOptions()"
+            [value]="selectedDepartmentId()"
+            placeholder="All Departments"
+            minWidth="180px"
+            (valueChange)="onDepartmentChange($event)"
+          ></app-select>
+        </div>
+
+        <!-- Designation Filter -->
+        <div class="filter-item">
+          <app-select
+            [options]="designationOptions()"
+            [value]="selectedDesignationId()"
+            placeholder="All Designations"
+            minWidth="180px"
+            (valueChange)="onDesignationChange($event)"
+          ></app-select>
+        </div>
+
+        <!-- Reset Filter Button -->
+        @if (hasActiveFilters()) {
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="resetFilters()"
+            title="Reset Filters"
+          >
+            <app-icon name="activity" [size]="16"></app-icon>
+          </button>
+        }
+
+      </div>
+    </div>
+
+    <!-- ── Content Block: Enclosed Table or Grid with Integrated Bottom Pagination ── -->
+    <div class="table-block">
+      @if (loading()) {
+        <div class="table-loading">
+          <span class="spinner"></span>
+          <span>Loading directory...</span>
+        </div>
+      } @else if (filteredCoworkers().length === 0) {
+        <div class="table-empty">
+          <div class="empty-icon-wrap">
+            <app-icon [name]="hasActiveFilters() ? 'search' : 'users'" [size]="28"></app-icon>
+          </div>
+          <h3 class="empty-title">
+            {{ hasActiveFilters() ? 'No colleagues match your search' : 'No employees in directory' }}
+          </h3>
+          
+          @if (hasActiveFilters()) {
+            <button
+              type="button"
+              class="btn btn-outline btn-sm"
+              (click)="resetFilters()"
+            >
+              Reset Filters
+            </button>
+          }
+        </div>
+      } @else {
+        <!-- ── TABLE VIEW ───────────────────────────────────────────── -->
+        @if (viewMode() === 'table') {
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>COWORKER</th>
+                  <th>DESIGNATION</th>
+                  <th>DEPARTMENT</th>
+                  <th>Reports to</th>
+                  <th>WORK EMAIL</th>
+                  <th>PHONE</th>
+                  <th class="text-right">ACTION</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (emp of displayedCoworkers(); track emp.id) {
+                  <tr class="table-row">
+                    <td>
+                      <div class="table-person-cell">
+                        <div class="person-meta">
+                          <span class="person-name">
+                            {{ emp.firstName }} {{ emp.lastName }}
+                          </span>
+                          <span class="person-code">{{ emp.employeeCode }}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="cell-text font-medium">
+                        {{ emp.designation?.name || '—' }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="cell-text font-medium">
+                        {{ emp.department?.name || '—' }}
+                      </span>
+                    </td>
+                    <td>
+                      @if (emp.manager) {
+                        <span class="cell-text">
+                          {{ emp.manager.firstName }} {{ emp.manager.lastName }}
+                        </span>
+                      } @else {
+                        <span class="text-muted">—</span>
+                      }
+                    </td>
+                    <td>
+                      <a
+                        [href]="'mailto:' + emp.email"
+                        class="email-link"
+                      >
+                        {{ emp.email }}
+                      </a>
+                    </td>
+                    <td>
+                      @if (emp.phone) {
+                        <a [href]="'tel:' + emp.phone" class="phone-link">
+                          {{ emp.phone }}
+                        </a>
+                      } @else {
+                        <span class="text-muted">—</span>
+                      }
+                    </td>
+                    <td class="text-right">
+                      <button
+                        type="button"
+                        class="action-icon-btn"
+                        (click)="openProfile(emp)"
+                        title="View Profile"
+                        aria-label="View Profile"
+                      >
+                        <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <!-- Integrated Card Bottom Pagination -->
+        @if (filteredCoworkers().length > 0) {
+          <div class="table-pagination-footer">
+            <span class="pagination-count">
+              Showing <strong>{{ displayedCoworkers().length }}</strong> of {{ filteredCoworkers().length }} colleagues
+            </span>
+
+            <div class="pagination-nav">
+              <button
+                type="button"
+                class="page-arrow-btn"
+                [disabled]="currentPage() <= 1 || loading()"
+                (click)="goToPage(currentPage() - 1)"
+                title="Previous Page"
+                aria-label="Previous Page"
+              >
+                <app-icon name="chevron-left" [size]="16" [strokeWidth]="2"></app-icon>
+              </button>
+              <span class="page-indicator">{{ currentPage() }} / {{ totalPages() }}</span>
+              <button
+                type="button"
+                class="page-arrow-btn"
+                [disabled]="currentPage() >= totalPages() || loading()"
+                (click)="goToPage(currentPage() + 1)"
+                title="Next Page"
+                aria-label="Next Page"
+              >
+                <app-icon name="chevron-right" [size]="16" [strokeWidth]="2"></app-icon>
+              </button>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Coworker Quick Profile Modal -->
+@if (selectedCoworker()) {
+  <app-coworker-profile-modal
+    [employee]="selectedCoworker()!"
+    (closeModal)="closeProfile()"
+  ></app-coworker-profile-modal>
+}

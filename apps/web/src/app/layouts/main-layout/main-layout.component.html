@@ -1,0 +1,296 @@
+<div class="layout-container">
+  <!-- Mobile Backdrop -->
+  @if (layoutService.isMobileMenuOpen()) {
+    <button
+      type="button"
+      class="mobile-backdrop"
+      (click)="layoutService.closeMobileMenu()"
+      aria-label="Close navigation overlay"
+    ></button>
+  }
+
+  <!-- Top Header -->
+  <header class="top-header">
+    <div class="header-left">
+      <button
+        type="button"
+        class="mobile-toggle-btn"
+        (click)="layoutService.toggleMobileMenu()"
+        aria-label="Toggle Navigation"
+      >
+        <app-icon name="menu" [size]="20"></app-icon>
+      </button>
+
+      <!-- Brand Header -->
+      <div class="brand-header">
+        <div class="brand-logo">TX</div>
+        <span class="brand-title">TreasureX</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <!-- Quick Attendance Check In / Check Out -->
+      @if (canPunchAttendance()) {
+        <div class="topbar-punch-wrap">
+          @if (!todayAttendance() || !todayAttendance()?.checkIn) {
+            <button
+              type="button"
+              class="topbar-punch-btn punch-in"
+              [disabled]="isPunching()"
+              (click)="quickCheckIn()"
+              title="Click to Check In for today"
+            >
+              <app-icon name="log-in" [size]="14" [strokeWidth]="2.2"></app-icon>
+              <span>{{ isPunching() ? 'Checking In...' : 'Check In' }}</span>
+            </button>
+          } @else if (todayAttendance()?.checkIn && !todayAttendance()?.checkOut) {
+            <button
+              type="button"
+              class="topbar-punch-btn punch-out"
+              [disabled]="isPunching()"
+              (click)="quickCheckOut()"
+              [title]="'Checked in at ' + formatTime(todayAttendance()?.checkIn) + '. Click to Check Out.'"
+            >
+              <app-icon name="log-out" [size]="14" [strokeWidth]="2.2"></app-icon>
+              <span>{{ isPunching() ? 'Checking Out...' : 'Check Out' }}</span>
+              <span class="punch-time-pill">{{ formatTime(todayAttendance()?.checkIn) }}</span>
+            </button>
+          } @else {
+            <div
+              class="topbar-punch-status completed"
+              [title]="'Checked in: ' + formatTime(todayAttendance()?.checkIn) + ' | Checked out: ' + formatTime(todayAttendance()?.checkOut)"
+            >
+              <app-icon name="check-circle" [size]="14" [strokeWidth]="2"></app-icon>
+              <span>Shift Completed</span>
+            </div>
+          }
+        </div>
+      }
+
+      @if (attendanceFeedback()) {
+        <div class="topbar-feedback-toast" role="status">
+          {{ attendanceFeedback() }}
+        </div>
+      }
+
+      <!-- Settings Button -->
+      <button
+        type="button"
+        class="icon-btn"
+        title="Settings"
+        (click)="goToSettings()"
+        aria-label="Settings"
+      >
+        <app-icon name="settings" [size]="18" [strokeWidth]="1.8"></app-icon>
+      </button>
+
+      <!-- Notification Bell & Center -->
+      <div class="notification-container">
+        <button
+          type="button"
+          class="icon-btn"
+          title="Notifications"
+          (click)="toggleNotificationDropdown()"
+          aria-haspopup="true"
+          [attr.aria-expanded]="isNotificationDropdownOpen()"
+        >
+          <app-icon name="bell" [size]="18" [strokeWidth]="1.8"></app-icon>
+          @if (unreadCount() > 0) {
+            <span class="notification-badge">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+          }
+        </button>
+
+        <!-- Notification Dropdown -->
+        @if (isNotificationDropdownOpen()) {
+          <div class="notification-dropdown">
+            <div class="notif-header">
+              <div class="notif-title-row">
+                <span class="notif-heading">Notifications</span>
+                @if (unreadCount() > 0) {
+                  <span class="notif-count-badge">{{ unreadCount() }} new</span>
+                }
+              </div>
+              <div class="notif-actions-row">
+                <div class="notif-tabs">
+                  <button
+                    type="button"
+                    class="notif-tab"
+                    [class.active]="notificationFilter() === 'ALL'"
+                    (click)="setNotificationFilter('ALL')"
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    class="notif-tab"
+                    [class.active]="notificationFilter() === 'UNREAD'"
+                    (click)="setNotificationFilter('UNREAD')"
+                  >
+                    Unread
+                  </button>
+                </div>
+                @if (unreadCount() > 0) {
+                  <button
+                    type="button"
+                    class="notif-mark-read-btn"
+                    (click)="markAllAsRead()"
+                  >
+                    Mark all read
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="notif-list">
+              @if (isLoadingNotifications()) {
+                <div class="notif-empty">
+                  <app-icon name="clock" [size]="20" customClass="spin"></app-icon>
+                  <span>Loading alerts...</span>
+                </div>
+              } @else if (filteredNotifications().length === 0) {
+                <div class="notif-empty">
+                  <app-icon name="check-circle" [size]="24"></app-icon>
+                  <span class="notif-empty-title">All caught up!</span>
+                  <span class="notif-empty-sub">No {{ notificationFilter() === 'UNREAD' ? 'unread ' : '' }}notifications at this time.</span>
+                </div>
+              } @else {
+                @for (item of filteredNotifications(); track item.id) {
+                  <div
+                    class="notif-item"
+                    [class.unread]="!item.read"
+                    (click)="onNotificationClick(item)"
+                    role="button"
+                    tabindex="0"
+                  >
+                    <div class="notif-icon-wrap" [ngClass]="'notif-type-' + item.variant">
+                      <app-icon [name]="item.icon" [size]="15"></app-icon>
+                    </div>
+                    <div class="notif-content">
+                      <div class="notif-item-top">
+                        <span class="notif-item-title">{{ item.title }}</span>
+                        <span class="notif-time">{{ item.timestamp }}</span>
+                      </div>
+                      <p class="notif-item-msg">{{ item.message }}</p>
+                    </div>
+                    @if (!item.read) {
+                      <span class="notif-unread-dot" title="Unread"></span>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- User Profile Menu -->
+      <div class="profile-container">
+        <button
+          type="button"
+          class="profile-trigger"
+          (click)="toggleUserDropdown()"
+          aria-haspopup="true"
+          [attr.aria-expanded]="isUserDropdownOpen()"
+        >
+          <app-avatar
+            [name]="displayUserName()"
+            [size]="34"
+          ></app-avatar>
+          <div class="profile-details">
+            <span class="profile-name">{{ displayUserName() }}</span>
+            <span class="profile-role">{{ displayUserRole() }}</span>
+          </div>
+          <app-icon name="chevron-down" [size]="13" [strokeWidth]="2.2" customClass="chevron-icon"></app-icon>
+        </button>
+
+        <!-- Profile Dropdown -->
+        @if (isUserDropdownOpen()) {
+          <div class="profile-dropdown">
+            <div class="dropdown-user-header">
+              <div class="dropdown-avatar-row">
+                <app-avatar [name]="displayUserName()" [size]="38"></app-avatar>
+                <div>
+                  <div class="dropdown-name">{{ displayUserName() }}</div>
+                  <div class="dropdown-username">&#64;{{ authService.currentUser()?.username }}</div>
+                </div>
+              </div>
+              <div class="dropdown-role-badge">
+                <app-badge variant="info" [showDot]="false">{{ displayUserRole() }}</app-badge>
+              </div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <button type="button" class="dropdown-item" (click)="goToMyProfile()">
+              <app-icon name="id-card" [size]="15" [strokeWidth]="1.8"></app-icon>
+              <span>My Profile & Documents</span>
+            </button>
+            <button type="button" class="dropdown-item" (click)="goToChangePassword()">
+              <app-icon name="shield" [size]="15" [strokeWidth]="1.8"></app-icon>
+              <span>Change Password</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button type="button" class="dropdown-item danger" (click)="onSignOut()">
+              <app-icon name="logout" [size]="15" [strokeWidth]="1.8"></app-icon>
+              <span>Sign Out</span>
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  </header>
+
+  <!-- Body Shell -->
+  <div class="body-shell">
+    <!-- Sidebar -->
+    <aside
+      class="sidebar"
+      [class.mobile-open]="layoutService.isMobileMenuOpen()"
+    >
+      <!-- Navigation Sections -->
+      <nav class="sidebar-nav">
+        @for (section of filteredNavSections(); track section.title) {
+          <div class="nav-section">
+            @if (section.title && section.title !== 'OVERVIEW') {
+              <div class="section-title">{{ section.title }}</div>
+            }
+            <ul class="nav-list">
+              @for (item of section.items; track item.route) {
+                <li>
+                  <a
+                    [routerLink]="item.route"
+                    routerLinkActive="active"
+                    (click)="layoutService.closeMobileMenu()"
+                    class="nav-link"
+                  >
+                    <app-icon [name]="item.icon" [size]="18" [strokeWidth]="1.8"></app-icon>
+                    <span class="nav-label">{{ item.label }}</span>
+                  </a>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </nav>
+
+      <!-- Services Link pinned at bottom -->
+      <div class="sidebar-services-btn-wrap">
+        <a
+          routerLink="/services"
+          routerLinkActive="active"
+          (click)="layoutService.closeMobileMenu()"
+          class="sidebar-services-btn"
+        >
+          <div class="ssb-icon-wrap">
+            <app-icon name="grid" [size]="16" [strokeWidth]="2"></app-icon>
+          </div>
+          <span class="ssb-label">All Services</span>
+          <app-icon name="chevron-right" [size]="14" [strokeWidth]="2" customClass="ssb-chevron"></app-icon>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Canvas -->
+    <main class="content-canvas">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

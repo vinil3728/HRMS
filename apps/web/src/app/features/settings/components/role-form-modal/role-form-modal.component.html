@@ -1,0 +1,247 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="role-form-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close modal backdrop"></button>
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-icon-badge">
+            <app-icon name="shield" [size]="20"></app-icon>
+          </div>
+          <div>
+            <h2 id="role-form-modal-title" class="modal-title">
+              {{ isEditMode() ? 'Edit Role & Privileges' : 'Create Custom Role & Assign Privileges' }}
+            </h2>
+            <p class="modal-subtitle">
+              Define role identity and configure module-level authorization permissions in one place.
+            </p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="x" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-form">
+        <div class="modal-body">
+          @if (errorMessage()) {
+            <div class="alert alert-danger" role="alert">
+              <app-icon name="alert-circle" [size]="18"></app-icon>
+              <span>{{ errorMessage() }}</span>
+            </div>
+          }
+
+          <!-- Role Basic Info -->
+          <div class="form-section">
+            <div class="section-header">
+              <h3 class="section-title">Role Identification</h3>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label class="form-label required" for="roleName">Role Display Name</label>
+                <input
+                  id="roleName"
+                  type="text"
+                  class="form-control"
+                  [class.is-invalid]="isFieldInvalid('name')"
+                  formControlName="name"
+                  placeholder="e.g. Payroll Specialist"
+                />
+                @if (isFieldInvalid('name')) {
+                  <div class="invalid-feedback">
+                    Role name is required (at least 2 characters).
+                  </div>
+                }
+              </div>
+
+              <div class="form-group flex-1">
+                <label class="form-label required" for="roleCode">Role Code</label>
+                <input
+                  id="roleCode"
+                  type="text"
+                  class="form-control"
+                  [class.is-invalid]="isFieldInvalid('code')"
+                  formControlName="code"
+                  placeholder="e.g. PAYROLL_SPECIALIST"
+                />
+                @if (isFieldInvalid('code')) {
+                  <div class="invalid-feedback">
+                    Role code is required (at least 2 characters, uppercase).
+                  </div>
+                }
+                @if (isSystemRole()) {
+                  <span class="field-hint text-warning">
+                    System role codes cannot be modified.
+                  </span>
+                }
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="roleDescription">Role Description & Responsibilities</label>
+              <textarea
+                id="roleDescription"
+                class="form-control textarea"
+                rows="2"
+                formControlName="description"
+                placeholder="Brief summary of duties and authorization scope for this role..."
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Role Permissions Selection Section -->
+          <div class="form-section">
+            <div class="section-header permission-section-header">
+              <div>
+                <h3 class="section-title">Assign Privileges</h3>
+                <p class="section-subtitle">
+                  Select which module capabilities this role is authorized to perform.
+                </p>
+              </div>
+
+              <div class="permission-meta-actions">
+                <div class="selected-pill">
+                  <span class="count">{{ selectedPermissionIds().size }}</span> / {{ allPermissions().length }} Selected
+                </div>
+
+                <div class="batch-links">
+                  <button type="button" class="link-btn" (click)="selectAllPermissions()">
+                    Select All
+                  </button>
+                  <span class="divider">|</span>
+                  <button type="button" class="link-btn" (click)="clearAllPermissions()">
+                    Clear All
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Permission Search -->
+            <div class="perm-search-box">
+              <app-icon name="search" [size]="16" class="search-icon"></app-icon>
+              <input
+                type="text"
+                class="search-input"
+                placeholder="Filter permissions by keyword, module or key..."
+                [value]="permissionSearch()"
+                (input)="onSearchInput($event)"
+              />
+              @if (permissionSearch()) {
+                <button
+                  type="button"
+                  class="clear-search-btn"
+                  (click)="clearSearch()"
+                  aria-label="Clear filter"
+                >
+                  <app-icon name="x" [size]="14"></app-icon>
+                </button>
+              }
+            </div>
+
+            @if (loadingPermissions()) {
+              <div class="loading-state">
+                <app-icon name="clock" [size]="24" class="spin"></app-icon>
+                <span>Loading permission matrix...</span>
+              </div>
+            } @else if (filteredModules().length === 0) {
+              <div class="empty-permissions">
+                <p>No permissions match "{{ permissionSearch() }}".</p>
+              </div>
+            } @else {
+              <div class="module-groups-list">
+                @for (mod of filteredModules(); track mod.name) {
+                  <div class="module-group-card">
+                    <div class="module-group-header">
+                      <div class="module-name-wrap">
+                        <span class="module-name">{{ mod.name }}</span>
+                        <span class="module-count-badge">
+                          {{ getModuleSelectedCount(mod.name) }} of {{ mod.permissions.length }}
+                        </span>
+                      </div>
+                      <div class="module-quick-buttons">
+                        <button
+                          type="button"
+                          class="module-btn"
+                          (click)="toggleModule(mod.name, true)"
+                        >
+                          Select All
+                        </button>
+                        <span class="divider">·</span>
+                        <button
+                          type="button"
+                          class="module-btn"
+                          (click)="toggleModule(mod.name, false)"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+
+                    <div class="module-items-grid">
+                      @for (perm of mod.permissions; track perm.id) {
+                        <label
+                          class="perm-checkbox-item"
+                          [for]="'role-perm-' + perm.id"
+                          [class.selected]="isPermissionSelected(perm.id)"
+                        >
+                          <input
+                            type="checkbox"
+                            [id]="'role-perm-' + perm.id"
+                            class="checkbox-input"
+                            [checked]="isPermissionSelected(perm.id)"
+                            (change)="togglePermission(perm.id)"
+                          />
+                          <div class="perm-item-content">
+                            <div class="perm-title-row">
+                              <span class="perm-title">{{ perm.name }}</span>
+                              <span class="perm-code">{{ perm.code }}</span>
+                            </div>
+                            @if (perm.description) {
+                              <p class="perm-desc">{{ perm.description }}</p>
+                            }
+                          </div>
+                        </label>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <div class="footer-summary">
+            <span class="summary-text">
+              <strong>{{ selectedPermissionIds().size }}</strong> privileges will be granted to this role.
+            </span>
+          </div>
+
+          <div class="footer-actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="onCancel()"
+              [disabled]="submitting()"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="submitting()"
+            >
+              @if (submitting()) {
+                <app-icon name="clock" [size]="16" class="spin"></app-icon>
+                <span>Saving Role & Privileges...</span>
+              } @else {
+                <app-icon name="check" [size]="16"></app-icon>
+                <span>{{ isEditMode() ? 'Save Role Changes' : 'Create Role & Grant Privileges' }}</span>
+              }
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+}

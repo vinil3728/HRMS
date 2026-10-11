@@ -1,0 +1,99 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="reimb-action-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close modal backdrop"></button>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 id="reimb-action-title" class="modal-title">
+            {{ actionType() === 'REJECT' ? 'Reject Expense Claim' : 'Upload Receipt Proof' }}
+          </h3>
+          <p class="modal-subtitle">
+            {{ actionType() === 'REJECT' ? 'Provide a formal reason for rejecting this reimbursement claim.' : 'Attach an official invoice, bill or payment receipt.' }}
+          </p>
+        </div>
+        <button class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      @if (errorMessage()) {
+        <div class="alert-error" role="alert">
+          <app-icon name="shield" [size]="16"></app-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      @if (actionType() === 'REJECT') {
+        <form [formGroup]="rejectForm" (ngSubmit)="onRejectSubmit()" class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="reimbRejectionReason">Rejection Reason <span class="required">*</span></label>
+            <textarea
+              id="reimbRejectionReason"
+              class="form-control"
+              rows="3"
+              formControlName="rejectionReason"
+              placeholder="State the justification (e.g. Missing tax invoice, exceeds per-diem policy limit)..."
+              [class.invalid]="isRejectInvalid('rejectionReason')"
+            ></textarea>
+            @if (isRejectInvalid('rejectionReason')) {
+              <span class="field-error">Rejection reason is required (min 5 characters)</span>
+            }
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="submitting()">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-danger" [disabled]="submitting() || rejectForm.invalid">
+              @if (submitting()) {
+                <span class="spinner" aria-hidden="true"></span>
+                <span>Rejecting...</span>
+              } @else {
+                <span>Reject Claim</span>
+              }
+            </button>
+          </div>
+        </form>
+      } @else {
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="receiptPicker">Choose Receipt File <span class="required">*</span></label>
+            <input
+              id="receiptPicker"
+              type="file"
+              class="form-control"
+              accept=".pdf,.png,.jpg,.jpeg"
+              (change)="onFileSelected($event)"
+            />
+            <span class="field-hint">PDF, PNG, or JPEG format (Max 5MB)</span>
+            @if (selectedFileName()) {
+              <div class="file-picked-info">
+                <app-icon name="file-text" [size]="16"></app-icon>
+                <span>{{ selectedFileName() }}</span>
+              </div>
+            }
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="submitting()">
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="onUploadSubmit()"
+              [disabled]="submitting() || !selectedFile"
+            >
+              @if (submitting()) {
+                <span class="spinner" aria-hidden="true"></span>
+                <span>Uploading...</span>
+              } @else {
+                <span>Upload Document</span>
+              }
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

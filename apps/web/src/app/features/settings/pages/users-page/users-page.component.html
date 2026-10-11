@@ -1,0 +1,317 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-info">
+      <div class="title-row">
+        <h1 class="page-title">User Accounts</h1>
+      </div>
+      <p class="page-subtitle">
+        Create login credentials, link employee profiles, and manage account access.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-primary"
+        *appHasPermission="[Permission.USER_ACCOUNT_CREATE]"
+        (click)="openCreateUserModal()"
+      >
+        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+        <span>Create User</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+  <div class="content-card">
+    <!-- Toolbar Section: Left Tabs, Right Filters (Option 2) -->
+    <div class="toolbar-section">
+      <!-- Tabs Navigation (Left) -->
+      <div class="tabs-nav">
+        <button
+          type="button"
+          class="tab-btn active"
+        >
+          <app-icon name="users" [size]="16"></app-icon>
+          <span>All User Accounts</span>
+        </button>
+      </div>
+
+      <!-- Filters Wrap (Right) -->
+      <div class="filters-wrap">
+        <!-- Search Input -->
+        <div class="search-input-wrap">
+          <app-icon name="search" [size]="16" customClass="filter-search-icon"></app-icon>
+          <input
+            type="text"
+            class="filter-search-input"
+            placeholder="Search accounts..."
+            [value]="userSearchQuery()"
+            (input)="onUserSearchInput($event)"
+          />
+        </div>
+
+        <!-- Role Filter -->
+        <div class="filter-item">
+          <app-select
+            [options]="roleOptions()"
+            [value]="userRoleFilter()"
+            placeholder="All Roles"
+            minWidth="175px"
+            (valueChange)="onUserRoleChange($event)"
+          ></app-select>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="filter-item">
+          <app-select
+            [options]="statusOptions"
+            [value]="userStatusFilter()"
+            placeholder="All Statuses"
+            minWidth="150px"
+            (valueChange)="onUserStatusChange($event)"
+          ></app-select>
+        </div>
+
+        <!-- Reset Filter Button -->
+        @if (hasActiveFilters()) {
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="resetUserFilters()"
+            title="Reset Filters"
+          >
+            <app-icon name="activity" [size]="16"></app-icon>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ── Table Block (Table & Pagination in Single Block with Border) ── -->
+    <div class="table-block">
+      <div
+        class="table-container"
+        [class.no-scroll]="loadingUsers() || displayedUsers().length === 0"
+      >
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="cursor-pointer" (click)="setSort('username')">
+                <span class="th-content">
+                  <span>USERNAME</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th>LINKED EMPLOYEE</th>
+              <th>ROLE</th>
+              <th class="cursor-pointer" (click)="setSort('createdAt')">
+                <span class="th-content">
+                  <span>CREATED DATE</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="cursor-pointer" (click)="setSort('isActive')">
+                <span class="th-content">
+                  <span>STATUS</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="text-right">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (loadingUsers()) {
+              <tr>
+                <td colspan="6" class="empty-table-cell">
+                  <div class="table-loading">
+                    <span class="spinner"></span>
+                    <span>Loading user accounts...</span>
+                  </div>
+                </td>
+              </tr>
+            } @else if (displayedUsers().length === 0) {
+              <tr>
+                <td colspan="6" class="empty-table-cell">
+                  <div class="table-empty">
+                    <div class="empty-icon-wrap">
+                      <app-icon [name]="hasActiveFilters() ? 'search' : 'users'" [size]="28"></app-icon>
+                    </div>
+                    <h3 class="empty-title">
+                      {{
+                        hasActiveFilters()
+                          ? 'No matching results found on your filter'
+                          : 'No user accounts found'
+                      }}
+                    </h3>
+                    @if (hasActiveFilters()) {
+                      <button
+                        type="button"
+                        class="btn btn-outline btn-sm"
+                        (click)="resetUserFilters()"
+                      >
+                        Reset Filters
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @else {
+              @for (u of displayedUsers(); track u.id) {
+                <tr class="table-row">
+                  <!-- USERNAME -->
+                  <td>
+                    <span class="primary-name">{{ u.username }}</span>
+                  </td>
+
+                  <!-- LINKED EMPLOYEE -->
+                  <td>
+                    @if (u.employee; as emp) {
+                      <div class="emp-cell">
+                        <span class="emp-fullname">{{ emp.firstName }} {{ emp.lastName }}</span>
+                        <span class="emp-sub">
+                          {{ emp.employeeCode }} 
+                        </span>
+                      </div>
+                    } @else {
+                      <span class="text-muted">Unlinked Account</span>
+                    }
+                  </td>
+
+                  <!-- ROLE -->
+                  <td>
+                    @if (u.role; as role) {
+                      <span class="cell-text">{{ role.name }}</span>
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
+                  </td>
+
+                  <!-- CREATED DATE -->
+                  <td>
+                    <span class="cell-text">
+                      {{ u.createdAt ? (u.createdAt | date: 'dd MMM yyyy') : '—' }}
+                    </span>
+                  </td>
+
+                  <!-- STATUS -->
+                  <td>
+                    <app-badge [variant]="u.isActive ? 'active' : 'inactive'">
+                      {{ u.isActive ? 'Active' : 'Inactive' }}
+                    </app-badge>
+                  </td>
+
+                  <!-- ACTIONS -->
+                  <td class="text-right">
+                    <div class="action-buttons">
+                      <button
+                        *appHasPermission="[Permission.USER_ACCOUNT_VIEW]"
+                        type="button"
+                        class="action-icon-btn"
+                        (click)="openViewUserModal(u)"
+                        title="View Details"
+                        aria-label="View Details"
+                      >
+                        <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+
+                      <button
+                        *appHasPermission="[Permission.USER_ACCOUNT_UPDATE]"
+                        type="button"
+                        class="action-icon-btn"
+                        (click)="openEditUserModal(u)"
+                        title="Edit User"
+                        aria-label="Edit User"
+                      >
+                        <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+
+                      @if (u.isActive) {
+                        <button
+                          *appHasPermission="[Permission.USER_ACCOUNT_DEACTIVATE]"
+                          type="button"
+                          class="action-btn danger"
+                          (click)="toggleUserStatus(u)"
+                          title="Deactivate User"
+                        >
+                          <app-icon name="x" [size]="15"></app-icon>
+                          <span>Deactivate</span>
+                        </button>
+                      } @else {
+                        <button
+                          *appHasPermission="[Permission.USER_ACCOUNT_ACTIVATE]"
+                          type="button"
+                          class="action-btn success"
+                          (click)="toggleUserStatus(u)"
+                          title="Activate User"
+                        >
+                          <app-icon name="check" [size]="15"></app-icon>
+                          <span>Activate</span>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Integrated Card Bottom Pagination -->
+      @if (!loadingUsers() && filteredUsers().length > 0) {
+        <div class="table-pagination-footer">
+          <span class="pagination-count">
+            Showing <strong>{{ displayedUsers().length }}</strong> of {{ filteredUsers().length }} user accounts
+          </span>
+
+          <div class="pagination-nav">
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() <= 1 || loadingUsers()"
+              (click)="goToPage(currentPage() - 1)"
+              title="Previous Page"
+              aria-label="Previous Page"
+            >
+              <app-icon name="chevron-left" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+            <span class="page-indicator">{{ currentPage() }} / {{ totalPages() }}</span>
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() >= totalPages() || loadingUsers()"
+              (click)="goToPage(currentPage() + 1)"
+              title="Next Page"
+              aria-label="Next Page"
+            >
+              <app-icon name="chevron-right" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+@if (isUserFormOpen()) {
+  <app-user-form-modal
+    [isOpen]="isUserFormOpen()"
+    [user]="selectedUserToEdit()"
+    [roles]="roles()"
+    [existingUsers]="users()"
+    (closeModal)="closeUserFormModal()"
+    (saved)="onUserSaved($event)"
+  ></app-user-form-modal>
+}
+
+@if (isUserViewOpen()) {
+  <app-user-view-modal
+    [isOpen]="isUserViewOpen()"
+    [user]="selectedUserToView()"
+    (closeModal)="closeUserViewModal()"
+    (editUser)="onUserViewEdit($event)"
+    (toggleStatus)="toggleUserStatus($event)"
+  ></app-user-view-modal>
+}

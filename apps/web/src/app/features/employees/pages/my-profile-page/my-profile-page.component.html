@@ -1,0 +1,922 @@
+<div class="profile-page-container">
+  <!-- Hero Identity Banner -->
+  <div class="hero-card">
+    <div class="hero-left">
+      <app-avatar [name]="fullName()" [size]="64"></app-avatar>
+      <div class="hero-meta">
+        <div class="hero-name-row">
+          <h1 class="hero-name">{{ fullName() }}</h1>
+          @if (employee()?.status) {
+            <app-badge [variant]="employee()!.status">{{ employee()!.status }}</app-badge>
+          }
+        </div>
+        <div class="hero-subtitle">
+          <span class="emp-code-pill">{{ employee()?.employeeCode || '—' }}</span>
+          <span class="dot-sep">•</span>
+          <span>{{ employee()?.designation?.name || 'Team Member' }}</span>
+          <span class="dot-sep">•</span>
+          <span>{{ employee()?.department?.name || 'General' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="hero-stat">
+        <span class="stat-label">Work Email</span>
+        <span class="stat-val">{{ employee()?.email || '—' }}</span>
+      </div>
+      <div class="hero-stat">
+        <span class="stat-label">Joining Date</span>
+        <span class="stat-val">
+          {{ employee()?.dateOfJoining ? (employee()?.dateOfJoining | date: 'dd MMM yyyy') : '—' }}
+        </span>
+      </div>
+      <div class="hero-stat">
+        <span class="stat-label">Reporting Manager</span>
+        <span class="stat-val">
+          @if (employee()?.manager) {
+            {{ employee()?.manager?.firstName }} {{ employee()?.manager?.lastName }}
+          } @else {
+            Direct / None
+          }
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main Unified Content Card (Leave Management Style) ─────────────── -->
+  <div class="content-card">
+    <!-- Toolbar Section: Left Tabs -->
+    <div class="toolbar-section">
+      <div class="tabs-nav">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'overview'"
+          (click)="setTab('overview')"
+        >
+          <app-icon name="id-card" [size]="16"></app-icon>
+          <span>Employment Overview</span>
+        </button>
+
+        <button
+          *appHasPermission="Permission.EMPLOYEE_PROFILE_VIEW"
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'profile'"
+          (click)="setTab('profile')"
+        >
+          <app-icon name="users" [size]="16"></app-icon>
+          <span>Personal & Emergency</span>
+        </button>
+
+        <button
+          *appHasPermission="Permission.EMPLOYEE_IDENTITY_VIEW"
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'identity'"
+          (click)="setTab('identity')"
+        >
+          <app-icon name="shield" [size]="16"></app-icon>
+          <span>Identity (KYC)</span>
+        </button>
+
+        <button
+          *appHasPermission="Permission.EMPLOYEE_BANK_VIEW"
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'bank'"
+          (click)="setTab('bank')"
+        >
+          <app-icon name="dollar" [size]="16"></app-icon>
+          <span>Bank Details</span>
+        </button>
+
+        <button
+          *appHasPermission="Permission.EMPLOYEE_DOCUMENT_VIEW"
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'documents'"
+          (click)="setTab('documents')"
+        >
+          <app-icon name="file-text" [size]="16"></app-icon>
+          <span>Documents Vault</span>
+          <span class="badge">{{ documents().length }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'security'"
+          (click)="setTab('security')"
+        >
+          <app-icon name="settings" [size]="16"></app-icon>
+          <span>Account Security</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Feedback Banners Inside Content Card -->
+    @if (successMessage()) {
+      <div class="alert-banner alert-success">
+        <app-icon name="check-circle" [size]="16"></app-icon>
+        <span>{{ successMessage() }}</span>
+      </div>
+    }
+
+    @if (errorMessage()) {
+      <div class="alert-banner alert-error">
+        <app-icon name="alert-circle" [size]="16"></app-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <!-- TAB 1: EMPLOYMENT OVERVIEW -->
+    @if (activeTab() === 'overview') {
+      <div class="card-pane">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Official Employment Information</h2>
+          <p class="card-subtitle">Managed by HR. Contact your HR representative if official job details require updates.</p>
+        </div>
+      </div>
+
+      @if (isLoading()) {
+        <div class="loading-box">Loading employment profile...</div>
+      } @else {
+        <div class="info-grid">
+          <div class="info-item with-icon">
+            <div class="info-icon-wrap indigo">
+              <app-icon name="id-card" [size]="16"></app-icon>
+            </div>
+            <div class="info-details">
+              <span class="info-label">Employee Code</span>
+              <span class="info-value font-mono">{{ employee()?.employeeCode || '—' }}</span>
+            </div>
+          </div>
+
+          <div class="info-item with-icon">
+            <div class="info-icon-wrap blue">
+              <app-icon name="users" [size]="16"></app-icon>
+            </div>
+            <div class="info-details">
+              <span class="info-label">Full Name</span>
+              <span class="info-value">{{ fullName() }}</span>
+            </div>
+          </div>
+
+          <div class="info-item with-icon">
+            <div class="info-icon-wrap cyan">
+              <app-icon name="mail" [size]="16"></app-icon>
+            </div>
+            <div class="info-details">
+              <span class="info-label">Official Email</span>
+              <span class="info-value" [title]="employee()?.email || ''">{{ employee()?.email || '—' }}</span>
+            </div>
+          </div>
+
+          <div class="info-item with-icon">
+            <div class="info-icon-wrap green">
+              <app-icon name="phone" [size]="16"></app-icon>
+            </div>
+            <div class="info-details">
+              <span class="info-label">Primary Phone</span>
+              <span class="info-value">{{ employee()?.phone || '—' }}</span>
+            </div>
+          </div>
+
+          <div class="info-item with-icon">
+            <div class="info-icon-wrap amber">
+              <app-icon name="building" [size]="16"></app-icon>
+            </div>
+            <div class="info-details">
+              <span class="info-label">Department</span>
+              <span class="info-value">
+                {{ employee()?.department?.name || '—' }}
+                @if (employee()?.department?.code) {
+                  <span class="text-muted">({{ employee()?.department?.code }})</span>
+                }
+              </span>
+            </div>
+          </div>
+
+          <div class="info-item with-icon">
+            <div class="info-icon-wrap purple">
+              <app-icon name="briefcase" [size]="16"></app-icon>
+            </div>
+            <div class="info-details">
+              <span class="info-label">Designation</span>
+              <span class="info-value">{{ employee()?.designation?.name || '—' }}</span>
+            </div>
+          </div>
+
+          <div class="info-item with-icon">
+            <div class="info-icon-wrap rose">
+              <app-icon name="calendar" [size]="16"></app-icon>
+            </div>
+            <div class="info-details">
+              <span class="info-label">Date of Joining</span>
+              <span class="info-value">
+                {{ employee()?.dateOfJoining ? (employee()?.dateOfJoining | date: 'dd MMMM yyyy') : '—' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="info-item with-icon">
+            <div class="info-icon-wrap violet">
+              <app-icon name="award" [size]="16"></app-icon>
+            </div>
+            <div class="info-details">
+              <span class="info-label">Reporting Manager</span>
+              <span class="info-value">
+                @if (employee()?.manager) {
+                  {{ employee()?.manager?.firstName }} {{ employee()?.manager?.lastName }}
+                  @if (employee()?.manager?.employeeCode) {
+                    <span class="text-muted">({{ employee()?.manager?.employeeCode }})</span>
+                  }
+                } @else {
+                  None Assigned
+                }
+              </span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- TAB 2: PERSONAL & EMERGENCY DETAILS -->
+  @if (activeTab() === 'profile') {
+    <div class="card-pane">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Personal & Emergency Contact Details</h2>
+          <p class="card-subtitle">Keep your residential address and emergency contact up to date.</p>
+        </div>
+        @if (!isEditingProfile() && canEditProfile()) {
+          <button type="button" class="btn btn-primary btn-sm" (click)="startEditProfile()">
+            <app-icon name="edit" [size]="15"></app-icon>
+            <span>{{ profile()?.id ? 'Edit Details' : 'Add Personal Details' }}</span>
+          </button>
+        }
+      </div>
+
+      @if (!isEditingProfile()) {
+        @if (profile()) {
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Date of Birth</span>
+              <span class="info-value">
+                {{ profile()?.dateOfBirth ? (profile()?.dateOfBirth | date: 'dd MMM yyyy') : '—' }}
+              </span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Gender</span>
+              <span class="info-value">{{ profile()?.gender || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Marital Status</span>
+              <span class="info-value">{{ profile()?.maritalStatus || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Blood Group</span>
+              <span class="info-value">{{ profile()?.bloodGroup || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Nationality</span>
+              <span class="info-value">{{ profile()?.nationality || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Personal Email</span>
+              <span class="info-value">{{ profile()?.personalEmail || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Alternate Phone</span>
+              <span class="info-value">{{ profile()?.alternatePhone || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Postal Code / Country</span>
+              <span class="info-value">
+                {{ profile()?.postalCode || '—' }}{{ profile()?.country ? ' • ' + profile()?.country : '' }}
+              </span>
+            </div>
+            <div class="info-item col-span-2">
+              <span class="info-label">Residential Address</span>
+              <span class="info-value">
+                @if (profile()?.addressLine1 || profile()?.city || profile()?.state) {
+                  {{ profile()?.addressLine1 }}{{ profile()?.addressLine2 ? ', ' + profile()?.addressLine2 : '' }}{{ profile()?.city ? ', ' + profile()?.city : '' }}{{ profile()?.state ? ', ' + profile()?.state : '' }}
+                } @else {
+                  —
+                }
+              </span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Emergency Contact Name</span>
+              <span class="info-value">
+                {{ profile()?.emergencyContactName || '—' }}
+                @if (profile()?.emergencyContactRelationship) {
+                  <span class="text-muted">({{ profile()?.emergencyContactRelationship }})</span>
+                }
+              </span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Emergency Contact Phone</span>
+              <span class="info-value">{{ profile()?.emergencyContactPhone || '—' }}</span>
+            </div>
+          </div>
+        } @else {
+          <div class="empty-box">
+            <p>You haven't added your personal and emergency contact details yet.</p>
+            @if (canEditProfile()) {
+              <button type="button" class="btn btn-primary btn-sm" (click)="startEditProfile()">
+                + Add Personal Details
+              </button>
+            }
+          </div>
+        }
+      } @else {
+        <form class="form-grid" (ngSubmit)="saveProfile()">
+          <div class="form-field">
+            <label for="dob">Date of Birth</label>
+            <input
+              id="dob"
+              type="date"
+              class="form-input"
+              [(ngModel)]="profileForm.dateOfBirth"
+              name="dateOfBirth"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="gender">Gender</label>
+            <app-select
+              id="gender"
+              [options]="genderOptions"
+              [value]="profileForm.gender || ''"
+              (valueChange)="profileForm.gender = $event"
+            ></app-select>
+          </div>
+
+          <div class="form-field">
+            <label for="maritalStatus">Marital Status</label>
+            <app-select
+              id="maritalStatus"
+              [options]="maritalStatusOptions"
+              [value]="profileForm.maritalStatus || ''"
+              (valueChange)="profileForm.maritalStatus = $event"
+            ></app-select>
+          </div>
+
+          <div class="form-field">
+            <label for="bloodGroup">Blood Group</label>
+            <app-select
+              id="bloodGroup"
+              [options]="bloodGroupOptions"
+              [value]="profileForm.bloodGroup || ''"
+              (valueChange)="profileForm.bloodGroup = $event"
+            ></app-select>
+          </div>
+
+          <div class="form-field">
+            <label for="nationality">Nationality</label>
+            <input
+              id="nationality"
+              type="text"
+              class="form-input"
+              placeholder="e.g. Indian"
+              [(ngModel)]="profileForm.nationality"
+              name="nationality"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="personalEmail">Personal Email</label>
+            <input
+              id="personalEmail"
+              type="email"
+              class="form-input"
+              placeholder="you@example.com"
+              [(ngModel)]="profileForm.personalEmail"
+              name="personalEmail"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="alternatePhone">Alternate Phone</label>
+            <input
+              id="alternatePhone"
+              type="text"
+              class="form-input"
+              placeholder="+91 9876543210"
+              [(ngModel)]="profileForm.alternatePhone"
+              name="alternatePhone"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="addressLine1">Address Line 1</label>
+            <input
+              id="addressLine1"
+              type="text"
+              class="form-input"
+              placeholder="House/Flat No., Building, Street"
+              [(ngModel)]="profileForm.addressLine1"
+              name="addressLine1"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="addressLine2">Address Line 2</label>
+            <input
+              id="addressLine2"
+              type="text"
+              class="form-input"
+              placeholder="Area, Locality, Landmark"
+              [(ngModel)]="profileForm.addressLine2"
+              name="addressLine2"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="city">City</label>
+            <input
+              id="city"
+              type="text"
+              class="form-input"
+              placeholder="City"
+              [(ngModel)]="profileForm.city"
+              name="city"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="state">State</label>
+            <input
+              id="state"
+              type="text"
+              class="form-input"
+              placeholder="State"
+              [(ngModel)]="profileForm.state"
+              name="state"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="postalCode">PIN / Postal Code</label>
+            <input
+              id="postalCode"
+              type="text"
+              class="form-input"
+              placeholder="500081"
+              [(ngModel)]="profileForm.postalCode"
+              name="postalCode"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="country">Country</label>
+            <input
+              id="country"
+              type="text"
+              class="form-input"
+              placeholder="India"
+              [(ngModel)]="profileForm.country"
+              name="country"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="emergencyContactName">Emergency Contact Name</label>
+            <input
+              id="emergencyContactName"
+              type="text"
+              class="form-input"
+              placeholder="Full Name"
+              [(ngModel)]="profileForm.emergencyContactName"
+              name="emergencyContactName"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="emergencyContactRelationship">Emergency Relationship</label>
+            <input
+              id="emergencyContactRelationship"
+              type="text"
+              class="form-input"
+              placeholder="e.g. Spouse, Parent, Sibling"
+              [(ngModel)]="profileForm.emergencyContactRelationship"
+              name="emergencyContactRelationship"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="emergencyContactPhone">Emergency Contact Phone</label>
+            <input
+              id="emergencyContactPhone"
+              type="text"
+              class="form-input"
+              placeholder="+91 9876543210"
+              [(ngModel)]="profileForm.emergencyContactPhone"
+              name="emergencyContactPhone"
+            />
+          </div>
+
+          <div class="form-actions col-span-full">
+            <button type="button" class="btn btn-outline" (click)="cancelEditProfile()">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="isSaving()">
+              {{ isSaving() ? 'Saving...' : 'Save Personal Details' }}
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+  }
+
+  <!-- TAB 3: IDENTITY DETAILS -->
+  @if (activeTab() === 'identity') {
+    <div class="card-pane">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Government Identity Verification (KYC)</h2>
+          <p class="card-subtitle">Statutory tax and identity numbers required for payroll & compliance.</p>
+        </div>
+        <div class="header-btn-group">
+          @if (identity() && !isEditingIdentity()) {
+            <button
+              type="button"
+              class="btn btn-outline btn-sm"
+              (click)="showSensitiveIdentity.set(!showSensitiveIdentity())"
+            >
+              <app-icon name="eye" [size]="15"></app-icon>
+              <span>{{ showSensitiveIdentity() ? 'Mask Numbers' : 'Show Full Numbers' }}</span>
+            </button>
+          }
+          @if (!isEditingIdentity() && canEditIdentity()) {
+            <button type="button" class="btn btn-primary btn-sm" (click)="startEditIdentity()">
+              <app-icon name="edit" [size]="15"></app-icon>
+              <span>{{ identity()?.id ? 'Update Identity' : 'Add Identity Details' }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (!isEditingIdentity()) {
+        @if (identity()) {
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Permanent Account Number (PAN)</span>
+              <span class="info-value font-mono">{{ maskValue(identity()?.panNumber, 4) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Aadhaar Number</span>
+              <span class="info-value font-mono">{{ maskValue(identity()?.aadhaarNumber, 4) }}</span>
+            </div>
+          </div>
+        } @else {
+          <div class="empty-box">
+            <p>No PAN or Aadhaar details have been submitted yet.</p>
+            @if (canEditIdentity()) {
+              <button type="button" class="btn btn-primary btn-sm" (click)="startEditIdentity()">
+                + Add Identity Details
+              </button>
+            }
+          </div>
+        }
+      } @else {
+        <form class="form-grid" (ngSubmit)="saveIdentity()">
+          <div class="form-field">
+            <label for="panNumber">PAN Number (10 characters, e.g. ABCDE1234F)</label>
+            <input
+              id="panNumber"
+              type="text"
+              maxlength="10"
+              class="form-input font-mono uppercase-input"
+              placeholder="ABCDE1234F"
+              [(ngModel)]="identityForm.panNumber"
+              name="panNumber"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="aadhaarNumber">Aadhaar Number (12 digits)</label>
+            <input
+              id="aadhaarNumber"
+              type="text"
+              maxlength="12"
+              class="form-input font-mono"
+              placeholder="123456789012"
+              [(ngModel)]="identityForm.aadhaarNumber"
+              name="aadhaarNumber"
+            />
+          </div>
+
+          <div class="form-actions col-span-full">
+            <button type="button" class="btn btn-outline" (click)="cancelEditIdentity()">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="isSaving()">
+              {{ isSaving() ? 'Saving...' : 'Save Identity Details' }}
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+  }
+
+  <!-- TAB 4: BANK DETAILS -->
+  @if (activeTab() === 'bank') {
+    <div class="card-pane">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Salary Disbursement Bank Account</h2>
+          <p class="card-subtitle">Bank account used for monthly salary credits and expense reimbursements.</p>
+        </div>
+        @if (!isEditingBank() && canEditBank()) {
+          <button type="button" class="btn btn-primary btn-sm" (click)="startEditBank()">
+            <app-icon name="edit" [size]="15"></app-icon>
+            <span>{{ bankDetails()?.id ? 'Update Bank Details' : 'Add Bank Details' }}</span>
+          </button>
+        }
+      </div>
+
+      @if (!isEditingBank()) {
+        @if (bankDetails()) {
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Account Holder Name</span>
+              <span class="info-value">{{ bankDetails()?.accountHolderName || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Bank Name</span>
+              <span class="info-value">{{ bankDetails()?.bankName || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Account Number</span>
+              <span class="info-value font-mono">{{ bankDetails()?.accountNumber || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">IFSC Code</span>
+              <span class="info-value font-mono">{{ bankDetails()?.ifscCode || '—' }}</span>
+            </div>
+            <div class="info-item col-span-2">
+              <span class="info-label">Branch Name</span>
+              <span class="info-value">{{ bankDetails()?.branchName || '—' }}</span>
+            </div>
+          </div>
+        } @else {
+          <div class="empty-box">
+            <p>No salary bank account details have been configured yet.</p>
+            @if (canEditBank()) {
+              <button type="button" class="btn btn-primary btn-sm" (click)="startEditBank()">
+                + Add Bank Details
+              </button>
+            }
+          </div>
+        }
+      } @else {
+        <form class="form-grid" (ngSubmit)="saveBankDetails()">
+          <div class="form-field">
+            <label for="accountHolderName">Account Holder Name *</label>
+            <input
+              id="accountHolderName"
+              type="text"
+              class="form-input"
+              required
+              [(ngModel)]="bankForm.accountHolderName"
+              name="accountHolderName"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="bankName">Bank Name *</label>
+            <input
+              id="bankName"
+              type="text"
+              class="form-input"
+              placeholder="e.g. HDFC Bank"
+              required
+              [(ngModel)]="bankForm.bankName"
+              name="bankName"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="accountNumber">Account Number (Digits only) *</label>
+            <input
+              id="accountNumber"
+              type="text"
+              class="form-input font-mono"
+              placeholder="50100123456789"
+              required
+              [(ngModel)]="bankForm.accountNumber"
+              name="accountNumber"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="ifscCode">IFSC Code (11 chars, e.g. HDFC0001234) *</label>
+            <input
+              id="ifscCode"
+              type="text"
+              maxlength="11"
+              class="form-input font-mono uppercase-input"
+              placeholder="HDFC0001234"
+              required
+              [(ngModel)]="bankForm.ifscCode"
+              name="ifscCode"
+            />
+          </div>
+
+          <div class="form-field col-span-2">
+            <label for="branchName">Branch Name *</label>
+            <input
+              id="branchName"
+              type="text"
+              class="form-input"
+              placeholder="e.g. Madhapur Branch, Hyderabad"
+              required
+              [(ngModel)]="bankForm.branchName"
+              name="branchName"
+            />
+          </div>
+
+          <div class="form-actions col-span-full">
+            <button type="button" class="btn btn-outline" (click)="cancelEditBank()">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="isSaving()">
+              {{ isSaving() ? 'Saving...' : 'Save Bank Account' }}
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+  }
+
+  <!-- TAB 5: DOCUMENTS VAULT -->
+  @if (activeTab() === 'documents') {
+    <div class="card-pane">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">My Employee Documents Vault</h2>
+          <p class="card-subtitle">Upload and access your KYC proofs, educational certificates, and employment letters.</p>
+        </div>
+      </div>
+
+      <!-- Upload Toolbar -->
+      <div *appHasPermission="Permission.EMPLOYEE_DOCUMENT_UPLOAD" class="upload-bar">
+        <div class="upload-field">
+          <label for="docType">Document Category</label>
+          <app-select
+            id="docType"
+            [options]="documentTypeOptions"
+            [value]="selectedDocType"
+            (valueChange)="selectedDocType = $event"
+            minWidth="220px"
+          ></app-select>
+        </div>
+
+        <div class="upload-field file-picker-field">
+          <label for="docFileInput">Select File (PDF, JPG, PNG • Max 5 MB)</label>
+          <input
+            #docFileInput
+            id="docFileInput"
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            class="file-input"
+            (change)="onFileSelected($event)"
+          />
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="!selectedFile || isUploadingDoc()"
+          (click)="uploadDocument(docFileInput)"
+        >
+          <app-icon name="plus" [size]="15"></app-icon>
+          <span>{{ isUploadingDoc() ? 'Uploading...' : 'Upload Document' }}</span>
+        </button>
+      </div>
+
+      @if (documents().length === 0) {
+        <div class="empty-box">
+          <p>No documents have been uploaded to your vault yet.</p>
+        </div>
+      } @else {
+        <div class="docs-grid">
+          @for (doc of documents(); track doc.id) {
+            <div class="doc-item-card">
+              <div class="doc-item-left">
+                <div class="doc-icon-box">
+                  <app-icon name="file-text" [size]="20"></app-icon>
+                </div>
+                <div class="doc-meta-wrap">
+                  <span class="doc-filename">{{ doc.fileName || doc.originalFileName }}</span>
+                  <div class="doc-submeta">
+                    <span class="doc-type-tag">{{ formatDocumentType(doc.documentType) }}</span>
+                    <span>•</span>
+                    <span>{{ (doc.fileSize / 1024).toFixed(1) }} KB</span>
+                    @if (doc.uploadedAt || doc.createdAt) {
+                      <span>•</span>
+                      <span>{{ (doc.uploadedAt || doc.createdAt) | date: 'dd MMM yyyy' }}</span>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <div class="doc-item-actions">
+                <button
+                  *appHasPermission="Permission.EMPLOYEE_DOCUMENT_DOWNLOAD"
+                  type="button"
+                  class="icon-action-btn"
+                  title="Download Document"
+                  (click)="downloadDocument(doc)"
+                >
+                  <app-icon name="download" [size]="16"></app-icon>
+                </button>
+                <button
+                  *appHasPermission="Permission.EMPLOYEE_DOCUMENT_DELETE"
+                  type="button"
+                  class="icon-action-btn danger"
+                  title="Delete Document"
+                  (click)="deleteDocument(doc)"
+                >
+                  <app-icon name="trash" [size]="16"></app-icon>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- TAB 6: ACCOUNT SECURITY / CHANGE PASSWORD -->
+  @if (activeTab() === 'security') {
+    <div class="card-pane">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Change Account Password</h2>
+          <p class="card-subtitle">Update your sign-in password. Use at least 8 characters with a mix of letters and numbers.</p>
+        </div>
+      </div>
+
+      <form class="password-form" (ngSubmit)="submitPasswordChange()">
+        <div class="password-form-grid">
+          <div class="form-field">
+            <label for="currentPassword">Current Password *</label>
+            <input
+              id="currentPassword"
+              type="password"
+              class="form-input"
+              placeholder="Enter your current password"
+              required
+              [(ngModel)]="passwordForm.currentPassword"
+              name="currentPassword"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="newPassword">New Password (minimum 8 characters) *</label>
+            <input
+              id="newPassword"
+              type="password"
+              minlength="8"
+              class="form-input"
+              placeholder="Enter new password"
+              required
+              [(ngModel)]="passwordForm.newPassword"
+              name="newPassword"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="confirmPassword">Confirm New Password *</label>
+            <input
+              id="confirmPassword"
+              type="password"
+              minlength="8"
+              class="form-input"
+              placeholder="Re-enter new password"
+              required
+              [(ngModel)]="passwordForm.confirmPassword"
+              name="confirmPassword"
+            />
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="isSaving()">
+            <app-icon name="check" [size]="15"></app-icon>
+            <span>{{ isSaving() ? 'Updating Password...' : 'Update Password' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+  </div>
+</div>
+

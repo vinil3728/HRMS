@@ -1,0 +1,116 @@
+<div class="regularizations-container">
+  <div class="table-card">
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="spinner-large" aria-hidden="true"></div>
+        <p class="loading-text">Loading regularization requests...</p>
+      </div>
+    } @else if (filteredRegularizations().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon-wrap">
+          <app-icon name="clock" [size]="36"></app-icon>
+        </div>
+        <h4 class="empty-title">No regularization requests found</h4>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 160px;">DATE</th>
+              <th style="width: 140px;">REQUESTED IN</th>
+              <th style="width: 140px;">REQUESTED OUT</th>
+              <th>REASON / PURPOSE</th>
+              <th style="width: 130px;">STATUS</th>
+              <th>DECISION NOTES / REVIEW</th>
+              <th class="text-right" style="width: 160px;">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of filteredRegularizations(); track item.id) {
+              <tr class="table-row">
+                <td>
+                  <div class="cell-date-wrap">
+                    <span class="date-main">{{ item.attendanceDate | date: 'dd MMM yyyy' }}</span>
+                    <span class="date-sub">{{ item.attendanceDate | date: 'EEEE' }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="punch-time">
+                    {{ formatTime(item.requestedCheckIn) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="punch-time">
+                    {{ formatTime(item.requestedCheckOut) }}
+                  </span>
+                </td>
+                <td class="cell-remarks">
+                  <span class="remarks-text" [title]="item.reason">{{ item.reason }}</span>
+                </td>
+                <td>
+                  <app-badge [variant]="getStatusVariant(item.status)">
+                    {{ item.status }}
+                  </app-badge>
+                </td>
+                <td>
+                  @if (item.status === 'REJECTED' && item.rejectionReason) {
+                    <span class="text-danger italic-note">{{ item.rejectionReason }}</span>
+                  } @else if (item.decisionNotes) {
+                    <span class="text-muted">{{ item.decisionNotes }}</span>
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td class="text-right">
+                  @if (item.status === 'PENDING') {
+                    @if (!isViewingSelf() && (canApproveRegularization() || canRejectRegularization())) {
+                      <div class="action-buttons justify-end">
+                        @if (canApproveRegularization()) {
+                          <button
+                            type="button"
+                            class="action-btn approve-btn"
+                            (click)="onApprove(item)"
+                            title="Approve Request"
+                          >
+                            <app-icon name="check" [size]="13"></app-icon>
+                            <span>Approve</span>
+                          </button>
+                        }
+                        @if (canRejectRegularization()) {
+                          <button
+                            type="button"
+                            class="action-btn reject-btn"
+                            (click)="onReject(item)"
+                            title="Reject Request"
+                          >
+                            <app-icon name="close" [size]="13"></app-icon>
+                            <span>Reject</span>
+                          </button>
+                        }
+                      </div>
+                    } @else if (isViewingSelf() && canCancelRegularization()) {
+                      <button
+                        type="button"
+                        class="action-btn cancel-btn"
+                        (click)="onCancel(item)"
+                        title="Cancel Request"
+                      >
+                        <app-icon name="close" [size]="13"></app-icon>
+                        <span>Cancel</span>
+                      </button>
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

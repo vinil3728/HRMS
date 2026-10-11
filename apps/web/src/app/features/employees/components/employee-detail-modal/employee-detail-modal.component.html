@@ -1,0 +1,266 @@
+<div class="modal-overlay">
+  <button
+    type="button"
+    class="modal-backdrop"
+    (click)="onClose()"
+    aria-label="Close dialog"
+  ></button>
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <!-- Header Banner -->
+    <div class="modal-header">
+      <div class="employee-identity">
+        <app-avatar
+          [name]="employee().firstName + ' ' + employee().lastName"
+          [size]="56"
+        ></app-avatar>
+        <div class="name-block">
+          <div class="title-row">
+            <h2 class="employee-name">
+              {{ employee().firstName }} {{ employee().lastName }}
+            </h2>
+            <app-badge [variant]="employee().status">{{ employee().status }}</app-badge>
+          </div>
+          <div class="sub-info">
+            <span class="emp-code">{{ employee().employeeCode }}</span>
+            <span class="sep">•</span>
+            <span class="emp-dept">{{ employee().department?.name || 'No Department' }}</span>
+            <span class="sep">•</span>
+            <span class="emp-desig">{{ employee().designation?.name || 'No Designation' }}</span>
+          </div>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="close-btn"
+        (click)="onClose()"
+        aria-label="Close"
+      >
+        <app-icon name="close" [size]="18"></app-icon>
+      </button>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-bar">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'overview'"
+        (click)="activeTab.set('overview')"
+      >
+        Overview
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'profile'"
+        (click)="activeTab.set('profile')"
+      >
+        Profile
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'identity'"
+        (click)="activeTab.set('identity')"
+      >
+        Identity
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'bank'"
+        (click)="activeTab.set('bank')"
+      >
+        Bank Details
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'documents'"
+        (click)="activeTab.set('documents')"
+      >
+        Documents
+      </button>
+    </div>
+
+    <!-- Content Area -->
+    <div class="modal-body">
+      @if (activeTab() === 'overview') {
+        <div class="details-grid">
+          <div class="detail-item">
+            <span class="detail-label">Employee Code</span>
+            <span class="detail-val font-semibold">{{ employee().employeeCode }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Email Address</span>
+            <span class="detail-val">{{ employee().email }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Phone Number</span>
+            <span class="detail-val">{{ employee().phone }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Date of Joining</span>
+            <span class="detail-val">{{ employee().dateOfJoining | date: 'dd MMM yyyy' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Department</span>
+            <span class="detail-val">{{ employee().department?.name }} ({{ employee().department?.code }})</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Designation</span>
+            <span class="detail-val">{{ employee().designation?.name }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Reporting Manager</span>
+            <span class="detail-val">
+              @if (employee().manager) {
+                {{ employee().manager?.firstName }} {{ employee().manager?.lastName }}
+              } @else {
+                None
+              }
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Employment Status</span>
+            <span class="detail-val">
+              <app-badge [variant]="employee().status">{{ employee().status }}</app-badge>
+            </span>
+          </div>
+        </div>
+      }
+
+      @if (activeTab() === 'profile') {
+        @if (isLoadingSub()) {
+          <div class="loading-state">Loading profile details...</div>
+        } @else if (profile()) {
+          <div class="details-grid">
+            <div class="detail-item">
+              <span class="detail-label">Date of Birth</span>
+              <span class="detail-val">{{ profile()?.dateOfBirth ? (profile()?.dateOfBirth | date: 'dd MMM yyyy') : '—' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Gender</span>
+              <span class="detail-val">{{ profile()?.gender || '—' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Marital Status</span>
+              <span class="detail-val">{{ profile()?.maritalStatus || '—' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Nationality</span>
+              <span class="detail-val">{{ profile()?.nationality || '—' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Blood Group</span>
+              <span class="detail-val">{{ profile()?.bloodGroup || '—' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Personal Email</span>
+              <span class="detail-val">{{ profile()?.personalEmail || '—' }}</span>
+            </div>
+            <div class="detail-item col-span-2">
+              <span class="detail-label">Residential Address</span>
+              <span class="detail-val">
+                @if (profile()?.addressLine1 || profile()?.city || profile()?.state) {
+                  {{ profile()?.addressLine1 }}{{ profile()?.addressLine2 ? ', ' + profile()?.addressLine2 : '' }}{{ profile()?.city ? ', ' + profile()?.city : '' }}{{ profile()?.state ? ', ' + profile()?.state : '' }}{{ profile()?.postalCode ? ' - ' + profile()?.postalCode : '' }}{{ profile()?.country ? ', ' + profile()?.country : '' }}
+                } @else {
+                  {{ profile()?.currentAddress || '—' }}
+                }
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Emergency Contact</span>
+              <span class="detail-val">{{ profile()?.emergencyContactName || '—' }} ({{ profile()?.emergencyContactRelationship || profile()?.emergencyContactRelation || '—' }})</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Emergency Phone</span>
+              <span class="detail-val">{{ profile()?.emergencyContactPhone || '—' }}</span>
+            </div>
+          </div>
+        } @else {
+          <div class="empty-sub">No profile details recorded yet.</div>
+        }
+      }
+
+      @if (activeTab() === 'identity') {
+        @if (isLoadingSub()) {
+          <div class="loading-state">Loading identity details...</div>
+        } @else if (identity()) {
+          <div class="details-grid">
+            <div class="detail-item">
+              <span class="detail-label">PAN Number</span>
+              <span class="detail-val font-mono">{{ identity()?.panNumber || '—' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Aadhaar Number</span>
+              <span class="detail-val font-mono">{{ identity()?.aadhaarNumber || '—' }}</span>
+            </div>
+          </div>
+        } @else {
+          <div class="empty-sub">No identity details registered yet.</div>
+        }
+      }
+
+      @if (activeTab() === 'bank') {
+        @if (isLoadingSub()) {
+          <div class="loading-state">Loading bank details...</div>
+        } @else if (bankDetails()) {
+          <div class="details-grid">
+            <div class="detail-item">
+              <span class="detail-label">Account Holder Name</span>
+              <span class="detail-val">{{ bankDetails()?.accountHolderName || '—' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Bank Name</span>
+              <span class="detail-val">{{ bankDetails()?.bankName || '—' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Account Number</span>
+              <span class="detail-val font-mono">{{ bankDetails()?.accountNumber || '—' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">IFSC Code</span>
+              <span class="detail-val font-mono">{{ bankDetails()?.ifscCode || '—' }}</span>
+            </div>
+            <div class="detail-item col-span-2">
+              <span class="detail-label">Branch Name</span>
+              <span class="detail-val">{{ bankDetails()?.branchName || '—' }}</span>
+            </div>
+          </div>
+        } @else {
+          <div class="empty-sub">No bank account details linked yet.</div>
+        }
+      }
+
+      @if (activeTab() === 'documents') {
+        @if (isLoadingSub()) {
+          <div class="loading-state">Loading employee documents...</div>
+        } @else if (documents().length > 0) {
+          <div class="docs-list">
+            @for (doc of documents(); track doc.id) {
+              <div class="doc-card">
+                <app-icon name="file-text" [size]="20" customClass="doc-icon"></app-icon>
+                <div class="doc-info">
+                  <div class="doc-name">{{ doc.fileName || doc.originalFileName }}</div>
+                  <div class="doc-meta">
+                    {{ doc.documentType }} • {{ (doc.fileSize / 1024).toFixed(1) }} KB
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="empty-sub">No documents uploaded for this employee.</div>
+        }
+      }
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" (click)="onClose()">
+        Close
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,1156 @@
+<div class="page-container">
+  <!-- ── Page Header ──────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="title-row">
+        <h1 class="page-title">Settings & Preferences</h1>
+      </div>
+      <p class="page-subtitle">
+        Manage your personal account preferences, team approval delegations, HR policies, and enterprise parameters.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+  <div class="content-card">
+    <!-- Perspective Scope Selector Bar (Displayed when user has access to multiple perspectives) -->
+    @if (availablePerspectives().length > 1) {
+      <div class="perspective-bar">
+        <div class="perspective-label">
+          <app-icon name="settings" [size]="16"></app-icon>
+          <span>Settings Perspective:</span>
+        </div>
+
+        <div class="perspective-pill-group">
+          <!-- 1. Employee Perspective (Available for all) -->
+          @if (canAccessEmployeePerspective()) {
+            <button
+              type="button"
+              class="perspective-pill"
+              [class.active]="activePerspective() === 'employee'"
+              (click)="setPerspective('employee')"
+            >
+              <app-icon name="users" [size]="15"></app-icon>
+              <span>Employee View</span>
+            </button>
+          }
+
+          <!-- 2. Manager Perspective -->
+          @if (canAccessManagerPerspective()) {
+            <button
+              type="button"
+              class="perspective-pill"
+              [class.active]="activePerspective() === 'manager'"
+              (click)="setPerspective('manager')"
+            >
+              <app-icon name="briefcase" [size]="15"></app-icon>
+              <span>Manager View</span>
+            </button>
+          }
+
+          <!-- 3. HR Perspective -->
+          @if (canAccessHRPerspective()) {
+            <button
+              type="button"
+              class="perspective-pill"
+              [class.active]="activePerspective() === 'hr'"
+              (click)="setPerspective('hr')"
+            >
+              <app-icon name="award" [size]="15"></app-icon>
+              <span>HR Operations</span>
+            </button>
+          }
+
+          <!-- 4. Admin Perspective -->
+          @if (canAccessAdminPerspective()) {
+            <button
+              type="button"
+              class="perspective-pill"
+              [class.active]="activePerspective() === 'admin'"
+              (click)="setPerspective('admin')"
+            >
+              <app-icon name="building" [size]="15"></app-icon>
+              <span>Admin (Org) View</span>
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ── Sub-Tabs Toolbar (Leave Management Style) ─────────────────────── -->
+    <div class="toolbar-section">
+      <div class="tabs-nav">
+        <!-- Employee Tabs -->
+        @if (canAccessEmployeePerspective() && activePerspective() === 'employee') {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeEmployeeTab() === 'preferences'"
+            (click)="setEmployeeTab('preferences')"
+          >
+            <app-icon name="edit" [size]="16"></app-icon>
+            <span>Personal Preferences</span>
+          </button>
+
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeEmployeeTab() === 'notifications'"
+            (click)="setEmployeeTab('notifications')"
+          >
+            <app-icon name="bell" [size]="16"></app-icon>
+            <span>Notification Rules</span>
+          </button>
+
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeEmployeeTab() === 'security'"
+            (click)="setEmployeeTab('security')"
+          >
+            <app-icon name="shield" [size]="16"></app-icon>
+            <span>Account Security</span>
+          </button>
+        }
+
+        <!-- Manager Tabs -->
+        @if (canAccessManagerPerspective() && activePerspective() === 'manager') {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeManagerTab() === 'delegation'"
+            (click)="setManagerTab('delegation')"
+          >
+            <app-icon name="users" [size]="16"></app-icon>
+            <span>Approval Delegation</span>
+          </button>
+
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeManagerTab() === 'team-alerts'"
+            (click)="setManagerTab('team-alerts')"
+          >
+            <app-icon name="clock" [size]="16"></app-icon>
+            <span>Team Alerts & Overtime</span>
+          </button>
+        }
+
+        <!-- HR Tabs -->
+        @if (canAccessHRPerspective() && activePerspective() === 'hr') {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeHRTab() === 'lifecycle'"
+            (click)="setHRTab('lifecycle')"
+          >
+            <app-icon name="id-card" [size]="16"></app-icon>
+            <span>Onboarding & Lifecycle</span>
+          </button>
+
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeHRTab() === 'governance'"
+            (click)="setHRTab('governance')"
+          >
+            <app-icon name="calendar" [size]="16"></app-icon>
+            <span>Attendance & Leave Rules</span>
+          </button>
+
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeHRTab() === 'compliance'"
+            (click)="setHRTab('compliance')"
+          >
+            <app-icon name="shield" [size]="16"></app-icon>
+            <span>Compliance & Document Alerts</span>
+          </button>
+        }
+
+        <!-- Admin Tabs -->
+        @if (canAccessAdminPerspective() && activePerspective() === 'admin') {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeAdminTab() === 'organization'"
+            (click)="setAdminTab('organization')"
+          >
+            <app-icon name="building" [size]="16"></app-icon>
+            <span>Organization Profile</span>
+          </button>
+
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeAdminTab() === 'security'"
+            (click)="setAdminTab('security')"
+          >
+            <app-icon name="shield" [size]="16"></app-icon>
+            <span>Enterprise Security & Sessions</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Feedback Banners -->
+    @if (successMessage()) {
+      <div class="settings-alert alert-success">
+        <app-icon name="check-circle" [size]="16"></app-icon>
+        <span>{{ successMessage() }}</span>
+      </div>
+    }
+    @if (errorMessage()) {
+      <div class="settings-alert alert-error">
+        <app-icon name="alert-circle" [size]="16"></app-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- PERSPECTIVE 1: EMPLOYEE VIEW                                           -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <!-- Employee Tab 1: Personal Preferences -->
+    @if (canAccessEmployeePerspective() && activePerspective() === 'employee' && activeEmployeeTab() === 'preferences') {
+      <div class="card-pane">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Personal Preferences & Localization</h2>
+            <p class="pane-subtitle">
+              Customize how dates, times, languages, and UI density appear across your HRMS workspace.
+            </p>
+          </div>
+        </div>
+
+        <form [formGroup]="empPrefForm" (ngSubmit)="saveEmployeePreferences()" class="settings-form">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label" for="displayName">Preferred Display Name</label>
+              <input
+                id="displayName"
+                type="text"
+                class="form-control"
+                formControlName="displayName"
+                placeholder="e.g. John D."
+              />
+              <span class="field-hint">Used in dashboard greetings and team activity logs.</span>
+            </div>
+
+            <div class="form-group flex-1">
+              <span class="form-label required">System Language</span>
+              <app-select
+                formControlName="language"
+                [options]="languageOptions"
+                [fullWidth]="true"
+              ></app-select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <span class="form-label required">Preferred Date Format</span>
+              <app-select
+                formControlName="dateFormat"
+                [options]="dateFormatOptions"
+                [fullWidth]="true"
+              ></app-select>
+            </div>
+
+            <div class="form-group flex-1">
+              <span class="form-label required">Time Format</span>
+              <app-select
+                formControlName="timeFormat"
+                [options]="timeFormatOptions"
+                [fullWidth]="true"
+              ></app-select>
+            </div>
+
+            <div class="form-group flex-1">
+              <span class="form-label required">Table Display Density</span>
+              <app-select
+                formControlName="density"
+                [options]="densityOptions"
+                [fullWidth]="true"
+              ></app-select>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="isSaving() || empPrefForm.invalid"
+            >
+              <app-icon name="check" [size]="16"></app-icon>
+              <span>Save Personal Preferences</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- Employee Tab 2: Notification Rules -->
+    @if (canAccessEmployeePerspective() && activePerspective() === 'employee' && activeEmployeeTab() === 'notifications') {
+      <div class="card-pane">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Personal Notification Preferences</h2>
+            <p class="pane-subtitle">
+              Choose which operational alerts, status changes, and announcements reach your inbox and browser.
+            </p>
+          </div>
+        </div>
+
+        <form [formGroup]="empNotifForm" (ngSubmit)="saveEmployeeNotifications()" class="settings-form">
+          <div class="section-title-wrap">
+            <h3 class="section-heading">Email Notifications</h3>
+            <p class="section-desc">Receive real-time transactional emails about your HR requests.</p>
+          </div>
+
+          <div class="checkbox-stack">
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="emailLeaveUpdates" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Leave Applications & Status Updates</span>
+                <span class="checkbox-desc">Email me when my leave is approved, rejected, or cancelled.</span>
+              </div>
+            </label>
+
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="emailPayrollPublished" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Monthly Payslip Availability</span>
+                <span class="checkbox-desc">Email me as soon as a new salary payslip is released.</span>
+              </div>
+            </label>
+
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="emailReimbursementStatus" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Expense & Reimbursement Status</span>
+                <span class="checkbox-desc">Email me when expense claim reviews or disbarments occur.</span>
+              </div>
+            </label>
+
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="emailPolicyAnnouncements" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Company Policy Announcements</span>
+                <span class="checkbox-desc">Email me whenever new company policies are published.</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="section-title-wrap" style="margin-top: 1.5rem;">
+            <h3 class="section-heading">Workspace & In-App Alerts</h3>
+            <p class="section-desc">Push reminders and celebrations inside the HRMS dashboard.</p>
+          </div>
+
+          <div class="checkbox-stack">
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="inAppAttendanceReminders" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Daily Attendance Check-In / Check-Out Reminder</span>
+                <span class="checkbox-desc">Remind me if I haven't checked in by 10:00 AM on work days.</span>
+              </div>
+            </label>
+
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="inAppCelebrations" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Colleague Celebrations</span>
+                <span class="checkbox-desc">Show team birthdays and work anniversaries on my dashboard.</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="form-row" style="margin-top: 1.25rem;">
+            <div class="form-group flex-1">
+              <span class="form-label required">Notification Frequency</span>
+              <app-select
+                formControlName="emailDigestFrequency"
+                [options]="digestFrequencyOptions"
+                [fullWidth]="true"
+              ></app-select>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="isSaving()"
+            >
+              <app-icon name="check" [size]="16"></app-icon>
+              <span>Save Notification Preferences</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- Employee Tab 3: Account Security -->
+    @if (canAccessEmployeePerspective() && activePerspective() === 'employee' && activeEmployeeTab() === 'security') {
+      <div class="card-pane">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Account Credentials & Access Security</h2>
+            <p class="pane-subtitle">
+              Manage your login password, 2-factor authentication, and security preferences.
+            </p>
+          </div>
+        </div>
+
+        <form [formGroup]="empSecForm" (ngSubmit)="saveEmployeeSecurity()" class="settings-form">
+          <div class="section-title-wrap">
+            <h3 class="section-heading">Change Account Password</h3>
+            <p class="section-desc">Ensure your password contains at least 8 characters with numbers and symbols.</p>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label" for="currentPassword">Current Password</label>
+              <input
+                id="currentPassword"
+                type="password"
+                class="form-control"
+                formControlName="currentPassword"
+                placeholder="Enter current password"
+              />
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label" for="newPassword">New Password</label>
+              <input
+                id="newPassword"
+                type="password"
+                class="form-control"
+                formControlName="newPassword"
+                placeholder="At least 8 characters"
+              />
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label" for="confirmPassword">Confirm New Password</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                class="form-control"
+                formControlName="confirmPassword"
+                placeholder="Repeat new password"
+              />
+            </div>
+          </div>
+
+          <div class="section-title-wrap" style="margin-top: 1.5rem;">
+            <h3 class="section-heading">Multi-Factor Authentication (2FA)</h3>
+            <p class="section-desc">Add an extra layer of security when signing into your employee account.</p>
+          </div>
+
+          <div class="checkbox-stack">
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="twoFactorEnabled" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Enable Two-Factor Authentication</span>
+                <span class="checkbox-desc">Require a one-time verification code upon every new sign-in.</span>
+              </div>
+            </label>
+
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="notifyNewLogins" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Alert on Logins from Unrecognized Devices</span>
+                <span class="checkbox-desc">Send immediate email notifications if a login occurs from a new IP or browser.</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="isSaving()"
+            >
+              <app-icon name="check" [size]="16"></app-icon>
+              <span>Update Security & Password</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- PERSPECTIVE 2: MANAGER VIEW                                            -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <!-- Manager Tab 1: Approval Delegation -->
+    @if (canAccessManagerPerspective() && activePerspective() === 'manager' && activeManagerTab() === 'delegation') {
+      <div class="card-pane">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Approval Delegation & Out-of-Office Approver</h2>
+            <p class="pane-subtitle">
+              Delegate your managerial sign-off authority to a peer colleague during business travel or planned leave.
+            </p>
+          </div>
+        </div>
+
+        <form [formGroup]="managerDelegationForm" (ngSubmit)="saveManagerDelegation()" class="settings-form">
+          <div class="checkbox-stack">
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="isDelegationActive" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Activate Approval Delegation</span>
+                <span class="checkbox-desc">Route incoming team approvals to your assigned delegate during the selected period.</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="form-row" style="margin-top: 1rem;">
+            <div class="form-group flex-1">
+              <span class="form-label required">Assigned Delegate Colleague</span>
+              <app-select
+                formControlName="delegateEmployeeId"
+                [options]="delegateOptions()"
+                [fullWidth]="true"
+              ></app-select>
+              <span class="field-hint">The delegate must be an active team lead or manager.</span>
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label" for="startDate">Delegation Start Date</label>
+              <input id="startDate" type="date" class="form-control" formControlName="startDate" />
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label" for="endDate">Delegation End Date</label>
+              <input id="endDate" type="date" class="form-control" formControlName="endDate" />
+            </div>
+          </div>
+
+          <div class="section-title-wrap" style="margin-top: 1.25rem;">
+            <h3 class="section-heading">Delegation Scope</h3>
+            <p class="section-desc">Select which modules the delegate is authorized to approve on your behalf.</p>
+          </div>
+
+          <div class="checkbox-grid">
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="delegateLeaves" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Leave Applications</span>
+              </div>
+            </label>
+
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="delegateTimesheets" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Timesheet Hours</span>
+              </div>
+            </label>
+
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="delegateReimbursements" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Expense Reimbursements</span>
+              </div>
+            </label>
+
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="delegateAttendanceRegularizations" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Attendance Regularizations</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="isSaving()"
+            >
+              <app-icon name="check" [size]="16"></app-icon>
+              <span>Save Delegation Settings</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- Manager Tab 2: Team Alerts & Overtime -->
+    @if (canAccessManagerPerspective() && activePerspective() === 'manager' && activeManagerTab() === 'team-alerts') {
+      <div class="card-pane">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Team Alerts & Overtime Monitoring</h2>
+            <p class="pane-subtitle">
+              Automate notifications for team absences, late check-ins, and pending manager approvals.
+            </p>
+          </div>
+        </div>
+
+        <form [formGroup]="managerAlertsForm" (ngSubmit)="saveManagerAlerts()" class="settings-form">
+          <div class="checkbox-stack">
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="notifyLateCheckIn" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Alert on Team Late Check-In</span>
+                <span class="checkbox-desc">Receive an instant notification if a team member checks in after their grace threshold.</span>
+              </div>
+            </label>
+
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="notifyUnplannedAbsence" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Alert on Unplanned Team Absence</span>
+                <span class="checkbox-desc">Notify me if a team member has not checked in and has no applied leave for today.</span>
+              </div>
+            </label>
+
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="notifyOvertimeHours" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Weekly Overtime & Burnout Warning</span>
+                <span class="checkbox-desc">Flag when a direct report exceeds threshold hours in a single week.</span>
+              </div>
+            </label>
+
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="dailyPendingApprovalReminder" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Daily Pending Approvals Digest</span>
+                <span class="checkbox-desc">Send me a reminder summary of pending leaves and claims waiting for my approval.</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="form-row" style="margin-top: 1.25rem;">
+            <div class="form-group flex-1">
+              <label class="form-label required" for="lateThresholdMinutes">Late Alert Threshold (Minutes)</label>
+              <input
+                id="lateThresholdMinutes"
+                type="number"
+                min="5"
+                max="120"
+                class="form-control"
+                formControlName="lateThresholdMinutes"
+              />
+              <span class="field-hint">e.g. 15 minutes after shift start time.</span>
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label required" for="weeklyOvertimeThresholdHours">Weekly Overtime Threshold (Hours)</label>
+              <input
+                id="weeklyOvertimeThresholdHours"
+                type="number"
+                min="35"
+                max="80"
+                class="form-control"
+                formControlName="weeklyOvertimeThresholdHours"
+              />
+              <span class="field-hint">Standard baseline is 45 hours / week.</span>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="isSaving() || managerAlertsForm.invalid"
+            >
+              <app-icon name="check" [size]="16"></app-icon>
+              <span>Save Team Alert Rules</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- PERSPECTIVE 3: HR VIEW                                                 -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <!-- HR Tab 1: Onboarding & Lifecycle -->
+    @if (canAccessHRPerspective() && activePerspective() === 'hr' && activeHRTab() === 'lifecycle') {
+      <div class="card-pane">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Employee Onboarding & Lifecycle Defaults</h2>
+            <p class="pane-subtitle">
+              Standardize probation intervals, notice periods, and document submission requirements.
+            </p>
+          </div>
+        </div>
+
+        <form [formGroup]="hrLifecycleForm" (ngSubmit)="saveHRLifecycle()" class="settings-form">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label required" for="defaultProbationDays">Standard Probation Period (Days)</label>
+              <input
+                id="defaultProbationDays"
+                type="number"
+                min="0"
+                max="365"
+                class="form-control"
+                formControlName="defaultProbationDays"
+              />
+              <span class="field-hint">Common baseline is 90 days (3 months).</span>
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label required" for="defaultNoticePeriodDays">Standard Notice Period (Days)</label>
+              <input
+                id="defaultNoticePeriodDays"
+                type="number"
+                min="0"
+                max="180"
+                class="form-control"
+                formControlName="defaultNoticePeriodDays"
+              />
+              <span class="field-hint">Common baseline is 60 days (2 months).</span>
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label required" for="onboardingDocDeadlineDays">Document Upload Deadline (Days)</label>
+              <input
+                id="onboardingDocDeadlineDays"
+                type="number"
+                min="1"
+                max="60"
+                class="form-control"
+                formControlName="onboardingDocDeadlineDays"
+              />
+              <span class="field-hint">Days allowed for new joiners to upload proofs.</span>
+            </div>
+          </div>
+
+          <div class="checkbox-stack" style="margin-top: 1rem;">
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="sendWelcomeEmailOnCreation" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Send Automated Welcome Email & Credentials</span>
+                <span class="checkbox-desc">Email login setup instructions to the new hire's work email immediately upon creation.</span>
+              </div>
+            </label>
+
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="requireIdentityVerification" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Require Identity (PAN / Aadhaar / Passport) Before Confirmation</span>
+                <span class="checkbox-desc">Block probation completion until HR verifies employee identity documents.</span>
+              </div>
+            </label>
+
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="requireBankDetailsOnJoin" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Require Bank Account Details for Payroll Inclusion</span>
+                <span class="checkbox-desc">Prevent salary disbursement processing if account number & IFSC/SWIFT are unverified.</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="isSaving() || hrLifecycleForm.invalid"
+            >
+              <app-icon name="check" [size]="16"></app-icon>
+              <span>Save Lifecycle Defaults</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- HR Tab 2: Attendance & Leave Rules -->
+    @if (canAccessHRPerspective() && activePerspective() === 'hr' && activeHRTab() === 'governance') {
+      <div class="card-pane">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Attendance Governance & Leave Policy Rules</h2>
+            <p class="pane-subtitle">
+              Set grace periods, monthly regularization allowances, and minimum work duration thresholds.
+            </p>
+          </div>
+        </div>
+
+        <form [formGroup]="hrGovernanceForm" (ngSubmit)="saveHRGovernance()" class="settings-form">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label required" for="lateCheckInGraceMinutes">Late Check-In Grace Period (Minutes)</label>
+              <input
+                id="lateCheckInGraceMinutes"
+                type="number"
+                min="0"
+                max="60"
+                class="form-control"
+                formControlName="lateCheckInGraceMinutes"
+              />
+              <span class="field-hint">Leniency before attendance is marked as "Late".</span>
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label required" for="maxRegularizationsPerMonth">Max Regularizations Per Month</label>
+              <input
+                id="maxRegularizationsPerMonth"
+                type="number"
+                min="0"
+                max="10"
+                class="form-control"
+                formControlName="maxRegularizationsPerMonth"
+              />
+              <span class="field-hint">Limits manual missed-punch regularizations per employee.</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label required" for="halfDayMinHours">Half-Day Minimum Work Hours</label>
+              <input
+                id="halfDayMinHours"
+                type="number"
+                step="0.5"
+                min="1"
+                max="6"
+                class="form-control"
+                formControlName="halfDayMinHours"
+              />
+              <span class="field-hint">e.g. 4.5 hours of logged time required.</span>
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label required" for="fullDayMinHours">Full-Day Minimum Work Hours</label>
+              <input
+                id="fullDayMinHours"
+                type="number"
+                step="0.5"
+                min="4"
+                max="12"
+                class="form-control"
+                formControlName="fullDayMinHours"
+              />
+              <span class="field-hint">e.g. 8.0 hours of logged time required.</span>
+            </div>
+          </div>
+
+          <div class="checkbox-stack" style="margin-top: 1rem;">
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="enforceSandwichLeaveRule" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Enforce Sandwich Rule for Leaves</span>
+                <span class="checkbox-desc">Count intermediate weekend/holidays as leave if employee takes leave on preceding Friday and succeeding Monday.</span>
+              </div>
+            </label>
+
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="allowNegativeLeaveBalance" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Allow Negative Leave Balances (Leave Advance)</span>
+                <span class="checkbox-desc">Allow employees to apply for leave ahead of monthly quota accrual.</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="isSaving() || hrGovernanceForm.invalid"
+            >
+              <app-icon name="check" [size]="16"></app-icon>
+              <span>Save Governance Policies</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- HR Tab 3: Compliance & Document Alerts -->
+    @if (canAccessHRPerspective() && activePerspective() === 'hr' && activeHRTab() === 'compliance') {
+      <div class="card-pane">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Company Compliance & Policy Acknowledgements</h2>
+            <p class="pane-subtitle">
+              Automate policy read-and-agree grace periods, escalations, and expiring document alerts.
+            </p>
+          </div>
+        </div>
+
+        <form [formGroup]="hrComplianceForm" (ngSubmit)="saveHRCompliance()" class="settings-form">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label required" for="policyAckGraceDays">Policy Acknowledgement Grace Period (Days)</label>
+              <input
+                id="policyAckGraceDays"
+                type="number"
+                min="1"
+                max="60"
+                class="form-control"
+                formControlName="policyAckGraceDays"
+              />
+              <span class="field-hint">Days allowed before an unacknowledged policy is flagged overdue.</span>
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label required" for="documentExpiryAlertDays">Document Expiration Advance Alert (Days)</label>
+              <input
+                id="documentExpiryAlertDays"
+                type="number"
+                min="5"
+                max="180"
+                class="form-control"
+                formControlName="documentExpiryAlertDays"
+              />
+              <span class="field-hint">Alert HR before passport, visa, or certifications expire.</span>
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label required" for="annualLeaveRolloverLimit">Annual Leave Rollover Cap (Days)</label>
+              <input
+                id="annualLeaveRolloverLimit"
+                type="number"
+                min="0"
+                max="50"
+                class="form-control"
+                formControlName="annualLeaveRolloverLimit"
+              />
+              <span class="field-hint">Max earned leave days carried forward into next year.</span>
+            </div>
+          </div>
+
+          <div class="checkbox-stack" style="margin-top: 1rem;">
+            <label class="checkbox-control">
+              <input type="checkbox" class="checkbox-input" formControlName="escalateUnacknowledgedPolicyToManager" />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Escalate Overdue Policies to Reporting Manager</span>
+                <span class="checkbox-desc">Notify the reporting manager if an employee ignores mandatory policy agreements.</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="isSaving() || hrComplianceForm.invalid"
+            >
+              <app-icon name="check" [size]="16"></app-icon>
+              <span>Save Compliance Settings</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- PERSPECTIVE 4: ADMIN (ORG) VIEW                                        -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <!-- Admin Tab 1: Organization Profile -->
+    @if (canAccessAdminPerspective() && activePerspective() === 'admin' && activeAdminTab() === 'organization') {
+      <div class="card-pane">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Corporate Profile & Regional Defaults</h2>
+            <p class="pane-subtitle">
+              Configure baseline organization branding, contact points, base currency, and business calendar.
+            </p>
+          </div>
+        </div>
+
+        <form [formGroup]="orgForm" (ngSubmit)="saveOrgSettings()" class="settings-form">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label required" for="companyName">Legal Entity Name</label>
+              <input
+                id="companyName"
+                type="text"
+                class="form-control"
+                formControlName="companyName"
+                placeholder="e.g. TreasureX FinServ Ltd."
+              />
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label required" for="companyDomain">Primary Domain</label>
+              <input
+                id="companyDomain"
+                type="text"
+                class="form-control"
+                formControlName="companyDomain"
+                placeholder="e.g. treasurex.com"
+              />
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label required" for="supportEmail">HR Support / Inquiries Email</label>
+              <input
+                id="supportEmail"
+                type="email"
+                class="form-control"
+                formControlName="supportEmail"
+                placeholder="e.g. hr@treasurex.com"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <span class="form-label required">Base Currency</span>
+              <app-select
+                formControlName="defaultCurrency"
+                [options]="currencyOptions"
+                [fullWidth]="true"
+              ></app-select>
+            </div>
+
+            <div class="form-group flex-1">
+              <span class="form-label required">Operational Time Zone</span>
+              <app-select
+                formControlName="timeZone"
+                [options]="timezoneOptions"
+                [fullWidth]="true"
+              ></app-select>
+            </div>
+
+            <div class="form-group flex-1">
+              <span class="form-label required">Fiscal Year Start Month</span>
+              <app-select
+                formControlName="fiscalYearStart"
+                [options]="fiscalMonthOptions"
+                [fullWidth]="true"
+              ></app-select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <span class="form-label" id="workWeekLabel">Official Work Days</span>
+            <div class="days-picker" role="group" aria-labelledby="workWeekLabel">
+              @for (day of daysOfWeek; track day) {
+                <button
+                  type="button"
+                  class="day-pill"
+                  [class.selected]="isDaySelected(day)"
+                  (click)="toggleWorkDay(day)"
+                >
+                  <app-icon [name]="isDaySelected(day) ? 'check' : 'plus'" [size]="14"></app-icon>
+                  <span>{{ day }}</span>
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="isSaving() || orgForm.invalid"
+            >
+              <app-icon name="check" [size]="16"></app-icon>
+              <span>Save Organization Settings</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- Admin Tab 2: Security & Sessions -->
+    @if (canAccessAdminPerspective() && activePerspective() === 'admin' && activeAdminTab() === 'security') {
+      <div class="card-pane">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">Enterprise Authentication & Security Parameters</h2>
+            <p class="pane-subtitle">
+              Manage enterprise session timeouts, password complexity rules, and cryptography guarantees.
+            </p>
+          </div>
+        </div>
+
+        <form [formGroup]="securityForm" (ngSubmit)="saveSecuritySettings()" class="settings-form">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label required" for="sessionTimeout">Session Inactivity Timeout (Minutes)</label>
+              <input
+                id="sessionTimeout"
+                type="number"
+                min="5"
+                max="1440"
+                class="form-control"
+                formControlName="sessionTimeoutMinutes"
+              />
+              <span class="field-hint">Users will be safely prompted to re-authenticate after inactivity.</span>
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label required" for="passwordMinLength">Minimum Password Length</label>
+              <input
+                id="passwordMinLength"
+                type="number"
+                min="6"
+                max="32"
+                class="form-control"
+                formControlName="passwordMinLength"
+              />
+              <span class="field-hint">Recommended industry baseline is 8+ characters.</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-control" for="requireSpecialChar">
+              <input
+                id="requireSpecialChar"
+                type="checkbox"
+                class="checkbox-input"
+                formControlName="requireSpecialChar"
+              />
+              <div class="checkbox-text">
+                <span class="checkbox-title">Enforce Special Characters in Passwords</span>
+                <span class="checkbox-desc">
+                  Requires at least one symbol (e.g. &#64;, #, $, %, ^, &amp;) in user credentials.
+                </span>
+              </div>
+            </label>
+          </div>
+
+          <div class="security-info-box">
+            <div class="info-item">
+              <div class="info-icon">
+                <app-icon name="shield" [size]="20"></app-icon>
+              </div>
+              <div class="info-content">
+                <strong>RBAC Mode: Strict</strong>
+                <p>Every NestJS backend controller endpoint enforces strict &#64;Permissions verification backed by PostgreSQL.</p>
+              </div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-icon">
+                <app-icon name="shield" [size]="20"></app-icon>
+              </div>
+              <div class="info-content">
+                <strong>Password Encryption</strong>
+                <p>All employee passwords use salted Argon2/Bcrypt hash iterations before storage.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="isSaving() || securityForm.invalid"
+            >
+              <app-icon name="check" [size]="16"></app-icon>
+              <span>Save Enterprise Security Policies</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+  </div>
+</div>

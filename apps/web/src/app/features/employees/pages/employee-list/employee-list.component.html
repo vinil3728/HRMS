@@ -1,0 +1,349 @@
+<div class="page-container">
+  <!-- ── Page Header ──────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-info">
+      <div class="title-row">
+        <h1 class="page-title">Employees</h1>
+      </div>
+      <p class="page-subtitle">Manage employee records, assignments, and organizational access.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        *appHasPermission="Permission.EMPLOYEE_CREATE"
+        type="button"
+        class="btn btn-primary"
+        (click)="openAddModal()"
+      >
+        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+        <span>Add Employee</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+  <div class="content-card">
+    <!-- Toolbar Section: Left Tabs, Right Filters (Option 2) -->
+    <div class="toolbar-section">
+      <!-- Tabs Navigation (Left) -->
+      <div class="tabs-nav">
+        <button
+          type="button"
+          class="tab-btn active"
+        >
+          <app-icon name="users" [size]="16"></app-icon>
+          <span>All Employees</span>
+        </button>
+      </div>
+
+      <!-- Filters Wrap (Right) -->
+      <div class="filters-wrap">
+        <!-- Search Input -->
+        <div class="search-input-wrap">
+          <app-icon name="search" [size]="16" customClass="filter-search-icon"></app-icon>
+          <input
+            type="text"
+            class="filter-search-input"
+            placeholder="Search employees..."
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="onSearchChange()"
+          />
+        </div>
+
+        <!-- Department Filter -->
+        <div class="filter-item">
+          <app-select
+            [options]="departmentOptions()"
+            [value]="selectedDepartment"
+            placeholder="All Departments"
+            minWidth="180px"
+            (valueChange)="onDepartmentChange($event)"
+          ></app-select>
+        </div>
+
+        <!-- Designation Filter -->
+        <div class="filter-item">
+          <app-select
+            [options]="designationOptions()"
+            [value]="selectedDesignation"
+            placeholder="All Designations"
+            minWidth="180px"
+            (valueChange)="onDesignationChange($event)"
+          ></app-select>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="filter-item">
+          <app-select
+            [options]="statusOptions"
+            [value]="selectedStatus"
+            placeholder="All Statuses"
+            minWidth="140px"
+            (valueChange)="onStatusChange($event)"
+          ></app-select>
+        </div>
+
+        <!-- Reset Filter Button -->
+        @if (hasActiveFilters()) {
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="resetFilters()"
+            title="Reset Filters"
+          >
+            <app-icon name="activity" [size]="16"></app-icon>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Feedback Banners -->
+    @if (actionMessage()) {
+      <div class="alert-banner alert-success">
+        <app-icon name="check" [size]="16"></app-icon>
+        <span>{{ actionMessage() }}</span>
+      </div>
+    }
+
+    @if (errorMessage()) {
+      <div class="alert-banner alert-error">
+        <app-icon name="close" [size]="16"></app-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <!-- ── Table Block (Table & Pagination in Single Block with Border) ── -->
+    <div class="table-block">
+      <div
+        class="table-container"
+        [class.no-scroll]="isLoading() || displayedEmployees().length === 0"
+      >
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="cursor-pointer" (click)="toggleSort('code')">
+                <span class="th-content">
+                  <span>EMP CODE</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="cursor-pointer" (click)="toggleSort('name')">
+                <span class="th-content">
+                  <span>EMPLOYEE NAME</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th>DEPARTMENT</th>
+              <th>DESIGNATION</th>
+              <th>REPORTING MANAGER</th>
+              <th>DATE OF JOINING</th>
+              <th>STATUS</th>
+              <th class="text-right">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (isLoading()) {
+              <tr>
+                <td colspan="8" class="empty-table-cell">
+                  <div class="table-loading">
+                    <span class="spinner"></span>
+                    <span>Loading employees...</span>
+                  </div>
+                </td>
+              </tr>
+            } @else if (displayedEmployees().length === 0) {
+              <tr>
+                <td colspan="8" class="empty-table-cell">
+                  <div class="table-empty">
+                    <div class="empty-icon-wrap">
+                      <app-icon [name]="hasActiveFilters() ? 'search' : 'users'" [size]="28"></app-icon>
+                    </div>
+                    <h3 class="empty-title">
+                      {{
+                        hasActiveFilters()
+                          ? 'No matching results found on your filter'
+                          : 'No employees found'
+                      }}
+                    </h3>
+                    @if (hasActiveFilters()) {
+                      <button
+                        type="button"
+                        class="btn btn-outline btn-sm"
+                        (click)="resetFilters()"
+                      >
+                        Reset Filters
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @else {
+              @for (emp of displayedEmployees(); track emp.id) {
+                <tr class="table-row">
+                  <!-- EMP CODE -->
+                  <td class="emp-code-cell">
+                    {{ emp.employeeCode }}
+                  </td>
+
+                  <!-- EMPLOYEE NAME -->
+                  <td>
+                    <div class="employee-name-cell">
+                      <div class="name-meta">
+                        <span class="emp-fullname">
+                          {{ emp.firstName }} {{ emp.lastName }}
+                        </span>
+                        <span class="emp-email">
+                          {{ emp.email }}
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- DEPARTMENT -->
+                  <td>
+                    <span class="cell-text">{{ emp.department?.name || '—' }}</span>
+                  </td>
+
+                  <!-- DESIGNATION -->
+                  <td>
+                    <span class="cell-text">{{ emp.designation?.name || '—' }}</span>
+                  </td>
+
+                  <!-- MANAGER -->
+                  <td>
+                    @if (emp.manager) {
+                      <span class="cell-text">
+                        {{ emp.manager.firstName }} {{ emp.manager.lastName }}
+                      </span>
+                    } @else {
+                      <span class="text-muted">—</span>
+                    }
+                  </td>
+
+                  <!-- DATE OF JOINING -->
+                  <td>
+                    <span class="cell-text">
+                      {{ emp.dateOfJoining | date: 'dd MMM yyyy' }}
+                    </span>
+                  </td>
+
+                  <!-- STATUS -->
+                  <td>
+                    <app-badge [variant]="emp.status">
+                      {{ formatStatus(emp.status) }}
+                    </app-badge>
+                  </td>
+
+                  <!-- ACTIONS -->
+                  <td class="text-right">
+                    <div class="action-buttons">
+                      <!-- View Details -->
+                      <button
+                        type="button"
+                        class="action-icon-btn"
+                        title="View Details"
+                        (click)="openDetailModal(emp)"
+                        aria-label="View Details"
+                      >
+                        <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+
+                      <!-- Edit -->
+                      <button
+                        *appHasPermission="Permission.EMPLOYEE_UPDATE"
+                        type="button"
+                        class="action-icon-btn"
+                        title="Edit Employee"
+                        (click)="openEditModal(emp)"
+                        aria-label="Edit Employee"
+                      >
+                        <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+
+                      <!-- Toggle Status -->
+                      @if (emp.status === EmployeeStatus.ACTIVE) {
+                        <button
+                          *appHasPermission="Permission.EMPLOYEE_STATUS_UPDATE"
+                          type="button"
+                          class="action-btn danger"
+                          title="Deactivate Employee"
+                          (click)="toggleStatus(emp)"
+                        >
+                          <app-icon name="x" [size]="15"></app-icon>
+                          <span>Deactivate</span>
+                        </button>
+                      } @else {
+                        <button
+                          *appHasPermission="Permission.EMPLOYEE_STATUS_UPDATE"
+                          type="button"
+                          class="action-btn success"
+                          title="Activate Employee"
+                          (click)="toggleStatus(emp)"
+                        >
+                          <app-icon name="check" [size]="15"></app-icon>
+                          <span>Activate</span>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Integrated Card Bottom Pagination -->
+      @if (!isLoading() && totalEmployees() > 0) {
+        <div class="table-pagination-footer">
+          <span class="pagination-count">
+            Showing <strong>{{ displayedEmployees().length }}</strong> of {{ totalEmployees() }} employees
+          </span>
+
+          <div class="pagination-nav">
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() <= 1 || isLoading()"
+              (click)="goToPage(currentPage() - 1)"
+              title="Previous Page"
+              aria-label="Previous Page"
+            >
+              <app-icon name="chevron-left" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+            <span class="page-indicator">{{ currentPage() }} / {{ totalPages() }}</span>
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() >= totalPages() || isLoading()"
+              (click)="goToPage(currentPage() + 1)"
+              title="Next Page"
+              aria-label="Next Page"
+            >
+              <app-icon name="chevron-right" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+@if (isFormModalOpen()) {
+  <app-employee-form-modal
+    [employee]="selectedEmployee()"
+    [departments]="departments()"
+    [designations]="designations()"
+    [managers]="allEmployeesList()"
+    (saveModal)="handleSaveEmployee($event)"
+    (cancelModal)="closeFormModal()"
+  ></app-employee-form-modal>
+}
+
+@if (isDetailModalOpen() && selectedEmployee()) {
+  <app-employee-detail-modal
+    [employee]="selectedEmployee()!"
+    (closeModal)="closeDetailModal()"
+  ></app-employee-detail-modal>
+}

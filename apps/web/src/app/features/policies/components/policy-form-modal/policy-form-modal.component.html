@@ -1,0 +1,135 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="policy-form-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close modal backdrop"></button>
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-icon-badge">
+            <app-icon name="file-text" [size]="20"></app-icon>
+          </div>
+          <div>
+            <h2 id="policy-form-modal-title" class="modal-title">
+              {{ isEditMode() ? 'Edit Organizational Policy' : 'Create Organizational Policy' }}
+            </h2>
+            <p class="modal-subtitle">
+              Draft or update official company policies, codes of conduct, and compliance documentation.
+            </p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="x" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-form">
+        <div class="modal-body">
+          @if (errorMessage()) {
+            <div class="alert alert-danger" role="alert">
+              <app-icon name="alert-circle" [size]="18"></app-icon>
+              <span>{{ errorMessage() }}</span>
+            </div>
+          }
+
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label class="form-label required" for="policyTitle">Policy Title</label>
+              <input
+                id="policyTitle"
+                type="text"
+                class="form-control"
+                [class.is-invalid]="isFieldInvalid('title')"
+                formControlName="title"
+                placeholder="e.g. Information Security & Acceptable Use Policy"
+              />
+              @if (isFieldInvalid('title')) {
+                <div class="invalid-feedback">
+                  Policy title is required (at least 3 characters).
+                </div>
+              }
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label required" for="policyCode">Policy Code</label>
+              <input
+                id="policyCode"
+                type="text"
+                class="form-control"
+                [class.is-invalid]="isFieldInvalid('code')"
+                formControlName="code"
+                placeholder="e.g. POL-IT-001"
+              />
+              @if (isFieldInvalid('code')) {
+                <div class="invalid-feedback">
+                  Policy code is required.
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="policyVersion">Document Version</label>
+              <input
+                id="policyVersion"
+                type="text"
+                class="form-control"
+                formControlName="version"
+                placeholder="e.g. v2.1"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="policyEffectiveDate">Effective Date</label>
+              <input
+                id="policyEffectiveDate"
+                type="date"
+                class="form-control"
+                formControlName="effectiveDate"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required" for="policyContent">Policy Content & Terms</label>
+            <textarea
+              id="policyContent"
+              class="form-control textarea"
+              rows="8"
+              [class.is-invalid]="isFieldInvalid('content')"
+              formControlName="content"
+              placeholder="Outline the full terms, scope, employee responsibilities, security procedures, and compliance guidelines..."
+            ></textarea>
+            @if (isFieldInvalid('content')) {
+              <div class="invalid-feedback">
+                Policy content is required (at least 10 characters).
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="onCancel()"
+            [disabled]="submitting()"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="submitting()"
+          >
+            @if (submitting()) {
+              <app-icon name="clock" [size]="16" class="spin"></app-icon>
+              <span>Saving...</span>
+            } @else {
+              <span>{{ isEditMode() ? 'Save Changes' : 'Create Policy' }}</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

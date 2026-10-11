@@ -1,0 +1,295 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-info">
+      <div class="title-row">
+        <h1 class="page-title">Designations</h1>
+      </div>
+      <p class="page-subtitle">Manage corporate job titles and position status.</p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        *appHasPermission="Permission.DESIGNATION_CREATE"
+        type="button"
+        class="btn btn-primary"
+        (click)="openAddModal()"
+      >
+        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+        <span>Add Designation</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+  <div class="content-card">
+    <!-- Toolbar Section: Left Tabs, Right Filters (Option 2) -->
+    <div class="toolbar-section">
+      <!-- Tabs Navigation (Left) -->
+      <div class="tabs-nav">
+        <button
+          type="button"
+          class="tab-btn active"
+        >
+          <app-icon name="id-card" [size]="16"></app-icon>
+          <span>All Designations</span>
+        </button>
+      </div>
+
+      <!-- Filters Wrap (Right) -->
+      <div class="filters-wrap">
+        <!-- Search Input -->
+        <div class="search-input-wrap">
+          <app-icon name="search" [size]="16" customClass="filter-search-icon"></app-icon>
+          <input
+            type="text"
+            class="filter-search-input"
+            placeholder="Search designations..."
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+          />
+        </div>
+
+        <!-- Department Filter -->
+        <div class="filter-item">
+          <app-select
+            [options]="departmentOptions()"
+            [value]="departmentFilter()"
+            placeholder="All Departments"
+            minWidth="175px"
+            (valueChange)="onDepartmentFilterChange($event)"
+          ></app-select>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="filter-item">
+          <app-select
+            [options]="statusOptions"
+            [value]="statusFilter()"
+            placeholder="All Statuses"
+            minWidth="150px"
+            (valueChange)="onStatusFilterChange($event)"
+          ></app-select>
+        </div>
+
+        <!-- Reset Filter Button -->
+        @if (hasActiveFilters()) {
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="resetFilters()"
+            title="Reset Filters"
+          >
+            <app-icon name="activity" [size]="16"></app-icon>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ── Table Block (Table & Pagination in Single Block with Border) ── -->
+    <div class="table-block">
+      <div
+        class="table-container"
+        [class.no-scroll]="loading() || displayedDesignations().length === 0"
+      >
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="cursor-pointer" (click)="setSort('code')">
+                <span class="th-content">
+                  <span>CODE</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="cursor-pointer" (click)="setSort('name')">
+                <span class="th-content">
+                  <span>DESIGNATION TITLE</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th>
+                <span class="th-content">
+                  <span>DEPARTMENT</span>
+                </span>
+              </th>
+              <th class="cursor-pointer" (click)="setSort('createdAt')">
+                <span class="th-content">
+                  <span>CREATED DATE</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="cursor-pointer" (click)="setSort('isActive')">
+                <span class="th-content">
+                  <span>STATUS</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="text-right">
+                <span class="th-content">
+                  <span>ACTIONS</span>
+                </span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (loading()) {
+              <tr>
+                <td colspan="6" class="empty-table-cell">
+                  <div class="table-loading">
+                    <span class="spinner"></span>
+                    <span>Loading designations...</span>
+                  </div>
+                </td>
+              </tr>
+            } @else if (displayedDesignations().length === 0) {
+              <tr>
+                <td colspan="6" class="empty-table-cell">
+                  <div class="table-empty">
+                    <div class="empty-icon-wrap">
+                      <app-icon [name]="hasActiveFilters() ? 'search' : 'id-card'" [size]="28"></app-icon>
+                    </div>
+                    <h3 class="empty-title">
+                      {{
+                        hasActiveFilters()
+                          ? 'No matching results found on your filter'
+                          : 'No designations found'
+                      }}
+                    </h3>
+                    @if (hasActiveFilters()) {
+                      <button
+                        type="button"
+                        class="btn btn-outline btn-sm"
+                        (click)="resetFilters()"
+                      >
+                        Reset Filters
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @else {
+              @for (desig of displayedDesignations(); track desig.id) {
+                <tr class="table-row">
+                  <!-- CODE -->
+                  <td class="code-cell">
+                    {{ desig.code }}
+                  </td>
+
+                  <!-- DESIGNATION TITLE -->
+                  <td>
+                    <span class="primary-name">{{ desig.name }}</span>
+                  </td>
+
+                  <!-- DEPARTMENT -->
+                  <td>
+                    @if (desig.department) {
+                      <span class="cell-text">{{ desig.department.name }}</span>
+                    } @else {
+                      <span class="cell-text">All Departments</span>
+                    }
+                  </td>
+
+                  <!-- CREATED DATE -->
+                  <td>
+                    <span class="cell-text">
+                      {{ desig.createdAt | date: 'dd MMM yyyy' }}
+                    </span>
+                  </td>
+
+                  <!-- STATUS -->
+                  <td>
+                    <app-badge [variant]="desig.isActive ? 'active' : 'inactive'">
+                      {{ desig.isActive ? 'Active' : 'Inactive' }}
+                    </app-badge>
+                  </td>
+
+                  <!-- ACTIONS -->
+                  <td class="text-right">
+                    <div class="action-buttons">
+                      <button
+                        *appHasPermission="Permission.DESIGNATION_UPDATE"
+                        type="button"
+                        class="action-icon-btn"
+                        (click)="openEditModal(desig)"
+                        title="Edit Designation"
+                        aria-label="Edit Designation"
+                      >
+                        <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+                      @if (desig.isActive) {
+                        <button
+                          *appHasPermission="Permission.DESIGNATION_DEACTIVATE"
+                          type="button"
+                          class="action-btn danger"
+                          (click)="toggleStatus(desig)"
+                          title="Deactivate Designation"
+                        >
+                          <app-icon name="x" [size]="15"></app-icon>
+                          <span>Deactivate</span>
+                        </button>
+                      } @else {
+                        <button
+                          *appHasPermission="Permission.DESIGNATION_ACTIVATE"
+                          type="button"
+                          class="action-btn success"
+                          (click)="toggleStatus(desig)"
+                          title="Activate Designation"
+                        >
+                          <app-icon name="check" [size]="15"></app-icon>
+                          <span>Activate</span>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Integrated Card Bottom Pagination -->
+      @if (!loading() && filteredDesignations().length > 0) {
+        <div class="table-pagination-footer">
+          <span class="pagination-count">
+            Showing <strong>{{ displayedDesignations().length }}</strong> of {{ filteredDesignations().length }} designations
+          </span>
+
+          <div class="pagination-nav">
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() <= 1 || loading()"
+              (click)="goToPage(currentPage() - 1)"
+              title="Previous Page"
+              aria-label="Previous Page"
+            >
+              <app-icon name="chevron-left" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+            <span class="page-indicator">{{ currentPage() }} / {{ totalPages() }}</span>
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() >= totalPages() || loading()"
+              (click)="goToPage(currentPage() + 1)"
+              title="Next Page"
+              aria-label="Next Page"
+            >
+              <app-icon name="chevron-right" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Form Modal -->
+@if (isModalOpen()) {
+  <app-designation-form-modal
+    [isOpen]="isModalOpen()"
+    [designation]="selectedDesignation()"
+    (closeModal)="closeModal()"
+    (saved)="onDesignationSaved($event)"
+  ></app-designation-form-modal>
+}

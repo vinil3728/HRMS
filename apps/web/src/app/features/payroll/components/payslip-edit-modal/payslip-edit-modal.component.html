@@ -1,0 +1,111 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-payslip-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close dialog"></button>
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="header-title-wrap">
+          <div class="icon-wrap">
+            <app-icon name="dollar" [size]="20"></app-icon>
+          </div>
+          <div>
+            <h2 id="edit-payslip-title" class="modal-title">Edit Payslip Adjustments</h2>
+            <p class="modal-subtitle">
+              {{ payslip()?.employee?.firstName }} {{ payslip()?.employee?.lastName }} ({{ payslip()?.employee?.employeeCode }}) &bull; Period: {{ payslip()?.month }}/{{ payslip()?.year }}
+            </p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="x" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-form">
+        <div class="modal-body">
+          @if (errorMessage()) {
+            <div class="alert alert-danger" role="alert">
+              <app-icon name="alert-circle" [size]="18"></app-icon>
+              <span>{{ errorMessage() }}</span>
+            </div>
+          }
+
+          <div class="base-salary-summary">
+            <div class="summary-chip">
+              <span class="chip-label">Base Monthly Earnings:</span>
+              <span class="chip-value">₹ {{ baseEarnings() | number: '1.2-2' }}</span>
+            </div>
+            <div class="summary-chip">
+              <span class="chip-label">Base Monthly Deductions:</span>
+              <span class="chip-value text-danger">- ₹ {{ baseDeductions() | number: '1.2-2' }}</span>
+            </div>
+          </div>
+
+          <div class="section-title">Incentives & Additions</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="editBonus">Performance Bonus (₹)</label>
+              <input id="editBonus" type="number" class="form-control" formControlName="bonus" min="0" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="editOvertime">Overtime / Special Pay (₹)</label>
+              <input id="editOvertime" type="number" class="form-control" formControlName="overtimePay" min="0" />
+            </div>
+          </div>
+
+          <div class="section-title">Attendance & Other Deductions</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="editLopDays">Loss of Pay (LOP Days)</label>
+              <input id="editLopDays" type="number" step="0.5" class="form-control" formControlName="lossOfPayDays" min="0" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="editLopAmount">LOP Deduction Amount (₹)</label>
+              <input id="editLopAmount" type="number" class="form-control" formControlName="lossOfPayDeduction" min="0" />
+            </div>
+            <div class="form-group full-width">
+              <label class="form-label" for="editOtherDeductions">Other Deductions / Penalties (₹)</label>
+              <input id="editOtherDeductions" type="number" class="form-control" formControlName="otherDeductions" min="0" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="editNotes">Adjustment Remarks / Notes</label>
+            <textarea id="editNotes" rows="2" class="form-control textarea" formControlName="notes" placeholder="Reason for bonus or deductions..."></textarea>
+          </div>
+
+          <!-- Computed Final Preview -->
+          <div class="final-preview-bar">
+            <div class="preview-metric">
+              <span class="p-label">Revised Gross Pay</span>
+              <span class="p-val font-semibold">₹ {{ previewGross() | number: '1.2-2' }}</span>
+            </div>
+            <div class="p-divider"></div>
+            <div class="preview-metric">
+              <span class="p-label">Revised Total Deductions</span>
+              <span class="p-val text-danger font-semibold">₹ {{ previewDeductions() | number: '1.2-2' }}</span>
+            </div>
+            <div class="p-divider"></div>
+            <div class="preview-metric">
+              <span class="p-label">Revised Net Take-Home</span>
+              <span class="p-val text-success font-bold text-lg">₹ {{ previewNet() | number: '1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="submitting()">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="submitting() || form.invalid">
+            @if (submitting()) {
+              <app-icon name="clock" [size]="16" class="spin"></app-icon>
+              <span>Updating Payslip...</span>
+            } @else {
+              <app-icon name="check" [size]="16"></app-icon>
+              <span>Apply Adjustments</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

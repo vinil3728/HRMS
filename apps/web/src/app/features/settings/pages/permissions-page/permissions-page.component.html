@@ -1,0 +1,287 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-info">
+      <div class="title-row">
+        <h1 class="page-title">Permissions Catalog</h1>
+      </div>
+      <p class="page-subtitle">
+        Manage granular system privilege definitions across functional modules.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-primary"
+        *appHasPermission="[Permission.PERMISSION_CREATE]"
+        (click)="openCreatePermissionModal()"
+      >
+        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+        <span>New Permission</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+  <div class="content-card">
+    <!-- Toolbar Section: Left Tabs, Right Filters (Option 2) -->
+    <div class="toolbar-section">
+      <!-- Tabs Navigation (Left) -->
+      <div class="tabs-nav">
+        <button
+          type="button"
+          class="tab-btn active"
+        >
+          <app-icon name="shield" [size]="16"></app-icon>
+          <span>All Permissions</span>
+        </button>
+      </div>
+
+      <!-- Filters Wrap (Right) -->
+      <div class="filters-wrap">
+        <!-- Search Input -->
+        <div class="search-input-wrap">
+          <app-icon name="search" [size]="16" customClass="filter-search-icon"></app-icon>
+          <input
+            type="text"
+            class="filter-search-input"
+            placeholder="Search permissions..."
+            [value]="permSearchQuery()"
+            (input)="onPermSearchInput($event)"
+          />
+        </div>
+
+        <!-- Module Filter -->
+        <div class="filter-item">
+          <app-select
+            [options]="moduleOptions()"
+            [value]="permModuleFilter()"
+            placeholder="All Modules"
+            minWidth="175px"
+            (valueChange)="onPermModuleChange($event)"
+          ></app-select>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="filter-item">
+          <app-select
+            [options]="statusOptions"
+            [value]="permStatusFilter()"
+            placeholder="All Statuses"
+            minWidth="150px"
+            (valueChange)="onPermStatusChange($event)"
+          ></app-select>
+        </div>
+
+        <!-- Reset Filter Button -->
+        @if (hasActiveFilters()) {
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="resetPermFilters()"
+            title="Reset Filters"
+          >
+            <app-icon name="activity" [size]="16"></app-icon>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ── Table Block (Table & Pagination in Single Block with Border) ── -->
+    <div class="table-block">
+      <div
+        class="table-container"
+        [class.no-scroll]="loadingPermissions() || displayedPermissions().length === 0"
+      >
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="cursor-pointer" (click)="setSort('code')">
+                <span class="th-content">
+                  <span>CODE</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="cursor-pointer" (click)="setSort('name')">
+                <span class="th-content">
+                  <span>PERMISSION NAME</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="cursor-pointer" (click)="setSort('module')">
+                <span class="th-content">
+                  <span>MODULE</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th>DESCRIPTION</th>
+              <th class="cursor-pointer" (click)="setSort('isActive')">
+                <span class="th-content">
+                  <span>STATUS</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="text-right">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (loadingPermissions()) {
+              <tr>
+                <td colspan="6" class="empty-table-cell">
+                  <div class="table-loading">
+                    <span class="spinner"></span>
+                    <span>Loading permissions...</span>
+                  </div>
+                </td>
+              </tr>
+            } @else if (displayedPermissions().length === 0) {
+              <tr>
+                <td colspan="6" class="empty-table-cell">
+                  <div class="table-empty">
+                    <div class="empty-icon-wrap">
+                      <app-icon [name]="hasActiveFilters() ? 'search' : 'shield'" [size]="28"></app-icon>
+                    </div>
+                    <h3 class="empty-title">
+                      {{
+                        hasActiveFilters()
+                          ? 'No matching results found on your filter'
+                          : 'No permissions found'
+                      }}
+                    </h3>
+                    @if (hasActiveFilters()) {
+                      <button
+                        type="button"
+                        class="btn btn-outline btn-sm"
+                        (click)="resetPermFilters()"
+                      >
+                        Reset Filters
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @else {
+              @for (perm of displayedPermissions(); track perm.id) {
+                <tr class="table-row">
+                  <!-- CODE -->
+                  <td class="code-cell">
+                    {{ perm.code }}
+                  </td>
+
+                  <!-- PERMISSION NAME -->
+                  <td>
+                    <span class="primary-name">{{ perm.name }}</span>
+                  </td>
+
+                  <!-- MODULE -->
+                  <td>
+                    <span class="cell-text">{{ perm.module }}</span>
+                  </td>
+
+                  <!-- DESCRIPTION -->
+                  <td>
+                    <span class="desc-text">
+                      {{ perm.description || '—' }}
+                    </span>
+                  </td>
+
+                  <!-- STATUS -->
+                  <td>
+                    <app-badge [variant]="perm.isActive ? 'active' : 'inactive'">
+                      {{ perm.isActive ? 'Active' : 'Inactive' }}
+                    </app-badge>
+                  </td>
+
+                  <!-- ACTIONS -->
+                  <td class="text-right">
+                    <div class="action-buttons">
+                      <button
+                        *appHasPermission="[Permission.PERMISSION_UPDATE]"
+                        type="button"
+                        class="action-icon-btn"
+                        (click)="openEditPermissionModal(perm)"
+                        title="Edit Permission"
+                        aria-label="Edit Permission"
+                      >
+                        <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+
+                      @if (perm.isActive) {
+                        <button
+                          *appHasPermission="[Permission.PERMISSION_DEACTIVATE]"
+                          type="button"
+                          class="action-btn danger"
+                          (click)="togglePermissionActive(perm)"
+                          title="Deactivate Permission"
+                        >
+                          <app-icon name="x" [size]="15"></app-icon>
+                          <span>Deactivate</span>
+                        </button>
+                      } @else {
+                        <button
+                          *appHasPermission="[Permission.PERMISSION_ACTIVATE]"
+                          type="button"
+                          class="action-btn success"
+                          (click)="togglePermissionActive(perm)"
+                          title="Activate Permission"
+                        >
+                          <app-icon name="check" [size]="15"></app-icon>
+                          <span>Activate</span>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Integrated Card Bottom Pagination -->
+      @if (!loadingPermissions() && filteredPermissions().length > 0) {
+        <div class="table-pagination-footer">
+          <span class="pagination-count">
+            Showing <strong>{{ displayedPermissions().length }}</strong> of {{ filteredPermissions().length }} permissions
+          </span>
+
+          <div class="pagination-nav">
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() <= 1 || loadingPermissions()"
+              (click)="goToPage(currentPage() - 1)"
+              title="Previous Page"
+              aria-label="Previous Page"
+            >
+              <app-icon name="chevron-left" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+            <span class="page-indicator">{{ currentPage() }} / {{ totalPages() }}</span>
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() >= totalPages() || loadingPermissions()"
+              (click)="goToPage(currentPage() + 1)"
+              title="Next Page"
+              aria-label="Next Page"
+            >
+              <app-icon name="chevron-right" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+@if (isPermissionModalOpen()) {
+  <app-permission-form-modal
+    [isOpen]="isPermissionModalOpen()"
+    [permission]="selectedPermissionToEdit()"
+    [existingModules]="allModules()"
+    (closeModal)="closePermissionModal()"
+    (saved)="onPermissionSaved()"
+  ></app-permission-form-modal>
+}

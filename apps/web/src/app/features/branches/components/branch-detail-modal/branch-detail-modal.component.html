@@ -1,0 +1,116 @@
+@if (isOpen() && branch()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="branch-detail-title">
+    <button class="modal-backdrop" (click)="onClose()" aria-label="Close modal backdrop"></button>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="header-left">
+          <div class="branch-avatar">
+            <app-icon name="map-pin" [size]="22"></app-icon>
+          </div>
+          <div>
+            <div class="title-status-row">
+              <h3 id="branch-detail-title" class="modal-title">
+                {{ branch()!.name }}
+              </h3>
+              <app-badge [variant]="branch()!.isActive ? 'active' : 'inactive'">
+                {{ branch()!.isActive ? 'Active' : 'Inactive' }}
+              </app-badge>
+            </div>
+            <p class="modal-subtitle">
+              Branch Code: <span class="badge-code">{{ branch()!.code }}</span>
+            </p>
+          </div>
+        </div>
+        <button class="close-btn" (click)="onClose()" aria-label="Close modal">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Branch Quick Stats / Overview -->
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Location</span>
+            <span class="info-val">
+              {{ branch()!.city || 'N/A' }}{{ branch()!.state ? ', ' + branch()!.state : '' }} ({{ branch()!.country }})
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Work Email</span>
+            <span class="info-val">
+              {{ branch()!.email || 'Not specified' }}
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Phone Contact</span>
+            <span class="info-val">
+              {{ branch()!.phone || 'Not specified' }}
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Postal Code</span>
+            <span class="info-val">
+              {{ branch()!.postalCode || 'N/A' }}
+            </span>
+          </div>
+        </div>
+
+        @if (branch()!.address) {
+          <div class="address-box">
+            <span class="info-label">Street Address</span>
+            <p class="address-text">{{ branch()!.address }}</p>
+          </div>
+        }
+
+        <!-- Subordinate Departments Section -->
+        <div class="depts-section">
+          <div class="section-header">
+            <h4 class="section-title">
+              Departments under this Branch ({{ branch()!.departments?.length || 0 }})
+            </h4>
+            <span class="section-desc">Organizational functional units hosted at this office</span>
+          </div>
+
+          @if (branch()!.departments && branch()!.departments!.length > 0) {
+            <div class="dept-cards-list">
+              @for (dept of branch()!.departments!; track dept.id) {
+                <div class="dept-card">
+                  <div class="dept-card-header">
+                    <div class="dept-title-group">
+                      <span class="dept-name">{{ dept.name }}</span>
+                      <span class="dept-code-tag">{{ dept.code }}</span>
+                    </div>
+                    <app-badge [variant]="dept.isActive ? 'active' : 'inactive'">
+                      {{ dept.isActive ? 'Active' : 'Inactive' }}
+                    </app-badge>
+                  </div>
+                  <div class="dept-card-footer">
+                    <span class="positions-count">
+                      <app-icon name="id-card" [size]="13"></app-icon>
+                      <span>{{ dept.designations?.length || 0 }} {{ dept.designations?.length === 1 ? 'Designation' : 'Designations' }}</span>
+                    </span>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-depts">
+              <app-icon name="building" [size]="24"></app-icon>
+              <p>No departments currently assigned under this branch.</p>
+              <span class="empty-subtext">You can assign departments to this branch in the Departments Management page.</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="onClose()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+}

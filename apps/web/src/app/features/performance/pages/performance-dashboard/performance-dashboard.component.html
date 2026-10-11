@@ -1,0 +1,397 @@
+<div class="page-container">
+  <!-- ── Page Header ──────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="title-row">
+        <h1 class="page-title">{{ isOrgView() ? (orgTabLabel() + ' & Appraisals') : 'My Performance & Goals' }}</h1>
+      </div>
+      <p class="page-subtitle">
+        {{
+          isOrgView()
+            ? 'Track appraisal cycles, KPIs, goals, and team performance reviews.'
+            : 'Track appraisal cycles, goals, KPIs, and 360° performance reviews across teams.'
+        }}
+      </p>
+    </div>
+
+    <div class="header-actions">
+
+      <button
+        type="button"
+        class="btn btn-secondary"
+        *appHasPermission="Permission.PERFORMANCE_CYCLE_CREATE"
+        (click)="openCreateCycleModal()"
+      >
+        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+        <span>New Cycle</span>
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        *appHasPermission="Permission.PERFORMANCE_GOAL_CREATE"
+        (click)="openCreateGoalModal()"
+        [disabled]="!selectedCycleId() || !activeTargetEmployeeId() || selectedCycle()?.status === 'CLOSED'"
+      >
+        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+        <span>Add Goal</span>
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-indigo"
+        (click)="openSummaryModal()"
+        [disabled]="!selectedCycleId() || !activeTargetEmployeeId()"
+      >
+        <app-icon [name]="summary() ? 'check-circle' : 'award'" [size]="16" [strokeWidth]="2"></app-icon>
+        <span>{{ summary() || !hasFinalizePermission() ? 'View Summary' : 'Review & Finalize' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+  <div class="content-card">
+    <!-- Toolbar Section: Left Tabs, Right Selectors & Filters (Option 2) -->
+    <div class="toolbar-section">
+      <!-- Tabs Navigation (Left) -->
+      <div class="tabs-nav">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="!isOrgView()"
+          (click)="setViewMode('self')"
+        >
+          <app-icon name="target" [size]="16"></app-icon>
+          <span>My Goals</span>
+        </button>
+
+        @if (showViewTabs()) {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="isOrgView()"
+            (click)="setViewMode('org')"
+          >
+            <app-icon name="users" [size]="16"></app-icon>
+            <span>{{ orgTabLabel() }}</span>
+          </button>
+        }
+      </div>
+
+      <!-- Filters & Selectors Wrap (Right) -->
+      <div class="filters-wrap">
+        <!-- Cycle Selector -->
+        <div class="filter-item">
+          <app-select
+            [options]="cycleOptions()"
+            [value]="selectedCycleId()"
+            (valueChange)="onCycleChange($event)"
+            placeholder="Select Cycle"
+            minWidth="200px"
+          ></app-select>
+        </div>
+
+        <!-- Employee Selector in Org View -->
+        @if (isOrgView() && manageableEmployees().length > 0) {
+          <div class="filter-item">
+            <app-select
+              [options]="employeeOptions()"
+              [value]="selectedEmployeeId()"
+              (valueChange)="onEmployeeChange($event)"
+              placeholder="Select Employee"
+              minWidth="220px"
+            ></app-select>
+          </div>
+        }
+
+        <!-- Status Filter -->
+        <div class="filter-item">
+          <app-select
+            [options]="statusOptions"
+            [value]="statusFilter()"
+            (valueChange)="onStatusFilterChange($event)"
+            minWidth="150px"
+          ></app-select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Scorecard Analytics Metric Cards (Below Toolbar, Above Table) ── -->
+    <div class="card-metrics-section">
+      <div class="performance-metrics-grid">
+        <div class="perf-metric-card">
+          <div class="perf-metric-icon perf-icon-blue">
+            <app-icon name="target" [size]="20"></app-icon>
+          </div>
+          <div class="perf-metric-info">
+            <span class="perf-metric-value">{{ totalGoals() }}</span>
+            <span class="perf-metric-label">Defined Goals</span>
+          </div>
+        </div>
+
+        <div class="perf-metric-card">
+          <div class="perf-metric-icon" [class.perf-icon-green]="isWeightValid()" [class.perf-icon-amber]="!isWeightValid()">
+            <app-icon name="pie-chart" [size]="20"></app-icon>
+          </div>
+          <div class="perf-metric-info">
+            <span class="perf-metric-value">{{ totalWeight() }}%</span>
+            <span class="perf-metric-label">Scorecard Weight</span>
+          </div>
+        </div>
+
+        <div class="perf-metric-card">
+          <div class="perf-metric-icon perf-icon-purple">
+            <app-icon name="activity" [size]="20"></app-icon>
+          </div>
+          <div class="perf-metric-info">
+            <span class="perf-metric-value">{{ avgProgress() }}%</span>
+            <span class="perf-metric-label">Average Progress</span>
+          </div>
+        </div>
+
+        <div class="perf-metric-card">
+          <div class="perf-metric-icon perf-icon-amber">
+            <app-icon name="award" [size]="20"></app-icon>
+          </div>
+          <div class="perf-metric-info">
+            <span class="perf-metric-value">{{ summary() ? (summary()!.finalRating | number:'1.2-2') : 'In Progress' }}</span>
+            <span class="perf-metric-label">Final Rating</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Table & Integrated Bottom Pagination (Single Block) ──────────── -->
+    <div class="table-block">
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="spinner-large" aria-hidden="true"></div>
+          <p>Loading performance goals and scorecard evaluations...</p>
+        </div>
+      }
+
+      @if (!loading() && filteredGoals().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon-wrap">
+            <app-icon name="target" [size]="40"></app-icon>
+          </div>
+          <h3>No Goals Found</h3>
+          <p>
+            {{
+              !selectedCycleId()
+                ? 'Please create or select an appraisal cycle above.'
+                : 'No performance goals have been defined for this employee in this cycle yet.'
+            }}
+          </p>
+          <button
+            *appHasPermission="Permission.PERFORMANCE_GOAL_CREATE"
+            type="button"
+            class="btn btn-primary btn-sm"
+            (click)="openCreateGoalModal()"
+            [disabled]="!selectedCycleId() || !selectedEmployeeId() || selectedCycle()?.status === 'CLOSED'"
+          >
+            <app-icon name="plus" [size]="14"></app-icon>
+            <span>Add First Goal</span>
+          </button>
+        </div>
+      }
+
+      @if (!loading() && filteredGoals().length > 0) {
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="col-title">Objective & Target</th>
+                <th class="col-weight">Weight</th>
+                <th class="col-progress">Progress</th>
+                <th class="col-status">Status</th>
+                <th class="col-eval">Self Review</th>
+                <th class="col-eval">Manager Review</th>
+                <th class="col-actions text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (goal of displayedGoals(); track goal.id) {
+                <tr class="table-row">
+                  <td class="col-title">
+                    <div class="goal-info">
+                      <span class="goal-name">{{ goal.title }}</span>
+                      @if (goal.target) {
+                        <span class="goal-target">
+                          <app-icon name="check-circle" [size]="12"></app-icon>
+                          <span>{{ goal.target }}</span>
+                        </span>
+                      }
+                      <span class="goal-dates">
+                        {{ goal.startDate | date:'MMM d, y' }} &ndash; {{ goal.endDate | date:'MMM d, y' }}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td class="col-weight">
+                    <span class="weight-tag">{{ goal.weight }}%</span>
+                  </td>
+
+                  <td class="col-progress">
+                    <div class="progress-cell">
+                      <div class="progress-bar-wrap">
+                        <div class="progress-fill" [style.width.%]="goal.progress"></div>
+                      </div>
+                      <span class="progress-text">{{ goal.progress }}%</span>
+                    </div>
+                  </td>
+
+                  <td class="col-status">
+                    <app-badge [variant]="getGoalStatusVariant(goal.status)">
+                      {{ formatGoalStatus(goal.status) }}
+                    </app-badge>
+                  </td>
+
+                  <td class="col-eval">
+                    @if (getSelfEval(goal); as se) {
+                      <div class="eval-pill">
+                        @if (se.rating) {
+                          <span class="stars">★ {{ se.rating }}/5</span>
+                        }
+                        <span class="eval-state" [class.submitted]="se.status === 'SUBMITTED'">
+                          {{ se.status === 'SUBMITTED' ? 'Submitted' : 'Draft' }}
+                        </span>
+                      </div>
+                    } @else {
+                      <span class="eval-empty">&mdash; Pending</span>
+                    }
+                  </td>
+
+                  <td class="col-eval">
+                    @if (getManagerEval(goal); as me) {
+                      <div class="eval-pill">
+                        @if (me.rating) {
+                          <span class="stars">★ {{ me.rating }}/5</span>
+                        }
+                        <span class="eval-state" [class.submitted]="me.status === 'SUBMITTED'">
+                          {{ me.status === 'SUBMITTED' ? 'Submitted' : 'Draft' }}
+                        </span>
+                      </div>
+                    } @else {
+                      <span class="eval-empty">&mdash; Pending</span>
+                    }
+                  </td>
+
+                  <td class="col-actions text-right">
+                    <div class="action-buttons">
+                      <button
+                        type="button"
+                        class="action-icon-btn"
+                        title="Appraise & Review"
+                        (click)="openEvaluationModal(goal)"
+                        aria-label="Review Goal"
+                      >
+                        <app-icon name="award" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+
+                      <button
+                        type="button"
+                        class="action-icon-btn"
+                        title="Edit Goal"
+                        *appHasPermission="Permission.PERFORMANCE_GOAL_UPDATE"
+                        [disabled]="selectedCycle()?.status === 'CLOSED'"
+                        (click)="openEditGoalModal(goal)"
+                        aria-label="Edit Goal"
+                      >
+                        <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+
+                      <button
+                        type="button"
+                        class="action-icon-btn text-danger"
+                        title="Delete Goal"
+                        *appHasPermission="Permission.PERFORMANCE_GOAL_DELETE"
+                        [disabled]="selectedCycle()?.status === 'CLOSED'"
+                        (click)="onDeleteGoal(goal)"
+                        aria-label="Delete Goal"
+                      >
+                        <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Integrated Card Bottom Pagination -->
+        <div class="table-pagination-footer">
+          <span class="pagination-count">
+            Showing <strong>{{ displayedGoals().length }}</strong> of {{ filteredGoals().length }} goals
+          </span>
+
+          <div class="pagination-nav">
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() <= 1 || loading()"
+              (click)="goToPage(currentPage() - 1)"
+              title="Previous Page"
+              aria-label="Previous Page"
+            >
+              <app-icon name="chevron-left" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+            <span class="page-indicator">{{ currentPage() }} / {{ totalPages() }}</span>
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() >= totalPages() || loading()"
+              (click)="goToPage(currentPage() + 1)"
+              title="Next Page"
+              aria-label="Next Page"
+            >
+              <app-icon name="chevron-right" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+  <!-- Modals -->
+  <app-cycle-form-modal
+    [isOpen]="isCycleModalOpen()"
+    [cycle]="selectedCycleToEdit()"
+    (closeModal)="closeCycleModal()"
+    (saved)="onCycleSaved($event)"
+  ></app-cycle-form-modal>
+
+  <app-goal-form-modal
+    [isOpen]="isGoalModalOpen()"
+    [goal]="selectedGoalToEdit()"
+    [employeeId]="activeTargetEmployeeId()"
+    [cycleId]="selectedCycleId()"
+    [currentTotalWeight]="totalWeight()"
+    (closeModal)="closeGoalModal()"
+    (saved)="onGoalSaved()"
+  ></app-goal-form-modal>
+
+  <app-evaluation-modal
+    [isOpen]="isEvalModalOpen()"
+    [goal]="selectedGoalForEval()"
+    [employeeId]="activeTargetEmployeeId()"
+    [cycleId]="selectedCycleId()"
+    [isCurrentUserSelf]="isCurrentUserSelf()"
+    (closeModal)="closeEvaluationModal()"
+    (evaluationUpdated)="onEvaluationUpdated()"
+  ></app-evaluation-modal>
+
+  <app-summary-modal
+    [isOpen]="isSummaryModalOpen()"
+    [employeeId]="activeTargetEmployeeId()"
+    [employeeName]="activeTargetEmployee() ? (activeTargetEmployee()!.firstName + ' ' + activeTargetEmployee()!.lastName) : 'Employee'"
+    [cycle]="selectedCycle()"
+    [goals]="goals()"
+    [summary]="summary()"
+    [canFinalize]="canFinalize()"
+    (closeModal)="closeSummaryModal()"
+    (finalized)="onSummaryFinalized($event)"
+  ></app-summary-modal>
+

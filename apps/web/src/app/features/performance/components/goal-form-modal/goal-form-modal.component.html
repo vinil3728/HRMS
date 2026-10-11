@@ -1,0 +1,195 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="goal-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close modal backdrop"></button>
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-icon-badge">
+            <app-icon name="target" [size]="20"></app-icon>
+          </div>
+          <div>
+            <h2 id="goal-modal-title" class="modal-title">
+              {{ isEditMode() ? 'Edit Goal / Objective' : 'Add Goal / Objective' }}
+            </h2>
+            <p class="modal-subtitle">
+              Define specific KPI metrics, targets, and cycle scorecard weight.
+            </p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="x" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-form">
+        <div class="modal-body">
+          @if (errorMessage()) {
+            <div class="alert alert-danger" role="alert">
+              <app-icon name="alert-circle" [size]="18"></app-icon>
+              <span>{{ errorMessage() }}</span>
+            </div>
+          }
+
+          <div class="weight-hint-card">
+            <div class="weight-hint-icon">
+              <app-icon name="info" [size]="18"></app-icon>
+            </div>
+            <div class="weight-hint-text">
+              <span>Current Allocated Weight: <strong>{{ currentTotalWeight() }}%</strong></span>
+              <span class="weight-hint-sub">All employee goals in this cycle must total 100% before summary finalization.</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required" for="goalTitle">Goal Title</label>
+            <input
+              id="goalTitle"
+              type="text"
+              class="form-control"
+              [class.is-invalid]="isFieldInvalid('title')"
+              formControlName="title"
+              placeholder="e.g. Optimize Monorepo Build Speed & CI/CD Pipelines"
+            />
+            @if (isFieldInvalid('title')) {
+              <div class="invalid-feedback">
+                Goal title is required.
+              </div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="goalDescription">Description & Scope</label>
+            <textarea
+              id="goalDescription"
+              class="form-control textarea"
+              formControlName="description"
+              rows="2"
+              placeholder="Detailed description of key expectations and deliverables..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="goalTarget">Measurable Target / Metric</label>
+            <input
+              id="goalTarget"
+              type="text"
+              class="form-control"
+              formControlName="target"
+              placeholder="e.g. Reduce pipeline build duration from 12 mins to under 4 mins"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label required" for="goalWeight">Scorecard Weight (%)</label>
+              <input
+                id="goalWeight"
+                type="number"
+                min="1"
+                max="100"
+                step="1"
+                class="form-control"
+                [class.is-invalid]="isFieldInvalid('weight')"
+                formControlName="weight"
+                placeholder="e.g. 25"
+              />
+              @if (isFieldInvalid('weight')) {
+                <div class="invalid-feedback">
+                  Weight must be between 1% and 100%.
+                </div>
+              }
+            </div>
+
+            @if (isEditMode()) {
+              <div class="form-group">
+                <label class="form-label required" for="goalProgress">Progress (%)</label>
+                <input
+                  id="goalProgress"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="5"
+                  class="form-control"
+                  [class.is-invalid]="isFieldInvalid('progress')"
+                  formControlName="progress"
+                  placeholder="e.g. 75"
+                />
+                @if (isFieldInvalid('progress')) {
+                  <div class="invalid-feedback">
+                    Progress must be between 0% and 100%.
+                  </div>
+                }
+              </div>
+
+              <div class="form-group">
+                <span class="form-label required">Status</span>
+                <app-select
+                  formControlName="status"
+                  [options]="goalStatusOptions"
+                  [fullWidth]="true"
+                ></app-select>
+              </div>
+            }
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label required" for="goalStartDate">Start Date</label>
+              <input
+                id="goalStartDate"
+                type="date"
+                class="form-control"
+                [class.is-invalid]="isFieldInvalid('startDate')"
+                formControlName="startDate"
+              />
+              @if (isFieldInvalid('startDate')) {
+                <div class="invalid-feedback">
+                  Start date is required.
+                </div>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required" for="goalEndDate">Target End Date</label>
+              <input
+                id="goalEndDate"
+                type="date"
+                class="form-control"
+                [class.is-invalid]="isFieldInvalid('endDate')"
+                formControlName="endDate"
+              />
+              @if (isFieldInvalid('endDate')) {
+                <div class="invalid-feedback">
+                  End date is required.
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="onCancel()"
+            [disabled]="submitting()"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="submitting()"
+          >
+            @if (submitting()) {
+              <app-icon name="clock" [size]="16" class="spin"></app-icon>
+              <span>Saving...</span>
+            } @else {
+              <span>{{ isEditMode() ? 'Update Goal' : 'Add Goal' }}</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

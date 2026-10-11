@@ -1,0 +1,168 @@
+<div
+  class="custom-datepicker-container"
+  [class.full-width]="fullWidth()"
+  [style.min-width]="fullWidth() ? '100%' : minWidth()"
+>
+  <!-- Trigger Button -->
+  <button
+    type="button"
+    class="datepicker-trigger"
+    [class.open]="isOpen()"
+    [class.has-value]="hasValue()"
+    [disabled]="isDisabled()"
+    (click)="toggleDropdown()"
+    aria-haspopup="dialog"
+    [attr.aria-expanded]="isOpen()"
+  >
+    <div class="trigger-left">
+      <app-icon
+        name="calendar"
+        [size]="15"
+        [strokeWidth]="2"
+        customClass="datepicker-cal-icon"
+      ></app-icon>
+      <span class="selected-text" [class.is-placeholder]="!hasValue()">
+        {{ displayLabel() }}
+      </span>
+    </div>
+
+    <div class="trigger-right">
+      @if (allowClear() && hasValue() && !isDisabled()) {
+        <button
+          type="button"
+          class="inline-clear-btn"
+          (click)="onClear($event)"
+          title="Clear date selection"
+          aria-label="Clear date selection"
+        >
+          <app-icon name="close" [size]="13" [strokeWidth]="2.2"></app-icon>
+        </button>
+      } @else {
+        <app-icon
+          name="chevron-down"
+          [size]="14"
+          [strokeWidth]="2"
+          customClass="datepicker-chevron"
+          [class.rotated]="isOpen()"
+        ></app-icon>
+      }
+    </div>
+  </button>
+
+  <!-- Calendar Popover -->
+  @if (isOpen()) {
+    <div
+      class="datepicker-dropdown"
+      [class.drop-up]="openUpward()"
+      role="dialog"
+      aria-label="Date Picker"
+    >
+      <!-- Range Quick Presets Toolbar -->
+      @if (mode() === 'range') {
+        <div class="presets-toolbar">
+          @for (preset of presets; track preset.label) {
+            <button
+              type="button"
+              class="preset-pill"
+              (click)="applyPreset(preset)"
+            >
+              {{ preset.label }}
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Calendar Header (Month/Year & Arrows) -->
+      <div class="calendar-header">
+        <button
+          type="button"
+          class="nav-btn"
+          (click)="prevMonth()"
+          title="Previous month"
+          aria-label="Previous month"
+        >
+          <app-icon name="chevron-left" [size]="15" [strokeWidth]="2.2"></app-icon>
+        </button>
+
+        <span class="month-year-label">{{ currentMonthYearLabel() }}</span>
+
+        <button
+          type="button"
+          class="nav-btn"
+          (click)="nextMonth()"
+          title="Next month"
+          aria-label="Next month"
+        >
+          <app-icon name="chevron-right" [size]="15" [strokeWidth]="2.2"></app-icon>
+        </button>
+      </div>
+
+      <!-- Weekday Headers -->
+      <div class="weekday-grid">
+        @for (wd of weekDays; track wd) {
+          <span class="weekday-header">{{ wd }}</span>
+        }
+      </div>
+
+      <!-- Days Grid -->
+      <div class="days-grid">
+        @for (day of calendarDays(); track day.dateStr + day.isCurrentMonth) {
+          <button
+            type="button"
+            class="day-cell"
+            [class.other-month]="!day.isCurrentMonth"
+            [class.today]="day.isToday"
+            [class.selected]="day.isSelected"
+            [class.range-start]="day.isRangeStart"
+            [class.range-end]="day.isRangeEnd"
+            [class.in-range]="day.isInRange"
+            [disabled]="day.isDisabled"
+            (click)="onDayClick(day)"
+            (mouseenter)="onDayHover(day)"
+          >
+            <span>{{ day.dayNumber }}</span>
+          </button>
+        }
+      </div>
+
+      <!-- Action Footer -->
+      <div class="datepicker-footer">
+        @if (mode() === 'single') {
+          <button type="button" class="footer-btn today-btn" (click)="goToToday()">
+            Today
+          </button>
+          @if (hasValue()) {
+            <button type="button" class="footer-btn clear-btn" (click)="onClear()">
+              Clear
+            </button>
+          }
+        } @else {
+          <div class="range-info">
+            @if (selectedFrom() && !selectedTo()) {
+              <span class="range-status-hint">Pick end date to finish</span>
+            } @else if (selectedFrom() && selectedTo()) {
+              <span class="range-status-active">Range selected</span>
+            } @else {
+              <span class="range-status-hint">Click a start date</span>
+            }
+          </div>
+
+          <div class="footer-actions">
+            @if (hasValue()) {
+              <button type="button" class="footer-btn clear-btn" (click)="onClear()">
+                Clear
+              </button>
+            }
+            <button
+              type="button"
+              class="footer-btn done-btn"
+              (click)="closeDropdown()"
+            >
+              Done
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

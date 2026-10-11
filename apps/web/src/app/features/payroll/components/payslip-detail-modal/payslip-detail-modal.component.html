@@ -1,0 +1,280 @@
+@if (isOpen() && payslip(); as slip) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="payslip-modal-title">
+    <button class="modal-backdrop" (click)="onClose()" aria-label="Close dialog"></button>
+    <div class="modal-container printable-payslip">
+      <!-- Modal Header -->
+      <div class="modal-header no-print">
+        <div class="header-title-wrap">
+          <div class="icon-wrap">
+            <app-icon name="receipt" [size]="20"></app-icon>
+          </div>
+          <div>
+            <h2 id="payslip-modal-title" class="modal-title">Employee Salary Slip</h2>
+            <p class="modal-subtitle">Official earnings statement and statutory deductions record</p>
+          </div>
+        </div>
+        <div class="header-actions-wrap">
+          <button type="button" class="btn btn-outline btn-sm" (click)="onPrint()" title="Print Salary Slip">
+            <app-icon name="download" [size]="15"></app-icon>
+            <span>Print / PDF</span>
+          </button>
+          <button type="button" class="close-btn" (click)="onClose()" aria-label="Close modal">
+            <app-icon name="x" [size]="20"></app-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Payslip Body (Printable Area) -->
+      <div class="modal-body print-area">
+        <!-- Corporate Slip Header -->
+        <div class="slip-brand-header">
+          <div class="brand-left">
+            <div class="brand-logo-text">TX</div>
+            <div>
+              <h1 class="company-name">TreasureX FinServ Ltd.</h1>
+              <p class="company-address">Financial District, Gachibowli, Hyderabad, Telangana 500032</p>
+            </div>
+          </div>
+          <div class="brand-right">
+            <div class="pay-period-title">PAYSLIP FOR {{ getMonthName(slip.month) }} {{ slip.year }}</div>
+            <div class="slip-status-badge">
+              <app-badge [variant]="getStatusVariant(slip.status)">{{ slip.status }}</app-badge>
+            </div>
+          </div>
+        </div>
+
+        <!-- Employee & Bank Info Grid -->
+        <div class="info-section-grid">
+          <div class="info-col">
+            <div class="info-row">
+              <span class="info-label">Employee Name:</span>
+              <span class="info-value font-semibold">
+                {{ slip.employee?.firstName }} {{ slip.employee?.lastName }}
+              </span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Employee Code:</span>
+              <span class="info-value font-mono">{{ slip.employee?.employeeCode }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Department:</span>
+              <span class="info-value">{{ slip.employee?.department?.name || 'General' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Designation:</span>
+              <span class="info-value">{{ slip.employee?.designation?.name || 'Associate' }}</span>
+            </div>
+          </div>
+
+          <div class="info-col">
+            <div class="info-row">
+              <span class="info-label">Bank Name:</span>
+              <span class="info-value">{{ slip.employee?.bankDetails?.bankName || 'HDFC Bank Ltd.' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Account No:</span>
+              <span class="info-value font-mono">{{ formatAccountNumber(slip.employee?.bankDetails?.accountNumber) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">IFSC Code:</span>
+              <span class="info-value font-mono">{{ slip.employee?.bankDetails?.ifscCode || 'HDFC0001234' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Payment Mode:</span>
+              <span class="info-value">{{ slip.paymentMode || 'BANK_TRANSFER' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attendance Summary Ribbon -->
+        <div class="attendance-ribbon">
+          <div class="att-item">
+            <span class="att-label">Calendar Days</span>
+            <span class="att-value">{{ slip.workingDays }}</span>
+          </div>
+          <div class="att-divider"></div>
+          <div class="att-item">
+            <span class="att-label">Paid Days</span>
+            <span class="att-value font-semibold text-success">{{ slip.paidDays }}</span>
+          </div>
+          <div class="att-divider"></div>
+          <div class="att-item">
+            <span class="att-label">Loss of Pay (LOP)</span>
+            <span class="att-value" [class.text-danger]="slip.lossOfPayDays > 0">{{ slip.lossOfPayDays }}</span>
+          </div>
+          <div class="att-divider"></div>
+          <div class="att-item">
+            <span class="att-label">Pay Date</span>
+            <span class="att-value">{{ slip.payDate | date: 'mediumDate' }}</span>
+          </div>
+        </div>
+
+        <!-- Earnings vs Deductions Table -->
+        <div class="salary-tables-grid">
+          <!-- Earnings Table -->
+          <div class="salary-table-box">
+            <div class="table-header-bar earnings-bar">
+              <span>Earnings</span>
+              <span class="text-right">Amount (₹)</span>
+            </div>
+            <div class="table-row">
+              <span>Basic Salary</span>
+              <span class="amount">{{ slip.basicSalary | number: '1.2-2' }}</span>
+            </div>
+            <div class="table-row">
+              <span>House Rent Allowance (HRA)</span>
+              <span class="amount">{{ slip.hra | number: '1.2-2' }}</span>
+            </div>
+            <div class="table-row">
+              <span>Conveyance Allowance</span>
+              <span class="amount">{{ slip.conveyance | number: '1.2-2' }}</span>
+            </div>
+            <div class="table-row">
+              <span>Medical Allowance</span>
+              <span class="amount">{{ slip.medicalAllowance | number: '1.2-2' }}</span>
+            </div>
+            <div class="table-row">
+              <span>Special Allowance</span>
+              <span class="amount">{{ slip.specialAllowance | number: '1.2-2' }}</span>
+            </div>
+            @if (slip.bonus > 0) {
+              <div class="table-row bonus-row">
+                <span>Performance Bonus</span>
+                <span class="amount">{{ slip.bonus | number: '1.2-2' }}</span>
+              </div>
+            }
+            @if (slip.overtimePay > 0) {
+              <div class="table-row">
+                <span>Overtime Pay</span>
+                <span class="amount">{{ slip.overtimePay | number: '1.2-2' }}</span>
+              </div>
+            }
+            @if (slip.reimbursements > 0) {
+              <div class="table-row">
+                <span>Reimbursements</span>
+                <span class="amount">{{ slip.reimbursements | number: '1.2-2' }}</span>
+              </div>
+            }
+            <div class="table-total-row earnings-total">
+              <span>Total Gross Earnings</span>
+              <span class="total-amount">₹ {{ slip.grossEarnings | number: '1.2-2' }}</span>
+            </div>
+          </div>
+
+          <!-- Deductions Table -->
+          <div class="salary-table-box">
+            <div class="table-header-bar deductions-bar">
+              <span>Deductions</span>
+              <span class="text-right">Amount (₹)</span>
+            </div>
+            <div class="table-row">
+              <span>Provident Fund (PF)</span>
+              <span class="amount">{{ slip.providentFund | number: '1.2-2' }}</span>
+            </div>
+            <div class="table-row">
+              <span>Professional Tax (PT)</span>
+              <span class="amount">{{ slip.professionalTax | number: '1.2-2' }}</span>
+            </div>
+            <div class="table-row">
+              <span>Tax Deducted at Source (TDS)</span>
+              <span class="amount">{{ slip.tds | number: '1.2-2' }}</span>
+            </div>
+            @if (slip.lossOfPayDeduction > 0) {
+              <div class="table-row lop-row">
+                <span>Loss of Pay (LOP) Deduction</span>
+                <span class="amount">{{ slip.lossOfPayDeduction | number: '1.2-2' }}</span>
+              </div>
+            }
+            @if (slip.otherDeductions > 0) {
+              <div class="table-row">
+                <span>Other Deductions</span>
+                <span class="amount">{{ slip.otherDeductions | number: '1.2-2' }}</span>
+              </div>
+            }
+            <div class="table-total-row deductions-total">
+              <span>Total Statutory Deductions</span>
+              <span class="total-amount">₹ {{ slip.totalDeductions | number: '1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Net In-Hand Pay Banner -->
+        <div class="net-pay-banner">
+          <div class="net-pay-left">
+            <div class="net-pay-label">Net Take-Home Pay (In-Hand)</div>
+            <div class="net-pay-amount">₹ {{ slip.netPay | number: '1.2-2' }}</div>
+          </div>
+          <div class="net-pay-right">
+            @if (slip.paymentReference) {
+              <div class="payment-ref-box">
+                <span class="ref-label">Transaction Ref / UTR:</span>
+                <span class="ref-value">{{ slip.paymentReference }}</span>
+              </div>
+            }
+            @if (slip.paidAt) {
+              <div class="disbursed-date">
+                Disbursed on: {{ slip.paidAt | date: 'medium' }}
+              </div>
+            }
+          </div>
+        </div>
+
+        @if (slip.rejectionReason) {
+          <div class="rejection-box">
+            <strong>Rejection Reason:</strong> {{ slip.rejectionReason }}
+          </div>
+        }
+
+        <!-- Sign-off Footer -->
+        <div class="slip-signoff">
+          <div class="signoff-note">
+            This is a system-generated salary slip and does not require a physical signature.
+          </div>
+          <div class="company-seal">
+            <span>TreasureX Payroll Authorization</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer Controls -->
+      <div class="modal-footer no-print">
+        <button type="button" class="btn btn-secondary" (click)="onClose()">
+          Close
+        </button>
+
+        @if (slip.status !== 'PAID') {
+          <button
+            type="button"
+            class="btn btn-outline"
+            (click)="onEditAdjustments()"
+          >
+            <app-icon name="edit" [size]="15"></app-icon>
+            <span>Edit Adjustments</span>
+          </button>
+        }
+
+        @if (slip.status === 'PROCESSED' || slip.status === 'DRAFT') {
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="onApprove()"
+          >
+            <app-icon name="check" [size]="15"></app-icon>
+            <span>Approve Payslip</span>
+          </button>
+        }
+
+        @if (slip.status === 'APPROVED') {
+          <button
+            type="button"
+            class="btn btn-success"
+            (click)="onMarkPaid()"
+          >
+            <app-icon name="check-circle" [size]="15"></app-icon>
+            <span>Mark as Disbursed / Paid</span>
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

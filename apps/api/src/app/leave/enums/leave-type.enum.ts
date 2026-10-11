@@ -1,0 +1,9 @@
+export enum LeaveType {
+  CASUAL = 'CASUAL',
+  SICK = 'SICK',
+  EARNED = 'EARNED',
+  UNPAID = 'UNPAID',
+  MATERNITY = 'MATERNITY',
+  PATERNITY = 'PATERNITY',
+  OTHER = 'OTHER',
+}

@@ -1,0 +1,22 @@
+import {
+    IsOptional,
+    IsString,
+    IsUUID,
+    MinLength,
+} from 'class-validator';
+
+export class UpdateUserDto {
+    @IsOptional()
+    @IsString()
+    @MinLength(3)
+    username?: string;
+
+    @IsOptional()
+    @IsString()
+    @MinLength(8)
+    password?: string;
+
+    @IsOptional()
+    @IsUUID()
+    roleId?: string;
+}

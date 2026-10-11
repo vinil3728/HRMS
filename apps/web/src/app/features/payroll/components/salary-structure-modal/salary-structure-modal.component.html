@@ -1,0 +1,167 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="salary-struct-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close dialog"></button>
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="header-title-wrap">
+          <div class="icon-wrap">
+            <app-icon name="dollar" [size]="20"></app-icon>
+          </div>
+          <div>
+            <h2 id="salary-struct-modal-title" class="modal-title">
+              {{ isEditMode() ? 'Update Salary Compensation Structure' : 'Define Employee Salary Structure' }}
+            </h2>
+            <p class="modal-subtitle">Configure annual CTC package, earnings components, and statutory deductions</p>
+          </div>
+        </div>
+        <button type="button" class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="x" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-form">
+        <div class="modal-body">
+          @if (errorMessage()) {
+            <div class="alert alert-danger" role="alert">
+              <app-icon name="alert-circle" [size]="18"></app-icon>
+              <span>{{ errorMessage() }}</span>
+            </div>
+          }
+
+          <!-- Employee Selection -->
+          <div class="form-group">
+            <span class="form-label required">Employee</span>
+            @if (isEditMode()) {
+              <div class="employee-static-box">
+                <span class="emp-name">{{ selectedStructure()?.employee?.firstName }} {{ selectedStructure()?.employee?.lastName }}</span>
+                <span class="emp-meta">({{ selectedStructure()?.employee?.employeeCode }}) &bull; {{ selectedStructure()?.employee?.department?.name || 'General' }}</span>
+              </div>
+            } @else {
+              <app-select
+                formControlName="employeeId"
+                [options]="employeeOptions()"
+                placeholder="-- Select Employee Profile --"
+                [fullWidth]="true"
+              ></app-select>
+              @if (isFieldInvalid('employeeId')) {
+                <div class="invalid-feedback">Please select an employee.</div>
+              }
+            }
+          </div>
+
+          <!-- CTC & Auto Calculate Ribbon -->
+          <div class="ctc-row">
+            <div class="form-group flex-1">
+              <label class="form-label required" for="structCtc">Annual Cost to Company (CTC in ₹)</label>
+              <input
+                id="structCtc"
+                type="number"
+                class="form-control"
+                [class.is-invalid]="isFieldInvalid('ctc')"
+                formControlName="ctc"
+                placeholder="e.g. 960000"
+              />
+              @if (isFieldInvalid('ctc')) {
+                <div class="invalid-feedback">Valid annual CTC is required.</div>
+              }
+            </div>
+
+            <div class="auto-calc-col">
+              <span class="form-label-spacer" aria-hidden="true">&nbsp;</span>
+              <button
+                type="button"
+                class="btn btn-outline auto-btn"
+                (click)="applyStandardBreakdown()"
+                title="Calculate standard components based on CTC"
+              >
+                <app-icon name="check" [size]="15"></app-icon>
+                <span>Auto-Calculate</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Earnings Breakdown -->
+          <div class="section-title">Monthly Earnings Components</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label required" for="structBasic">Basic Salary (₹)</label>
+              <input id="structBasic" type="number" class="form-control" formControlName="basicSalary" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required" for="structHra">House Rent Allowance (HRA) (₹)</label>
+              <input id="structHra" type="number" class="form-control" formControlName="hra" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="structConv">Conveyance Allowance (₹)</label>
+              <input id="structConv" type="number" class="form-control" formControlName="conveyanceAllowance" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="structMed">Medical Allowance (₹)</label>
+              <input id="structMed" type="number" class="form-control" formControlName="medicalAllowance" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="structSpecial">Special Allowance (₹)</label>
+              <input id="structSpecial" type="number" class="form-control" formControlName="specialAllowance" />
+            </div>
+          </div>
+
+          <!-- Deductions Breakdown -->
+          <div class="section-title">Monthly Statutory Deductions</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="structPf">Provident Fund (PF) (₹)</label>
+              <input id="structPf" type="number" class="form-control" formControlName="providentFund" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="structPt">Professional Tax (PT) (₹)</label>
+              <input id="structPt" type="number" class="form-control" formControlName="professionalTax" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="structTds">TDS / Income Tax Estimate (₹)</label>
+              <input id="structTds" type="number" class="form-control" formControlName="tds" />
+            </div>
+          </div>
+
+          <!-- Live Summary Bar -->
+          <div class="summary-live-bar">
+            <div class="summary-metric">
+              <span class="metric-label">Gross Monthly</span>
+              <span class="metric-value">₹ {{ computedGross() | number: '1.2-2' }}</span>
+            </div>
+            <div class="metric-divider"></div>
+            <div class="summary-metric">
+              <span class="metric-label">Total Deductions</span>
+              <span class="metric-value text-danger">- ₹ {{ computedDeductions() | number: '1.2-2' }}</span>
+            </div>
+            <div class="metric-divider"></div>
+            <div class="summary-metric">
+              <span class="metric-label">Net In-Hand (Monthly)</span>
+              <span class="metric-value text-success font-bold">₹ {{ computedNet() | number: '1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="submitting()">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="submitting() || form.invalid">
+            @if (submitting()) {
+              <app-icon name="clock" [size]="16" class="spin"></app-icon>
+              <span>Saving Compensation...</span>
+            } @else {
+              <app-icon name="check" [size]="16"></app-icon>
+              <span>{{ isEditMode() ? 'Save Changes' : 'Save Salary Structure' }}</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

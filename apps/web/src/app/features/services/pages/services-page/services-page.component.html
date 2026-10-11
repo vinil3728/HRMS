@@ -1,0 +1,48 @@
+<div class="services-page-wrapper">
+  <div class="services-page-container">
+    <!-- Centered Search Header -->
+    <div class="services-header">
+      <h1 class="services-title">All Services</h1>
+      <p class="services-subtitle">Quickly find and navigate to any workspace module</p>
+
+      <div class="services-search-box">
+        <span class="services-search-icon">
+          <app-icon name="search" [size]="18"></app-icon>
+        </span>
+        <input
+          type="text"
+          class="services-search-input"
+          placeholder="Search services..."
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+        />
+      </div>
+    </div>
+
+    <!-- Centered 3-Column Services Grid -->
+    @if (filteredServices().length === 0) {
+      <div class="services-empty">
+        <app-icon name="search" [size]="36"></app-icon>
+        <p>No services match "{{ searchQuery() }}"</p>
+      </div>
+    } @else {
+      <div class="services-grid">
+        @for (service of filteredServices(); track service.route) {
+          <a [routerLink]="service.route" class="service-card">
+            <div
+              class="service-icon-wrap"
+              [style.background]="service.color + '18'"
+              [style.color]="service.color"
+            >
+              <app-icon [name]="service.icon" [size]="26" [strokeWidth]="1.7"></app-icon>
+            </div>
+            <div class="service-card-info">
+              <span class="service-card-label">{{ service.label }}</span>
+              <span class="service-card-desc">{{ service.description }}</span>
+            </div>
+          </a>
+        }
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,174 @@
+@if (isOpen() && loan()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="loan-repay-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close modal backdrop"></button>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 id="loan-repay-modal-title" class="modal-title">Configure Repayment Options</h3>
+          <p class="modal-subtitle">Choose repayment method, split allocations (Cash vs Salary Deduction), and start timeline.</p>
+        </div>
+        <button class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <!-- Financial Metric Banner -->
+      <div class="loan-summary-bar">
+        <div class="sum-item">
+          <span class="sum-lbl">Total Loan Principal</span>
+          <span class="sum-val">₹{{ principalAmount() | number:'1.2-2' }}</span>
+        </div>
+        <div class="sum-item">
+          <span class="sum-lbl">Tenure</span>
+          <span class="sum-val">{{ form.get('tenureMonths')?.value }} Months</span>
+        </div>
+        <div class="sum-item">
+          <span class="sum-lbl">Est. Monthly Installment</span>
+          <span class="sum-val highlight">₹{{ getMonthlyEstimate() | number:'1.2-2' }}/mo</span>
+        </div>
+      </div>
+
+      @if (errorMessage()) {
+        <div class="alert-error" role="alert">
+          <app-icon name="alert-circle" [size]="16"></app-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-body">
+        <!-- Repayment Mode Selection -->
+        <div class="form-group">
+          <label class="form-label">Select Repayment Mode <span class="required">*</span></label>
+          <div class="mode-options-grid">
+            @for (mode of repaymentModes; track mode.value) {
+              <div
+                class="mode-card"
+                [class.selected]="form.get('repaymentMode')?.value === mode.value"
+                (click)="onModeChange(mode.value)"
+              >
+                <div class="mode-radio-circle">
+                  <div class="inner-dot"></div>
+                </div>
+                <div class="mode-details">
+                  <div class="mode-title">{{ mode.label }}</div>
+                  <div class="mode-desc">{{ mode.desc }}</div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Split Payment Breakdown Section (when SPLIT selected) -->
+        @if (isSplitMode()) {
+          <div class="split-section">
+            <div class="split-header">
+              <span class="split-title">Split Configuration (Custom Split Ratio)</span>
+              <div class="preset-pills">
+                <button type="button" class="pill-btn" (click)="applySplitPreset(50)">50% Cash / 50% Salary</button>
+                <button type="button" class="pill-btn" (click)="applySplitPreset(25)">25% Cash / 75% Salary</button>
+                <button type="button" class="pill-btn" (click)="applySplitPreset(75)">75% Cash / 25% Salary</button>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label class="form-label" for="cashAmount">
+                  <app-icon name="dollar" [size]="14"></app-icon>
+                  Cash / Direct Transfer Portion (₹)
+                </label>
+                <input
+                  id="cashAmount"
+                  type="number"
+                  class="form-control"
+                  formControlName="cashAmount"
+                  (input)="onCashAmountChange($any($event.target).value)"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div class="form-group flex-1">
+                <label class="form-label" for="salaryAmount">
+                  <app-icon name="receipt" [size]="14"></app-icon>
+                  Monthly Salary Deduction Portion (₹)
+                </label>
+                <input
+                  id="salaryAmount"
+                  type="number"
+                  class="form-control"
+                  formControlName="salaryDeductionAmount"
+                  (input)="onSalaryAmountChange($any($event.target).value)"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            <div class="split-visual-bar">
+              <div
+                class="cash-segment"
+                [style.width.%]="(form.get('cashAmount')?.value / principalAmount()) * 100"
+              >
+                Cash: ₹{{ form.get('cashAmount')?.value | number:'1.2-2' }}
+              </div>
+              <div
+                class="salary-segment"
+                [style.width.%]="(form.get('salaryDeductionAmount')?.value / principalAmount()) * 100"
+              >
+                Salary: ₹{{ form.get('salaryDeductionAmount')?.value | number:'1.2-2' }}
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Schedule Dates & Tenure Row (3 fields per row) -->
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label" for="repaymentStartDate">Repayments Start Date <span class="required">*</span></label>
+            <input
+              id="repaymentStartDate"
+              type="date"
+              class="form-control"
+              formControlName="repaymentStartDate"
+            />
+          </div>
+
+          <div class="form-group flex-1">
+            <label class="form-label" for="repayTenure">Tenure (Installment Months) <span class="required">*</span></label>
+            <input
+              id="repayTenure"
+              type="number"
+              class="form-control"
+              formControlName="tenureMonths"
+              placeholder="e.g. 6"
+            />
+          </div>
+
+          <div class="form-group flex-1">
+            <label class="form-label" for="repayNotes">Repayment Notes <span class="optional">(Optional)</span></label>
+            <input
+              id="repayNotes"
+              type="text"
+              class="form-control"
+              formControlName="notes"
+              placeholder="e.g. Deduct on 1st of every month"
+            />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" (click)="onCancel()" [disabled]="submitting()">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="spinner"></span>
+              <span>Initiating Schedule...</span>
+            } @else {
+              <app-icon name="check" [size]="16"></app-icon>
+              <span>Save Options & Initiate Repayment Schedule</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

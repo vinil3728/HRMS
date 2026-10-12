@@ -43,8 +43,8 @@ export class RolesPageComponent implements OnInit {
   readonly roles = signal<Role[]>([]);
   readonly loadingRoles = signal<boolean>(true);
   readonly searchQuery = signal<string>('');
-  readonly statusFilter = signal<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
-  readonly sortField = signal<'code' | 'name' | 'isActive'>('name');
+  readonly statusFilter = signal<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED'>('ALL');
+  readonly sortField = signal<'code' | 'name' | 'isActive' | 'isDeleted'>('name');
   readonly sortDirection = signal<'asc' | 'desc'>('asc');
 
   readonly currentPage = signal<number>(1);
@@ -60,6 +60,7 @@ export class RolesPageComponent implements OnInit {
     { label: 'All Statuses', value: 'ALL' },
     { label: 'Active', value: 'ACTIVE' },
     { label: 'Inactive', value: 'INACTIVE' },
+    { label: 'Deleted', value: 'DELETED' },
   ];
 
   readonly hasActiveFilters = computed(
@@ -83,8 +84,13 @@ export class RolesPageComponent implements OnInit {
     }
 
     if (status !== 'ALL') {
-      const activeWanted = status === 'ACTIVE';
-      list = list.filter((r) => r.isActive === activeWanted);
+      if (status === 'ACTIVE') {
+        list = list.filter((r) => r.isActive && !r.isDeleted);
+      } else if (status === 'INACTIVE') {
+        list = list.filter((r) => !r.isActive && !r.isDeleted);
+      } else if (status === 'DELETED') {
+        list = list.filter((r) => !!r.isDeleted);
+      }
     }
 
     list.sort((a, b) => {
@@ -94,6 +100,12 @@ export class RolesPageComponent implements OnInit {
       if (typeof valA === 'string' && typeof valB === 'string') {
         const cmp = valA.localeCompare(valB, undefined, { sensitivity: 'base' });
         return dir === 'asc' ? cmp : -cmp;
+      }
+
+      if (typeof valA === 'boolean' && typeof valB === 'boolean') {
+        const numA = valA ? 1 : 0;
+        const numB = valB ? 1 : 0;
+        return (numA - numB) * (dir === 'asc' ? 1 : -1);
       }
 
       if (valA === valB) return 0;
@@ -120,7 +132,7 @@ export class RolesPageComponent implements OnInit {
 
   loadRoles(): void {
     this.loadingRoles.set(true);
-    this.settingsService.getRoles().subscribe({
+    this.settingsService.getRoles(true).subscribe({
       next: (list) => {
         this.roles.set(list);
         this.loadingRoles.set(false);
@@ -138,7 +150,7 @@ export class RolesPageComponent implements OnInit {
   }
 
   onStatusFilterChange(value: string): void {
-    this.statusFilter.set((value || 'ALL') as 'ALL' | 'ACTIVE' | 'INACTIVE');
+    this.statusFilter.set((value || 'ALL') as 'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED');
     this.currentPage.set(1);
   }
 
@@ -153,7 +165,7 @@ export class RolesPageComponent implements OnInit {
     this.currentPage.set(page);
   }
 
-  setSort(field: 'code' | 'name' | 'isActive'): void {
+  setSort(field: 'code' | 'name' | 'isActive' | 'isDeleted'): void {
     if (this.sortField() === field) {
       this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
     } else {
@@ -198,7 +210,13 @@ export class RolesPageComponent implements OnInit {
   }
 
   toggleRoleActive(role: Role): void {
-    if (role.isSystemRole) return;
+    if (role.isDeleted) {
+      this.settingsService.activateRole(role.id).subscribe({
+        next: () => this.loadRoles(),
+        error: (err) => alert(err?.error?.message || 'Failed to activate role'),
+      });
+      return;
+    }
 
     if (role.isActive) {
       const confirmDeactivate = window.confirm(
@@ -208,12 +226,28 @@ export class RolesPageComponent implements OnInit {
 
       this.settingsService.deactivateRole(role.id).subscribe({
         next: () => this.loadRoles(),
+        error: (err) => alert(err?.error?.message || 'Failed to deactivate role'),
       });
     } else {
       this.settingsService.activateRole(role.id).subscribe({
         next: () => this.loadRoles(),
+        error: (err) => alert(err?.error?.message || 'Failed to activate role'),
       });
     }
+  }
+
+  deleteRole(role: Role): void {
+    if (role.isSystemRole) return;
+
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete role "${role.name}"? This action will soft-delete the role and mark it as deleted.`
+    );
+    if (!confirmDelete) return;
+
+    this.settingsService.deleteRole(role.id).subscribe({
+      next: () => this.loadRoles(),
+      error: (err) => alert(err?.error?.message || 'Failed to delete role'),
+    });
   }
 
   exportRolesCsv(): void {
@@ -225,6 +259,7 @@ export class RolesPageComponent implements OnInit {
       'Role Name',
       'Type',
       'Status',
+      'Deleted',
       'Granted Permissions Count',
       'Description',
     ];
@@ -234,6 +269,7 @@ export class RolesPageComponent implements OnInit {
       `"${r.name.replace(/"/g, '""')}"`,
       r.isSystemRole ? 'System' : 'Custom',
       r.isActive ? 'Active' : 'Inactive',
+      r.isDeleted ? 'True' : 'False',
       r.rolePermissions?.length || 0,
       `"${(r.description || '').replace(/"/g, '""')}"`,
     ]);

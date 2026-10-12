@@ -2,12 +2,15 @@ import {
     Column,
     CreateDateColumn,
     Entity,
+    JoinColumn,
+    ManyToOne,
     OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
 
 import { RolePermission } from './role-permission.entity';
+import { ModuleEntity } from '../../modules/entities/module.entity';
 
 @Entity('permissions')
 export class PermissionEntity {
@@ -32,16 +35,33 @@ export class PermissionEntity {
     description!: string | null;
 
     @Column({
-        type: 'varchar',
-        length: 100,
+        name: 'module_id',
+        type: 'uuid',
     })
-    module!: string;
+    moduleId!: string;
+
+    @ManyToOne(
+        () => ModuleEntity,
+        (module) => module.permissions,
+        {
+            onDelete: 'RESTRICT',
+        },
+    )
+    @JoinColumn({ name: 'module_id' })
+    module!: ModuleEntity;
 
     @Column({
         name: 'is_active',
         default: true,
     })
     isActive!: boolean;
+
+    @Column({
+        name: 'is_deleted',
+        type: 'boolean',
+        default: false,
+    })
+    isDeleted!: boolean;
 
     @OneToMany(
         () => RolePermission,

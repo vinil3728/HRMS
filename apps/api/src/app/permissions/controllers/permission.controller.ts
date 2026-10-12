@@ -1,6 +1,7 @@
 import {
     Body,
     Controller,
+    Delete,
     Get,
     Param,
     Patch,
@@ -15,7 +16,7 @@ import { UpdatePermissionDto } from '../dto/update-permission.dto';
 
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../guards/permission.guard';
-import { Permissions } from '../decorators/permissions.decorator';
+import { AnyPermissions, Permissions } from '../decorators/permissions.decorator';
 import { Permission } from '../../permissions/enums/permission.enum';
 
 @Controller('permissions')
@@ -62,7 +63,7 @@ export class PermissionController {
 
     @Patch(':id/activate')
     @UseGuards(PermissionGuard)
-    @Permissions(Permission.PERMISSION_ACTIVATE)
+    @AnyPermissions(Permission.PERMISSION_ACTIVATE, Permission.PERMISSION_UPDATE)
     activate(
         @Param('id') id: string,
     ) {
@@ -71,10 +72,19 @@ export class PermissionController {
 
     @Patch(':id/deactivate')
     @UseGuards(PermissionGuard)
-    @Permissions(Permission.PERMISSION_DEACTIVATE)
+    @AnyPermissions(Permission.PERMISSION_DEACTIVATE, Permission.PERMISSION_UPDATE)
     deactivate(
         @Param('id') id: string,
     ) {
         return this.permissionService.deactivate(id);
+    }
+
+    @Delete(':id')
+    @UseGuards(PermissionGuard)
+    @AnyPermissions(Permission.PERMISSION_DELETE, Permission.PERMISSION_UPDATE)
+    remove(
+        @Param('id') id: string,
+    ) {
+        return this.permissionService.remove(id);
     }
 }

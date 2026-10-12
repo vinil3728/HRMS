@@ -1,6 +1,7 @@
 import {
     IsOptional,
     IsString,
+    IsUUID,
     MaxLength,
     MinLength,
 } from 'class-validator';
@@ -17,6 +18,10 @@ export class UpdatePermissionDto {
     @MinLength(2)
     @MaxLength(100)
     code?: string;
+
+    @IsOptional()
+    @IsUUID()
+    moduleId?: string;
 
     @IsOptional()
     @IsString()

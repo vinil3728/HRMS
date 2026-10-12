@@ -43,6 +43,12 @@ export class Role {
     })
     isActive!: boolean;
 
+    @Column({
+        name: 'is_deleted',
+        default: false,
+    })
+    isDeleted!: boolean;
+
     @OneToMany(
         () => RolePermission,
         (rolePermission) => rolePermission.role,

@@ -27,6 +27,7 @@ import { PayrollModule } from './payroll/payroll.module';
 import { HolidaysModule } from './holidays/holidays.module';
 import { BranchesModule } from './branches/branches.module';
 import { LoansModule } from './loans/loans.module';
+import { ModulesModule } from './modules/modules.module';
 
 @Module({
   imports: [
@@ -84,6 +85,7 @@ import { LoansModule } from './loans/loans.module';
     HolidaysModule,
     BranchesModule,
     LoansModule,
+    ModulesModule,
   ],
 
   controllers: [

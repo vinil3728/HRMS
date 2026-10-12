@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from '../../../core/services/api.service';
 import { API_CONFIG } from '../../../core/config/api.config';
 import {
+  CreateModuleDto,
   CreatePermissionDto,
   CreateRoleDto,
   CreateUserDto,
@@ -15,8 +16,10 @@ import {
   ManagerSettings,
   OrganizationSettings,
   Role,
+  SystemModule,
   SystemPermission,
   SystemUser,
+  UpdateModuleDto,
   UpdatePermissionDto,
   UpdateRoleDto,
   UpdateUserDto,
@@ -76,8 +79,11 @@ export class SettingsService {
   }
 
   // --- Roles ---
-  getRoles(): Observable<Role[]> {
-    return this.api.get<Role[]>(this.endpoints.roles);
+  getRoles(includeInactive = true): Observable<Role[]> {
+    const url = includeInactive
+      ? `${this.endpoints.roles}?all=true`
+      : this.endpoints.roles;
+    return this.api.get<Role[]>(url);
   }
 
   getRole(id: string): Observable<Role> {
@@ -98,6 +104,10 @@ export class SettingsService {
 
   deactivateRole(id: string): Observable<Role> {
     return this.api.patch<Role>(this.endpoints.deactivateRole(id), {});
+  }
+
+  deleteRole(id: string): Observable<Role> {
+    return this.api.delete<Role>(this.endpoints.roleDetail(id));
   }
 
   // --- Permissions ---
@@ -140,6 +150,12 @@ export class SettingsService {
     );
   }
 
+  deletePermission(id: string): Observable<SystemPermission> {
+    return this.api.delete<SystemPermission>(
+      this.endpoints.permissionDetail(id)
+    );
+  }
+
   getRolePermissions(roleId: string): Observable<SystemPermission[]> {
     return this.api.get<SystemPermission[]>(
       this.endpoints.rolePermissions(roleId)
@@ -153,6 +169,40 @@ export class SettingsService {
     return this.api.put<Role>(this.endpoints.rolePermissions(roleId), {
       permissionIds,
     });
+  }
+
+  // --- Modules ---
+  getModules(search?: string): Observable<SystemModule[]> {
+    const url = search
+      ? `${this.endpoints.modules}?search=${encodeURIComponent(search)}`
+      : this.endpoints.modules;
+    return this.api.get<SystemModule[]>(url);
+  }
+
+  getModule(id: string): Observable<SystemModule> {
+    return this.api.get<SystemModule>(this.endpoints.moduleDetail(id));
+  }
+
+  createModule(dto: CreateModuleDto): Observable<SystemModule> {
+    return this.api.post<SystemModule>(this.endpoints.modules, dto);
+  }
+
+  updateModule(id: string, dto: UpdateModuleDto): Observable<SystemModule> {
+    return this.api.patch<SystemModule>(this.endpoints.moduleDetail(id), dto);
+  }
+
+  deleteModule(id: string): Observable<{ success: boolean; message: string }> {
+    return this.api.delete<{ success: boolean; message: string }>(
+      this.endpoints.moduleDetail(id)
+    );
+  }
+
+  activateModule(id: string): Observable<SystemModule> {
+    return this.api.patch<SystemModule>(this.endpoints.activateModule(id), {});
+  }
+
+  deactivateModule(id: string): Observable<SystemModule> {
+    return this.api.patch<SystemModule>(this.endpoints.deactivateModule(id), {});
   }
 
   // --- Org Settings Local Persistence ---

@@ -316,6 +316,11 @@
   color: #334155;
 }
 
+.action-icon-btn.delete-action-btn:hover {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
 .action-btn {
   display: inline-flex;
   align-items: center;

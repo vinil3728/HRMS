@@ -24,14 +24,15 @@ export class RoleService {
         private readonly rolePermissionRepository: Repository<RolePermission>,
     ) { }
 
-    async findAll(): Promise<Role[]> {
+    async findAll(includeInactive = true): Promise<Role[]> {
+        const whereClause = includeInactive ? {} : { isActive: true, isDeleted: false };
         return this.roleRepository.find({
-            where: {
-                isActive: true,
-            },
+            where: whereClause,
             relations: {
                 rolePermissions: {
-                    permission: true,
+                    permission: {
+                        module: true,
+                    },
                 },
             },
             order: {
@@ -45,7 +46,9 @@ export class RoleService {
             where: { id },
             relations: {
                 rolePermissions: {
-                    permission: true,
+                    permission: {
+                        module: true,
+                    },
                 },
             },
         });
@@ -92,6 +95,7 @@ export class RoleService {
             description: data.description ?? null,
             isSystemRole: false,
             isActive: true,
+            isDeleted: false,
         });
 
         const savedRole = await this.roleRepository.save(role);
@@ -115,6 +119,12 @@ export class RoleService {
         },
     ): Promise<Role> {
         const role = await this.findById(id);
+
+        if (role.isDeleted) {
+            throw new BadRequestException(
+                'Cannot edit a deleted role',
+            );
+        }
 
         if (
             role.isSystemRole &&
@@ -166,9 +176,9 @@ export class RoleService {
     async deactivate(id: string): Promise<Role> {
         const role = await this.findById(id);
 
-        if (role.isSystemRole) {
+        if (role.isDeleted) {
             throw new BadRequestException(
-                'System roles cannot be deactivated',
+                'Deleted role cannot be deactivated',
             );
         }
 
@@ -183,6 +193,24 @@ export class RoleService {
         const role = await this.findById(id);
 
         role.isActive = true;
+        role.isDeleted = false;
+
+        await this.roleRepository.save(role);
+
+        return role;
+    }
+
+    async remove(id: string): Promise<Role> {
+        const role = await this.findById(id);
+
+        if (role.isSystemRole) {
+            throw new BadRequestException(
+                'System roles cannot be deleted',
+            );
+        }
+
+        role.isDeleted = true;
+        role.isActive = false;
 
         await this.roleRepository.save(role);
 

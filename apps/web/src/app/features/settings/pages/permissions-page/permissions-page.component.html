@@ -122,13 +122,19 @@
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
+              <th class="cursor-pointer" (click)="setSort('isDeleted')">
+                <span class="th-content">
+                  <span>DELETED</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
               <th class="text-right">ACTIONS</th>
             </tr>
           </thead>
           <tbody>
             @if (loadingPermissions()) {
               <tr>
-                <td colspan="6" class="empty-table-cell">
+                <td colspan="7" class="empty-table-cell">
                   <div class="table-loading">
                     <span class="spinner"></span>
                     <span>Loading permissions...</span>
@@ -137,7 +143,7 @@
               </tr>
             } @else if (displayedPermissions().length === 0) {
               <tr>
-                <td colspan="6" class="empty-table-cell">
+                <td colspan="7" class="empty-table-cell">
                   <div class="table-empty">
                     <div class="empty-icon-wrap">
                       <app-icon [name]="hasActiveFilters() ? 'search' : 'shield'" [size]="28"></app-icon>
@@ -176,7 +182,7 @@
 
                   <!-- MODULE -->
                   <td>
-                    <span class="cell-text">{{ perm.module }}</span>
+                    <span class="cell-text">{{ getModuleName(perm) }}</span>
                   </td>
 
                   <!-- DESCRIPTION -->
@@ -193,42 +199,76 @@
                     </app-badge>
                   </td>
 
+                  <!-- DELETED -->
+                  <td>
+                    <app-badge [variant]="isModuleDeleted(perm) ? 'error' : 'gray'">
+                      {{ isModuleDeleted(perm) ? 'True' : 'False' }}
+                    </app-badge>
+                  </td>
+
                   <!-- ACTIONS -->
                   <td class="text-right">
                     <div class="action-buttons">
-                      <button
-                        *appHasPermission="[Permission.PERMISSION_UPDATE]"
-                        type="button"
-                        class="action-icon-btn"
-                        (click)="openEditPermissionModal(perm)"
-                        title="Edit Permission"
-                        aria-label="Edit Permission"
-                      >
-                        <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
-                      </button>
-
-                      @if (perm.isActive) {
+                      @if (isParentModuleDeleted(perm)) {
+                        <span class="cell-text" title="Module is deleted. Activate module to enable actions.">—</span>
+                      } @else if (perm.isDeleted) {
+                        <!-- For deleted permission: ONLY Activate option exists! -->
                         <button
-                          *appHasPermission="[Permission.PERMISSION_DEACTIVATE]"
-                          type="button"
-                          class="action-btn danger"
-                          (click)="togglePermissionActive(perm)"
-                          title="Deactivate Permission"
-                        >
-                          <app-icon name="x" [size]="15"></app-icon>
-                          <span>Deactivate</span>
-                        </button>
-                      } @else {
-                        <button
-                          *appHasPermission="[Permission.PERMISSION_ACTIVATE]"
+                          *appHasPermission="[Permission.PERMISSION_ACTIVATE, Permission.PERMISSION_UPDATE]"
                           type="button"
                           class="action-btn success"
                           (click)="togglePermissionActive(perm)"
-                          title="Activate Permission"
+                          title="Activate and restore permission"
                         >
                           <app-icon name="check" [size]="15"></app-icon>
                           <span>Activate</span>
                         </button>
+                      } @else {
+                        <button
+                          *appHasPermission="[Permission.PERMISSION_UPDATE]"
+                          type="button"
+                          class="action-icon-btn"
+                          (click)="openEditPermissionModal(perm)"
+                          title="Edit Permission"
+                          aria-label="Edit Permission"
+                        >
+                          <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                        </button>
+
+                         <button
+                          *appHasPermission="[Permission.PERMISSION_DELETE, Permission.PERMISSION_UPDATE]"
+                          type="button"
+                          class="action-icon-btn delete-action-btn"
+                          (click)="deletePermission(perm)"
+                          title="Delete Permission"
+                          aria-label="Delete Permission"
+                        >
+                          <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
+                        </button>
+
+                        @if (perm.isActive) {
+                          <button
+                            *appHasPermission="[Permission.PERMISSION_DEACTIVATE, Permission.PERMISSION_UPDATE]"
+                            type="button"
+                            class="action-btn danger"
+                            (click)="togglePermissionActive(perm)"
+                            title="Deactivate Permission"
+                          >
+                            <app-icon name="x" [size]="15"></app-icon>
+                            <span>Deactivate</span>
+                          </button>
+                        } @else {
+                          <button
+                            *appHasPermission="[Permission.PERMISSION_ACTIVATE, Permission.PERMISSION_UPDATE]"
+                            type="button"
+                            class="action-btn success"
+                            (click)="togglePermissionActive(perm)"
+                            title="Activate Permission"
+                          >
+                            <app-icon name="check" [size]="15"></app-icon>
+                            <span>Activate</span>
+                          </button>
+                        }
                       }
                     </div>
                   </td>
@@ -280,7 +320,6 @@
   <app-permission-form-modal
     [isOpen]="isPermissionModalOpen()"
     [permission]="selectedPermissionToEdit()"
-    [existingModules]="allModules()"
     (closeModal)="closePermissionModal()"
     (saved)="onPermissionSaved()"
   ></app-permission-form-modal>

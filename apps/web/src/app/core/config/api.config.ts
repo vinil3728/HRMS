@@ -129,6 +129,10 @@ export const API_CONFIG = {
       rolePermissions: (roleId: string) => `/roles/${roleId}/permissions`,
       activateRole: (roleId: string) => `/roles/${roleId}/activate`,
       deactivateRole: (roleId: string) => `/roles/${roleId}/deactivate`,
+      modules: '/modules',
+      moduleDetail: (moduleId: string) => `/modules/${moduleId}`,
+      activateModule: (moduleId: string) => `/modules/${moduleId}/activate`,
+      deactivateModule: (moduleId: string) => `/modules/${moduleId}/deactivate`,
     },
     payroll: {
       summary: '/payroll/summary',

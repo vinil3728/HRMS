@@ -1,0 +1,315 @@
+<div class="page-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-info">
+      <div class="title-row">
+        <h1 class="page-title">Modules Catalog</h1>
+      </div>
+      <p class="page-subtitle">
+        Manage functional system modules and associated permissions.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn btn-primary"
+        *appHasPermission="[Permission.MODULE_CREATE]"
+        (click)="openCreateModuleModal()"
+      >
+        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+        <span>New Module</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Main Unified Content Card ────────────────────────────────────── -->
+  <div class="content-card">
+    <!-- Toolbar Section: Left Tabs, Right Filters -->
+    <div class="toolbar-section">
+      <!-- Tabs Navigation (Left) -->
+      <div class="tabs-nav">
+        <button
+          type="button"
+          class="tab-btn active"
+        >
+          <app-icon name="shield" [size]="16"></app-icon>
+          <span>All Modules</span>
+        </button>
+      </div>
+
+      <!-- Filters Wrap (Right) -->
+      <div class="filters-wrap">
+        <!-- Search Input -->
+        <div class="search-input-wrap">
+          <app-icon name="search" [size]="16" customClass="filter-search-icon"></app-icon>
+          <input
+            type="text"
+            class="filter-search-input"
+            placeholder="Search modules..."
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+          />
+        </div>
+
+        <!-- Status Filter -->
+        <div class="filter-item">
+          <app-select
+            [options]="statusOptions"
+            [value]="statusFilter()"
+            placeholder="All Statuses"
+            minWidth="150px"
+            (valueChange)="onStatusChange($event)"
+          ></app-select>
+        </div>
+
+        <!-- Reset Filter Button -->
+        @if (hasActiveFilters()) {
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="resetFilters()"
+            title="Reset Filters"
+          >
+            <app-icon name="activity" [size]="16"></app-icon>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ── Table Block (Table & Pagination in Single Block with Border) ── -->
+    <div class="table-block">
+      <div
+        class="table-container"
+        [class.no-scroll]="loading() || displayedModules().length === 0"
+      >
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="cursor-pointer" (click)="setSort('code')">
+                <span class="th-content">
+                  <span>CODE</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="cursor-pointer" (click)="setSort('name')">
+                <span class="th-content">
+                  <span>MODULE NAME</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th>DESCRIPTION</th>
+              <th class="cursor-pointer" (click)="setSort('permissionCount')">
+                <span class="th-content">
+                  <span>PERMISSIONS</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="cursor-pointer" (click)="setSort('isActive')">
+                <span class="th-content">
+                  <span>STATUS</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="cursor-pointer" (click)="setSort('isDeleted')">
+                <span class="th-content">
+                  <span>DELETED</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="text-right">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (loading()) {
+              <tr>
+                <td colspan="7" class="empty-table-cell">
+                  <div class="table-loading">
+                    <span class="spinner"></span>
+                    <span>Loading modules...</span>
+                  </div>
+                </td>
+              </tr>
+            } @else if (displayedModules().length === 0) {
+              <tr>
+                <td colspan="7" class="empty-table-cell">
+                  <div class="table-empty">
+                    <div class="empty-icon-wrap">
+                      <app-icon [name]="hasActiveFilters() ? 'search' : 'shield'" [size]="28"></app-icon>
+                    </div>
+                    <h3 class="empty-title">
+                      {{
+                        hasActiveFilters()
+                          ? 'No matching results found on your filter'
+                          : 'No modules found'
+                      }}
+                    </h3>
+                    @if (hasActiveFilters()) {
+                      <button
+                        type="button"
+                        class="btn btn-outline btn-sm"
+                        (click)="resetFilters()"
+                      >
+                        Reset Filters
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @else {
+              @for (mod of displayedModules(); track mod.id) {
+                <tr class="table-row">
+                  <!-- CODE -->
+                  <td class="code-cell">
+                    {{ mod.code }}
+                  </td>
+
+                  <!-- MODULE NAME -->
+                  <td>
+                    <span class="primary-name">{{ mod.name }}</span>
+                  </td>
+
+                  <!-- DESCRIPTION -->
+                  <td>
+                    <span class="desc-text">
+                      {{ mod.description || '—' }}
+                    </span>
+                  </td>
+
+                  <!-- PERMISSIONS -->
+                  <td>
+                    <span class="cell-text">
+                      {{ mod.permissionCount ?? 0 }} {{ (mod.permissionCount === 1) ? 'permission' : 'permissions' }}
+                    </span>
+                  </td>
+
+                  <!-- STATUS -->
+                  <td>
+                    <app-badge [variant]="mod.isActive ? 'active' : 'inactive'">
+                      {{ mod.isActive ? 'Active' : 'Inactive' }}
+                    </app-badge>
+                  </td>
+
+                  <!-- DELETED -->
+                  <td>
+                    <app-badge [variant]="mod.isDeleted ? 'error' : 'gray'">
+                      {{ mod.isDeleted ? 'True' : 'False' }}
+                    </app-badge>
+                  </td>
+
+                  <!-- ACTIONS -->
+                  <td class="text-right">
+                    <div class="action-buttons">
+                      @if (mod.isDeleted) {
+                        <!-- For deleted module: ONLY Activate option exists! -->
+                        <button
+                          *appHasPermission="[Permission.MODULE_ACTIVATE, Permission.MODULE_UPDATE]"
+                          type="button"
+                          class="action-btn success"
+                          (click)="toggleModuleActive(mod)"
+                          title="Activate and restore module"
+                        >
+                          <app-icon name="check" [size]="15"></app-icon>
+                          <span>Activate</span>
+                        </button>
+                      } @else {
+                        <button
+                          *appHasPermission="[Permission.MODULE_UPDATE]"
+                          type="button"
+                          class="action-icon-btn"
+                          (click)="openEditModuleModal(mod)"
+                          title="Edit Module"
+                          aria-label="Edit Module"
+                        >
+                          <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                        </button>
+
+                        <button
+                          *appHasPermission="[Permission.MODULE_DELETE]"
+                          type="button"
+                          class="action-icon-btn delete-action-btn"
+                          (click)="deleteModule(mod)"
+                          title="Delete Module"
+                          aria-label="Delete Module"
+                        >
+                          <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
+                        </button>
+
+                        @if (mod.isActive) {
+                          <button
+                            *appHasPermission="[Permission.MODULE_DEACTIVATE, Permission.MODULE_UPDATE]"
+                            type="button"
+                            class="action-btn danger"
+                            (click)="toggleModuleActive(mod)"
+                            title="Deactivate Module"
+                          >
+                            <app-icon name="x" [size]="15"></app-icon>
+                            <span>Deactivate</span>
+                          </button>
+                        } @else {
+                          <button
+                            *appHasPermission="[Permission.MODULE_ACTIVATE, Permission.MODULE_UPDATE]"
+                            type="button"
+                            class="action-btn success"
+                            (click)="toggleModuleActive(mod)"
+                            title="Activate Module"
+                          >
+                            <app-icon name="check" [size]="15"></app-icon>
+                            <span>Activate</span>
+                          </button>
+                        }
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Integrated Card Bottom Pagination -->
+      @if (!loading() && filteredModules().length > 0) {
+        <div class="table-pagination-footer">
+          <span class="pagination-count">
+            Showing <strong>{{ displayedModules().length }}</strong> of {{ filteredModules().length }} modules
+          </span>
+
+          <div class="pagination-nav">
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() <= 1 || loading()"
+              (click)="goToPage(currentPage() - 1)"
+              title="Previous Page"
+              aria-label="Previous Page"
+            >
+              <app-icon name="chevron-left" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+            <span class="page-indicator">{{ currentPage() }} / {{ totalPages() }}</span>
+            <button
+              type="button"
+              class="page-arrow-btn"
+              [disabled]="currentPage() >= totalPages() || loading()"
+              (click)="goToPage(currentPage() + 1)"
+              title="Next Page"
+              aria-label="Next Page"
+            >
+              <app-icon name="chevron-right" [size]="16" [strokeWidth]="2"></app-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+@if (isModuleModalOpen()) {
+  <app-module-form-modal
+    [isOpen]="isModuleModalOpen()"
+    [module]="selectedModuleToEdit()"
+    (closeModal)="closeModuleModal()"
+    (saved)="onModuleSaved()"
+  ></app-module-form-modal>
+}

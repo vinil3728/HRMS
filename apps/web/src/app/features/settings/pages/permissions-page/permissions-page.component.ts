@@ -13,7 +13,7 @@ import { BadgeComponent } from '../../../../shared/ui/badge/badge.component';
 import { IconComponent } from '../../../../shared/ui/icon/icon.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/select/select.component';
 import { PermissionFormModalComponent } from '../../components/permission-form-modal/permission-form-modal.component';
-import { SystemPermission } from '../../models/settings.model';
+import { SystemModule, SystemPermission } from '../../models/settings.model';
 import { SettingsService } from '../../services/settings.service';
 
 @Component({
@@ -36,11 +36,12 @@ export class PermissionsPageComponent implements OnInit {
   readonly Permission = Permission;
 
   readonly permissions = signal<SystemPermission[]>([]);
+  readonly modules = signal<SystemModule[]>([]);
   readonly loadingPermissions = signal<boolean>(false);
   readonly permSearchQuery = signal<string>('');
   readonly permModuleFilter = signal<string>('ALL');
-  readonly permStatusFilter = signal<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
-  readonly sortField = signal<'code' | 'name' | 'module' | 'isActive'>('name');
+  readonly permStatusFilter = signal<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED'>('ALL');
+  readonly sortField = signal<'code' | 'name' | 'module' | 'isActive' | 'isDeleted'>('name');
   readonly sortDirection = signal<'asc' | 'desc'>('asc');
 
   readonly currentPage = signal<number>(1);
@@ -49,10 +50,34 @@ export class PermissionsPageComponent implements OnInit {
   readonly isPermissionModalOpen = signal<boolean>(false);
   readonly selectedPermissionToEdit = signal<SystemPermission | null>(null);
 
+  getModuleName(p: SystemPermission): string {
+    if (p.module && typeof p.module === 'object') return p.module.name;
+    if (typeof p.module === 'string' && p.module) return p.module;
+    const found = this.modules().find((m) => m.id === p.moduleId);
+    return found ? found.name : '—';
+  }
+
+  isModuleDeleted(p: SystemPermission): boolean {
+    if (p.isDeleted) return true;
+    if (p.module && typeof p.module === 'object' && p.module.isDeleted) return true;
+    const found = this.modules().find((m) => m.id === p.moduleId);
+    return found ? !!found.isDeleted : false;
+  }
+
+  isParentModuleDeleted(p: SystemPermission): boolean {
+    if (p.module && typeof p.module === 'object' && p.module.isDeleted) return true;
+    const found = this.modules().find((m) => m.id === p.moduleId);
+    return found ? !!found.isDeleted : false;
+  }
+
   readonly allModules = computed(() => {
+    if (this.modules().length > 0) {
+      return this.modules().map((m) => m.name).sort();
+    }
     const mods = new Set<string>();
     for (const p of this.permissions()) {
-      if (p.module) mods.add(p.module);
+      const name = this.getModuleName(p);
+      if (name && name !== '—') mods.add(name);
     }
     return Array.from(mods).sort();
   });
@@ -66,6 +91,7 @@ export class PermissionsPageComponent implements OnInit {
     { value: 'ALL', label: 'All Statuses' },
     { value: 'ACTIVE', label: 'Active' },
     { value: 'INACTIVE', label: 'Inactive' },
+    { value: 'DELETED', label: 'Deleted' },
   ];
 
   readonly hasActiveFilters = computed(
@@ -83,15 +109,18 @@ export class PermissionsPageComponent implements OnInit {
     const dir = this.sortDirection();
 
     const list = this.permissions().filter((p) => {
-      if (mod !== 'ALL' && p.module !== mod) return false;
+      const pModName = this.getModuleName(p);
+      const isDeleted = this.isModuleDeleted(p);
+      if (mod !== 'ALL' && pModName !== mod) return false;
 
-      if (status === 'ACTIVE' && !p.isActive) return false;
-      if (status === 'INACTIVE' && p.isActive) return false;
+      if (status === 'ACTIVE' && (!p.isActive || isDeleted)) return false;
+      if (status === 'INACTIVE' && (p.isActive || isDeleted)) return false;
+      if (status === 'DELETED' && !isDeleted) return false;
 
       if (q) {
         const matchesName = p.name.toLowerCase().includes(q);
         const matchesCode = p.code.toLowerCase().includes(q);
-        const matchesModule = p.module.toLowerCase().includes(q);
+        const matchesModule = pModName.toLowerCase().includes(q);
         const matchesDesc = !!(
           p.description && p.description.toLowerCase().includes(q)
         );
@@ -102,8 +131,19 @@ export class PermissionsPageComponent implements OnInit {
     });
 
     list.sort((a, b) => {
-      const valA = a[field];
-      const valB = b[field];
+      let valA: any = a[field as keyof SystemPermission];
+      let valB: any = b[field as keyof SystemPermission];
+
+      if (field === 'module') {
+        valA = this.getModuleName(a);
+        valB = this.getModuleName(b);
+      }
+
+      if (field === 'isDeleted') {
+        valA = this.isModuleDeleted(a) ? 1 : 0;
+        valB = this.isModuleDeleted(b) ? 1 : 0;
+        return (valA < valB ? -1 : valA > valB ? 1 : 0) * (dir === 'asc' ? 1 : -1);
+      }
 
       if (typeof valA === 'string' && typeof valB === 'string') {
         const cmp = valA.localeCompare(valB, undefined, { sensitivity: 'base' });
@@ -129,7 +169,15 @@ export class PermissionsPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.loadModules();
     this.loadPermissions();
+  }
+
+  loadModules(): void {
+    this.settingsService.getModules().subscribe({
+      next: (mods) => this.modules.set(mods),
+      error: () => {},
+    });
   }
 
   loadPermissions(): void {
@@ -157,7 +205,9 @@ export class PermissionsPageComponent implements OnInit {
   }
 
   onPermStatusChange(value: string): void {
-    this.permStatusFilter.set((value || 'ALL') as 'ALL' | 'ACTIVE' | 'INACTIVE');
+    this.permStatusFilter.set(
+      (value || 'ALL') as 'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED'
+    );
     this.currentPage.set(1);
   }
 
@@ -173,7 +223,7 @@ export class PermissionsPageComponent implements OnInit {
     this.currentPage.set(page);
   }
 
-  setSort(field: 'code' | 'name' | 'module' | 'isActive'): void {
+  setSort(field: 'code' | 'name' | 'module' | 'isActive' | 'isDeleted'): void {
     if (this.sortField() === field) {
       this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
     } else {
@@ -200,9 +250,28 @@ export class PermissionsPageComponent implements OnInit {
   onPermissionSaved(): void {
     this.closePermissionModal();
     this.loadPermissions();
+    this.loadModules();
   }
 
   togglePermissionActive(permission: SystemPermission): void {
+    if (permission.isDeleted) {
+      const confirmActivate = window.confirm(
+        `Are you sure you want to activate and restore permission "${permission.name}" (${permission.code})?`
+      );
+      if (!confirmActivate) return;
+
+      this.settingsService.activatePermission(permission.id).subscribe({
+        next: () => {
+          this.loadPermissions();
+          this.loadModules();
+        },
+        error: (err) => {
+          window.alert(err?.error?.message || 'Failed to activate permission');
+        },
+      });
+      return;
+    }
+
     if (permission.isActive) {
       const confirmDeactivate = window.confirm(
         `Are you sure you want to deactivate permission "${permission.name}" (${permission.code})? It will be excluded from all access control evaluations.`
@@ -210,13 +279,42 @@ export class PermissionsPageComponent implements OnInit {
       if (!confirmDeactivate) return;
 
       this.settingsService.deactivatePermission(permission.id).subscribe({
-        next: () => this.loadPermissions(),
+        next: () => {
+          this.loadPermissions();
+          this.loadModules();
+        },
+        error: (err) => {
+          window.alert(err?.error?.message || 'Failed to deactivate permission');
+        },
       });
     } else {
       this.settingsService.activatePermission(permission.id).subscribe({
-        next: () => this.loadPermissions(),
+        next: () => {
+          this.loadPermissions();
+          this.loadModules();
+        },
+        error: (err) => {
+          window.alert(err?.error?.message || 'Failed to activate permission');
+        },
       });
     }
+  }
+
+  deletePermission(permission: SystemPermission): void {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete permission "${permission.name}" (${permission.code})? If all permissions belonging to module "${this.getModuleName(permission)}" are deleted, the module will be automatically marked as deleted.`
+    );
+    if (!confirmDelete) return;
+
+    this.settingsService.deletePermission(permission.id).subscribe({
+      next: () => {
+        this.loadPermissions();
+        this.loadModules();
+      },
+      error: (err) => {
+        window.alert(err?.error?.message || 'Failed to delete permission');
+      },
+    });
   }
 
   exportPermissionsCsv(): void {
@@ -234,7 +332,7 @@ export class PermissionsPageComponent implements OnInit {
     const rows = list.map((p) => [
       p.code,
       `"${p.name.replace(/"/g, '""')}"`,
-      `"${p.module.replace(/"/g, '""')}"`,
+      `"${this.getModuleName(p).replace(/"/g, '""')}"`,
       p.isActive ? 'Active' : 'Inactive',
       `"${(p.description || '').replace(/"/g, '""')}"`,
     ]);

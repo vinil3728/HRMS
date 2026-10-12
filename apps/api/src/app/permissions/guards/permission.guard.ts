@@ -104,6 +104,9 @@ export class PermissionGuard implements CanActivate {
                     'permission.is_active = true',
                 )
                 .andWhere(
+                    'permission.is_deleted = false',
+                )
+                .andWhere(
                     'permission.code IN (:...permissions)',
                     {
                         permissions: targetCodes,

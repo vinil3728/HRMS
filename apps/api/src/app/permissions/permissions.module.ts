@@ -11,6 +11,7 @@ import { RoleController } from './controllers/role.controller';
 import { PermissionEntity } from './entities/permission.entity';
 import { RolePermission } from './entities/role-permission.entity';
 import { Role } from './entities/role.entity';
+import { ModuleEntity } from '../modules/entities/module.entity';
 
 import { PermissionGuard } from './guards/permission.guard';
 
@@ -25,6 +26,7 @@ import { AuthModule } from '../../auth/auth.module';
             Role,
             PermissionEntity,
             RolePermission,
+            ModuleEntity,
         ]),
 
         forwardRef(() => AuthModule),

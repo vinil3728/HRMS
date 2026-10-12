@@ -151,9 +151,14 @@
               <div class="module-groups-list">
                 @for (mod of filteredModules(); track mod.name) {
                   <div class="module-group-card">
-                    <div class="module-group-header">
+                    <div class="module-group-header" [class.module-disabled]="mod.isDeleted || mod.isDeactivated">
                       <div class="module-name-wrap">
                         <span class="module-name">{{ mod.name }}</span>
+                        @if (mod.isDeleted) {
+                          <span class="module-status-badge badge-deleted">Deleted</span>
+                        } @else if (mod.isDeactivated) {
+                          <span class="module-status-badge badge-inactive">Inactive</span>
+                        }
                         <span class="module-count-badge">
                           {{ getModuleSelectedCount(mod.name) }} of {{ mod.permissions.length }}
                         </span>
@@ -163,6 +168,7 @@
                           type="button"
                           class="module-btn"
                           (click)="toggleModule(mod.name, true)"
+                          [disabled]="submitting() || mod.isDeleted || mod.isDeactivated || allModulePermissionsDisabled(mod)"
                         >
                           Select All
                         </button>
@@ -171,6 +177,7 @@
                           type="button"
                           class="module-btn"
                           (click)="toggleModule(mod.name, false)"
+                          [disabled]="submitting()"
                         >
                           Clear
                         </button>
@@ -183,17 +190,31 @@
                           class="perm-checkbox-item"
                           [for]="'role-perm-' + perm.id"
                           [class.selected]="isPermissionSelected(perm.id)"
+                          [class.disabled]="isPermissionDisabled(perm)"
+                          [attr.title]="getDisabledReason(perm) ? 'Disabled (' + getDisabledReason(perm) + ')' : null"
                         >
                           <input
                             type="checkbox"
                             [id]="'role-perm-' + perm.id"
                             class="checkbox-input"
                             [checked]="isPermissionSelected(perm.id)"
+                            [disabled]="isPermissionDisabled(perm)"
                             (change)="togglePermission(perm.id)"
                           />
                           <div class="perm-item-content">
                             <div class="perm-title-row">
-                              <span class="perm-title">{{ perm.name }}</span>
+                              <div class="perm-title-group">
+                                <span class="perm-title">{{ perm.name }}</span>
+                                @if (getDisabledReason(perm); as reason) {
+                                  <span
+                                    class="perm-status-pill"
+                                    [class.pill-error]="reason.includes('Deleted')"
+                                    [class.pill-warning]="reason.includes('Inactive')"
+                                  >
+                                    {{ reason }}
+                                  </span>
+                                }
+                              </div>
                               <span class="perm-code">{{ perm.code }}</span>
                             </div>
                             @if (perm.description) {

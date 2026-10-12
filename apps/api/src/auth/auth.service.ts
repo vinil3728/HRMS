@@ -1008,6 +1008,10 @@ export class AuthService {
                     'rolePermission.permission',
                     'permission',
                 )
+                .leftJoinAndSelect(
+                    'permission.module',
+                    'module',
+                )
                 .innerJoin(
                     'rolePermission.role',
                     'role',
@@ -1024,8 +1028,11 @@ export class AuthService {
                 .andWhere(
                     'permission.is_active = true',
                 )
+                .andWhere(
+                    'permission.is_deleted = false',
+                )
                 .orderBy(
-                    'permission.module',
+                    'module.name',
                     'ASC',
                 )
                 .addOrderBy(

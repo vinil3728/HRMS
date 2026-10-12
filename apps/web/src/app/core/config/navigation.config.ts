@@ -42,6 +42,7 @@ export const ALL_SERVICES: ServiceItem[] = [
   { label: 'Policies',               description: 'HR policies & documents',          route: '/policies',       icon: 'file-text',   color: '#14b8a6', permission: Permission.POLICY_VIEW },
   { label: 'Reports',                description: 'HR reports & insights',            route: '/reports',        icon: 'bar-chart',   color: '#f43f5e', permission: Permission.EMPLOYEE_VIEWS },
   { label: 'Roles & Access Control', description: 'Manage roles & permission matrix', route: '/roles',          icon: 'shield',      color: '#3b82f6', permission: Permission.ROLE_VIEW },
+  { label: 'Module Management',      description: 'Configure system modules & capabilities', route: '/modules',    icon: 'grid',        color: '#0ea5e9', permission: Permission.MODULE_VIEW },
   { label: 'Permissions Catalog',    description: 'System privilege definitions',     route: '/permissions',    icon: 'target',      color: '#eab308', permission: Permission.PERMISSION_VIEW },
   { label: 'User Accounts',          description: 'Provision login credentials',      route: '/users',          icon: 'users',       color: '#8b5cf6', permission: Permission.USER_ACCOUNT_VIEW },
   { label: 'Settings',               description: 'Org profile & security policies',  route: '/settings',       icon: 'settings',    color: '#64748b', permission: Permission.SETTINGS_VIEW },
@@ -187,6 +188,12 @@ export const NAVIGATION_CONFIG: NavSection[] = [
         route: '/roles',
         icon: 'shield',
         permission: Permission.ROLE_VIEW,
+      },
+      {
+        label: 'Module Management',
+        route: '/modules',
+        icon: 'grid',
+        permission: Permission.MODULE_VIEW,
       },
       {
         label: 'Permissions Catalog',

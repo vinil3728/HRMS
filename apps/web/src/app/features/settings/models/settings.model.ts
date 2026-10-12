@@ -1,22 +1,50 @@
+export interface SystemModule {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+  isDeleted?: boolean;
+  permissionCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateModuleDto {
+  code: string;
+  name: string;
+  description?: string | null;
+}
+
+export interface UpdateModuleDto {
+  name?: string;
+  code?: string;
+  description?: string | null;
+}
+
 export interface SystemPermission {
   id: string;
   code: string;
   name: string;
   description: string | null;
-  module: string;
+  moduleId?: string;
+  module?: SystemModule | string;
   isActive: boolean;
+  isDeleted?: boolean;
 }
 
 export interface CreatePermissionDto {
   code: string;
   name: string;
-  module: string;
+  moduleId?: string;
+  module?: string;
   description?: string | null;
 }
 
 export interface UpdatePermissionDto {
   name?: string;
   code?: string;
+  moduleId?: string;
   module?: string;
   description?: string | null;
 }
@@ -33,6 +61,7 @@ export interface Role {
   description: string | null;
   isSystemRole: boolean;
   isActive: boolean;
+  isDeleted?: boolean;
   rolePermissions?: RolePermission[];
   createdAt?: string;
   updatedAt?: string;

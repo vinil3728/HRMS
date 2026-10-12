@@ -255,6 +255,18 @@ export const appRoutes: Routes = [
           ).then((m) => m.RolesPageComponent),
       },
       {
+        path: 'modules',
+        canActivate: [rbacGuard],
+        data: {
+          title: 'Module Management',
+          permission: Permission.MODULE_VIEW,
+        },
+        loadComponent: () =>
+          import(
+            './features/settings/pages/modules-page/modules-page.component'
+          ).then((m) => m.ModulesPageComponent),
+      },
+      {
         path: 'permissions',
         canActivate: [rbacGuard],
         data: {

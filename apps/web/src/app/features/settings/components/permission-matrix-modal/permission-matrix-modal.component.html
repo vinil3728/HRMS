@@ -94,9 +94,14 @@
           <div class="modules-accordion">
             @for (mod of filteredModules(); track mod.name) {
               <div class="module-card">
-                <div class="module-card-header">
+                <div class="module-card-header" [class.module-disabled]="mod.isDeleted || mod.isDeactivated">
                   <div class="module-title-wrap">
                     <span class="module-name">{{ mod.name }}</span>
+                    @if (mod.isDeleted) {
+                      <span class="module-status-badge badge-deleted">Deleted</span>
+                    } @else if (mod.isDeactivated) {
+                      <span class="module-status-badge badge-inactive">Inactive</span>
+                    }
                     <span class="module-counter">
                       {{ getModuleSelectedCount(mod.name) }} of {{ mod.permissions.length }} active
                     </span>
@@ -106,7 +111,7 @@
                       type="button"
                       class="module-action-link"
                       (click)="toggleModule(mod.name, true)"
-                      [disabled]="submitting()"
+                      [disabled]="submitting() || mod.isDeleted || mod.isDeactivated || allModulePermissionsDisabled(mod)"
                     >
                       Select All
                     </button>
@@ -124,19 +129,37 @@
 
                 <div class="permission-grid">
                   @for (perm of mod.permissions; track perm.id) {
-                    <label class="permission-item" [for]="'perm-' + perm.id" [class.checked]="isPermissionSelected(perm.id)">
+                    <label
+                      class="permission-item"
+                      [for]="'perm-' + perm.id"
+                      [class.checked]="isPermissionSelected(perm.id)"
+                      [class.disabled]="isPermissionDisabled(perm)"
+                      [attr.title]="getDisabledReason(perm) ? 'Disabled (' + getDisabledReason(perm) + ')' : null"
+                    >
                       <div class="permission-checkbox-wrap">
                         <input
                           type="checkbox"
                           [id]="'perm-' + perm.id"
                           class="checkbox-input"
                           [checked]="isPermissionSelected(perm.id)"
+                          [disabled]="isPermissionDisabled(perm)"
                           (change)="togglePermission(perm.id)"
                         />
                       </div>
                       <div class="permission-info">
                         <div class="permission-header">
-                          <span class="permission-name">{{ perm.name }}</span>
+                          <div class="perm-title-group">
+                            <span class="permission-name">{{ perm.name }}</span>
+                            @if (getDisabledReason(perm); as reason) {
+                              <span
+                                class="perm-status-pill"
+                                [class.pill-error]="reason.includes('Deleted')"
+                                [class.pill-warning]="reason.includes('Inactive')"
+                              >
+                                {{ reason }}
+                              </span>
+                            }
+                          </div>
                           <span class="permission-code">{{ perm.code }}</span>
                         </div>
                         @if (perm.description) {

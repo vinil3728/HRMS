@@ -107,13 +107,19 @@
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
+              <th class="cursor-pointer" (click)="setSort('isDeleted')">
+                <span class="th-content">
+                  <span>DELETED</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
               <th class="text-right">ACTIONS</th>
             </tr>
           </thead>
           <tbody>
             @if (loadingRoles()) {
               <tr>
-                <td colspan="7" class="empty-table-cell">
+                <td colspan="8" class="empty-table-cell">
                   <div class="table-loading">
                     <span class="spinner"></span>
                     <span>Loading roles...</span>
@@ -122,7 +128,7 @@
               </tr>
             } @else if (displayedRoles().length === 0) {
               <tr>
-                <td colspan="7" class="empty-table-cell">
+                <td colspan="8" class="empty-table-cell">
                   <div class="table-empty">
                     <div class="empty-icon-wrap">
                       <app-icon [name]="hasActiveFilters() ? 'search' : 'shield'" [size]="28"></app-icon>
@@ -193,24 +199,56 @@
                     </app-badge>
                   </td>
 
+                  <!-- DELETED -->
+                  <td>
+                    <app-badge [variant]="role.isDeleted ? 'error' : 'gray'">
+                      {{ role.isDeleted ? 'True' : 'False' }}
+                    </app-badge>
+                  </td>
+
                   <!-- ACTIONS -->
                   <td class="text-right">
                     <div class="action-buttons">
-                      <button
-                        *appHasPermission="[Permission.ROLE_UPDATE]"
-                        type="button"
-                        class="action-icon-btn"
-                        (click)="openEditRoleModal(role)"
-                        title="Edit Role"
-                        aria-label="Edit Role"
-                      >
-                        <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
-                      </button>
+                      @if (role.isDeleted) {
+                        <!-- For deleted role: ONLY Activate option exists! -->
+                        <button
+                          *appHasPermission="[Permission.ROLE_ACTIVATE, Permission.ROLE_UPDATE]"
+                          type="button"
+                          class="action-btn success"
+                          (click)="toggleRoleActive(role)"
+                          title="Activate and restore role"
+                        >
+                          <app-icon name="check" [size]="15"></app-icon>
+                          <span>Activate</span>
+                        </button>
+                      } @else {
+                        <button
+                          *appHasPermission="[Permission.ROLE_UPDATE]"
+                          type="button"
+                          class="action-icon-btn"
+                          (click)="openEditRoleModal(role)"
+                          title="Edit Role"
+                          aria-label="Edit Role"
+                        >
+                          <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                        </button>
 
-                      @if (!role.isSystemRole) {
+                        @if (!role.isSystemRole) {
+                          <button
+                            *appHasPermission="[Permission.ROLE_DELETE, Permission.ROLE_UPDATE]"
+                            type="button"
+                            class="action-icon-btn delete-action-btn"
+                            (click)="deleteRole(role)"
+                            title="Delete Role"
+                            aria-label="Delete Role"
+                          >
+                            <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+                        }
+
                         @if (role.isActive) {
                           <button
-                            *appHasPermission="[Permission.ROLE_DEACTIVATE]"
+                            *appHasPermission="[Permission.ROLE_DEACTIVATE, Permission.ROLE_UPDATE]"
                             type="button"
                             class="action-btn danger"
                             (click)="toggleRoleActive(role)"
@@ -221,7 +259,7 @@
                           </button>
                         } @else {
                           <button
-                            *appHasPermission="[Permission.ROLE_ACTIVATE]"
+                            *appHasPermission="[Permission.ROLE_ACTIVATE, Permission.ROLE_UPDATE]"
                             type="button"
                             class="action-btn success"
                             (click)="toggleRoleActive(role)"

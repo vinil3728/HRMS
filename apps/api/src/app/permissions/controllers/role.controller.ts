@@ -1,11 +1,13 @@
 import {
     Body,
     Controller,
+    Delete,
     Get,
     Param,
     Patch,
     Post,
     Put,
+    Query,
     UseGuards,
 } from '@nestjs/common';
 
@@ -17,7 +19,7 @@ import { AssignPermissionsDto } from '../dto/assign-permissions.dto';
 
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 
-import { Permissions } from '../decorators/permissions.decorator';
+import { AnyPermissions, Permissions } from '../decorators/permissions.decorator';
 import { PermissionGuard } from '../guards/permission.guard';
 import { Permission } from '../../permissions/enums/permission.enum';
 
@@ -31,8 +33,8 @@ export class RoleController {
     @Get()
     @UseGuards(PermissionGuard)
     @Permissions(Permission.ROLE_VIEW)
-    findAll() {
-        return this.roleService.findAll();
+    findAll(@Query('all') all?: string) {
+        return this.roleService.findAll(all !== 'false');
     }
 
     @Get(':id')
@@ -68,7 +70,7 @@ export class RoleController {
 
     @Patch(':id/activate')
     @UseGuards(PermissionGuard)
-    @Permissions(Permission.ROLE_ACTIVATE)
+    @AnyPermissions(Permission.ROLE_ACTIVATE, Permission.ROLE_UPDATE)
     activate(
         @Param('id') id: string,
     ) {
@@ -77,11 +79,20 @@ export class RoleController {
 
     @Patch(':id/deactivate')
     @UseGuards(PermissionGuard)
-    @Permissions(Permission.ROLE_DEACTIVATE)
+    @AnyPermissions(Permission.ROLE_DEACTIVATE, Permission.ROLE_UPDATE)
     deactivate(
         @Param('id') id: string,
     ) {
         return this.roleService.deactivate(id);
+    }
+
+    @Delete(':id')
+    @UseGuards(PermissionGuard)
+    @AnyPermissions(Permission.ROLE_DELETE, Permission.ROLE_UPDATE)
+    remove(
+        @Param('id') id: string,
+    ) {
+        return this.roleService.remove(id);
     }
 
     @Put(':id/permissions')

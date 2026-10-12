@@ -1,6 +1,7 @@
 import {
     IsOptional,
     IsString,
+    IsUUID,
     MaxLength,
     MinLength,
 } from 'class-validator';
@@ -16,10 +17,15 @@ export class CreatePermissionDto {
     @MaxLength(100)
     name!: string;
 
+    @IsOptional()
+    @IsUUID()
+    moduleId?: string;
+
+    @IsOptional()
     @IsString()
     @MinLength(2)
     @MaxLength(100)
-    module!: string;
+    module?: string;
 
     @IsOptional()
     @IsString()

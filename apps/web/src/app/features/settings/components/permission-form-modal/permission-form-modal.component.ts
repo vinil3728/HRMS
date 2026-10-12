@@ -18,26 +18,11 @@ import {
 import { IconComponent } from '../../../../shared/ui/icon/icon.component';
 import {
   CreatePermissionDto,
+  SystemModule,
   SystemPermission,
   UpdatePermissionDto,
 } from '../../models/settings.model';
 import { SettingsService } from '../../services/settings.service';
-
-const DEFAULT_MODULES = [
-  'Employees',
-  'Departments',
-  'Designations',
-  'Attendance',
-  'Employee Documents',
-  'Leave',
-  'Leave Balances',
-  'Payroll',
-  'Performance',
-  'Policies',
-  'Policy Acknowledgements',
-  'Reimbursements',
-  'Roles & Permissions',
-];
 
 @Component({
   selector: 'app-permission-form-modal',
@@ -52,51 +37,81 @@ export class PermissionFormModalComponent {
 
   readonly isOpen = input<boolean>(false);
   readonly permission = input<SystemPermission | null>(null);
-  readonly existingModules = input<string[]>([]);
 
   readonly closeModal = output<void>();
   readonly saved = output<SystemPermission>();
 
+  readonly modules = signal<SystemModule[]>([]);
+  readonly loadingModules = signal<boolean>(false);
   readonly submitting = signal<boolean>(false);
   readonly errorMessage = signal<string>('');
 
   readonly isEditMode = computed(() => !!this.permission());
 
-  readonly moduleSuggestions = computed(() => {
-    const fromProps = this.existingModules();
-    const set = new Set([...DEFAULT_MODULES, ...fromProps]);
-    return Array.from(set).sort();
-  });
-
   readonly form: FormGroup = this.fb.group({
     code: ['', [Validators.required, Validators.minLength(2)]],
     name: ['', [Validators.required, Validators.minLength(2)]],
-    module: ['', [Validators.required]],
+    moduleId: ['', [Validators.required]],
     description: [''],
   });
 
   constructor() {
     effect(() => {
-      const p = this.permission();
       const open = this.isOpen();
+      const p = this.permission();
 
-      if (open && p) {
-        this.form.patchValue({
-          code: p.code,
-          name: p.name,
-          module: p.module,
-          description: p.description || '',
-        });
-        this.errorMessage.set('');
-      } else if (open) {
-        this.form.reset({
-          code: '',
-          name: '',
-          module: 'Employees',
-          description: '',
-        });
-        this.errorMessage.set('');
+      if (open) {
+        this.loadModules();
+
+        if (p) {
+          const modId =
+            p.moduleId ||
+            (typeof p.module === 'object' ? p.module?.id : '') ||
+            '';
+          this.form.patchValue({
+            code: p.code,
+            name: p.name,
+            moduleId: modId,
+            description: p.description || '',
+          });
+          this.errorMessage.set('');
+        } else {
+          this.form.reset({
+            code: '',
+            name: '',
+            moduleId: '',
+            description: '',
+          });
+          this.errorMessage.set('');
+        }
       }
+    });
+  }
+
+  loadModules(): void {
+    if (this.modules().length > 0) return;
+    this.loadingModules.set(true);
+    this.settingsService.getModules().subscribe({
+      next: (data) => {
+        this.modules.set(data);
+        this.loadingModules.set(false);
+        const p = this.permission();
+        if (p && !this.form.get('moduleId')?.value) {
+          // If moduleId wasn't matched yet, attempt to match by module name/code
+          const modName = typeof p.module === 'object' ? p.module?.name : p.module;
+          const match = data.find(
+            (m) =>
+              m.id === p.moduleId ||
+              (modName && (m.name.toLowerCase() === modName.toLowerCase() || m.code.toLowerCase() === modName.toLowerCase()))
+          );
+          if (match) {
+            this.form.patchValue({ moduleId: match.id });
+          }
+        }
+      },
+      error: () => {
+        this.loadingModules.set(false);
+      },
     });
   }
 
@@ -120,12 +135,14 @@ export class PermissionFormModalComponent {
 
     const val = this.form.getRawValue();
     const current = this.permission();
+    const selectedMod = this.modules().find((m) => m.id === val.moduleId);
 
     if (current) {
       const dto: UpdatePermissionDto = {
         code: val.code.trim().toUpperCase(),
         name: val.name.trim(),
-        module: val.module.trim(),
+        moduleId: val.moduleId,
+        module: selectedMod?.name,
         description: val.description?.trim() || null,
       };
 
@@ -145,7 +162,8 @@ export class PermissionFormModalComponent {
       const dto: CreatePermissionDto = {
         code: val.code.trim().toUpperCase(),
         name: val.name.trim(),
-        module: val.module.trim(),
+        moduleId: val.moduleId,
+        module: selectedMod?.name,
         description: val.description?.trim() || null,
       };
 

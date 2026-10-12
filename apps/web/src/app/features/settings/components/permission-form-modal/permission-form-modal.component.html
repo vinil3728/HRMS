@@ -51,24 +51,24 @@
 
             <div class="form-group flex-1">
               <label class="form-label required" for="permModule">Functional Module</label>
-              <input
+              <select
                 id="permModule"
-                type="text"
-                list="modulesList"
                 class="form-control"
-                [class.is-invalid]="isFieldInvalid('module')"
-                formControlName="module"
-                placeholder="e.g. Payroll"
-              />
-              <datalist id="modulesList">
-                @for (mod of moduleSuggestions(); track mod) {
-                  <option [value]="mod"></option>
+                [class.is-invalid]="isFieldInvalid('moduleId')"
+                formControlName="moduleId"
+              >
+                <option value="" disabled>Select module...</option>
+                @for (mod of modules(); track mod.id) {
+                  <option [value]="mod.id">{{ mod.name }}</option>
                 }
-              </datalist>
-              @if (isFieldInvalid('module')) {
+              </select>
+              @if (isFieldInvalid('moduleId')) {
                 <div class="invalid-feedback">
-                  Module classification is required.
+                  Module selection is required.
                 </div>
+              }
+              @if (loadingModules()) {
+                <span class="field-hint">Loading modules...</span>
               }
             </div>
           </div>

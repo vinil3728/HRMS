@@ -17,7 +17,7 @@ import { UpdateModuleDto } from './dto/update-module.dto';
 
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../permissions/guards/permission.guard';
-import { AnyPermissions, Permissions } from '../permissions/decorators/permissions.decorator';
+import { Permissions } from '../permissions/decorators/permissions.decorator';
 import { Permission } from '../permissions/enums/permission.enum';
 
 @Controller('modules')
@@ -27,12 +27,7 @@ export class ModulesController {
 
     @Get()
     @UseGuards(PermissionGuard)
-    @AnyPermissions(
-        Permission.MODULE_VIEW,
-        Permission.PERMISSION_VIEW,
-        Permission.PERMISSION_CREATE,
-        Permission.PERMISSION_UPDATE,
-    )
+    @Permissions(Permission.MODULE_VIEW)
     findAll(
         @Query('search') search?: string,
         @Query('all') all?: string,
@@ -56,7 +51,7 @@ export class ModulesController {
 
     @Patch(':id')
     @UseGuards(PermissionGuard)
-    @Permissions(Permission.MODULE_UPDATE)
+    @Permissions(Permission.MODULE_EDIT)
     update(
         @Param('id', new ParseUUIDPipe()) id: string,
         @Body() dto: UpdateModuleDto,
@@ -66,14 +61,14 @@ export class ModulesController {
 
     @Patch(':id/activate')
     @UseGuards(PermissionGuard)
-    @AnyPermissions(Permission.MODULE_ACTIVATE, Permission.MODULE_UPDATE)
+    @Permissions(Permission.MODULE_ACTIVATE)
     activate(@Param('id', new ParseUUIDPipe()) id: string) {
         return this.modulesService.activate(id);
     }
 
     @Patch(':id/deactivate')
     @UseGuards(PermissionGuard)
-    @AnyPermissions(Permission.MODULE_DEACTIVATE, Permission.MODULE_UPDATE)
+    @Permissions(Permission.MODULE_DEACTIVATE)
     deactivate(@Param('id', new ParseUUIDPipe()) id: string) {
         return this.modulesService.deactivate(id);
     }

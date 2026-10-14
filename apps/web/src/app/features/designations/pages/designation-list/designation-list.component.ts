@@ -20,6 +20,7 @@ import { Designation } from '../../models/designation.model';
 import { DesignationService } from '../../services/designation.service';
 import { DepartmentService } from '../../../departments/services/department.service';
 import { Department } from '../../../departments/models/department.model';
+import { RbacService } from '../../../../core/services/rbac.service';
 
 @Component({
   selector: 'app-designation-list',
@@ -39,6 +40,7 @@ import { Department } from '../../../departments/models/department.model';
 export class DesignationListComponent implements OnInit {
   private readonly designationService = inject(DesignationService);
   private readonly departmentService = inject(DepartmentService);
+  private readonly rbacService = inject(RbacService);
 
   readonly Permission = Permission;
 
@@ -56,6 +58,15 @@ export class DesignationListComponent implements OnInit {
 
   readonly isModalOpen = signal<boolean>(false);
   readonly selectedDesignation = signal<Designation | null>(null);
+
+  readonly hasAnyActionPermissions = computed(() => {
+    return (
+      this.rbacService.hasPermission(Permission.DESIGNATION_EDIT) ||
+      this.rbacService.hasPermission(Permission.DESIGNATION_DELETE) ||
+      this.rbacService.hasPermission(Permission.DESIGNATION_ACTIVATE) ||
+      this.rbacService.hasPermission(Permission.DESIGNATION_DEACTIVATE)
+    );
+  });
 
   readonly statusOptions: SelectOption[] = [
     { label: 'All Statuses', value: 'ALL' },
@@ -205,6 +216,11 @@ export class DesignationListComponent implements OnInit {
   }
 
   openEditModal(desig: Designation): void {
+    this.selectedDesignation.set(desig);
+    this.isModalOpen.set(true);
+  }
+
+  openDeleteModal(desig: Designation): void {
     this.selectedDesignation.set(desig);
     this.isModalOpen.set(true);
   }

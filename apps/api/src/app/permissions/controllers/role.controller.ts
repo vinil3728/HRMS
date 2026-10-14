@@ -57,7 +57,7 @@ export class RoleController {
 
     @Patch(':id')
     @UseGuards(PermissionGuard)
-    @Permissions(Permission.ROLE_UPDATE)
+    @Permissions(Permission.ROLE_EDIT)
     update(
         @Param('id') id: string,
         @Body() dto: UpdateRoleDto,
@@ -70,7 +70,7 @@ export class RoleController {
 
     @Patch(':id/activate')
     @UseGuards(PermissionGuard)
-    @AnyPermissions(Permission.ROLE_ACTIVATE, Permission.ROLE_UPDATE)
+    @Permissions(Permission.ROLE_ACTIVATE)
     activate(
         @Param('id') id: string,
     ) {
@@ -79,7 +79,7 @@ export class RoleController {
 
     @Patch(':id/deactivate')
     @UseGuards(PermissionGuard)
-    @AnyPermissions(Permission.ROLE_DEACTIVATE, Permission.ROLE_UPDATE)
+    @Permissions(Permission.ROLE_DEACTIVATE)
     deactivate(
         @Param('id') id: string,
     ) {
@@ -88,7 +88,7 @@ export class RoleController {
 
     @Delete(':id')
     @UseGuards(PermissionGuard)
-    @AnyPermissions(Permission.ROLE_DELETE, Permission.ROLE_UPDATE)
+    @Permissions(Permission.ROLE_DELETE)
     remove(
         @Param('id') id: string,
     ) {
@@ -110,7 +110,7 @@ export class RoleController {
 
     @Get(':id/permissions')
     @UseGuards(PermissionGuard)
-    @Permissions(Permission.ROLE_VIEW)
+    @Permissions(Permission.PERMISSION_VIEW)
     getPermissions(
         @Param('id') id: string,
     ) {

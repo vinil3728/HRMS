@@ -19,6 +19,7 @@ import { PermissionMatrixModalComponent } from '../../components/permission-matr
 import { RoleFormModalComponent } from '../../components/role-form-modal/role-form-modal.component';
 import { Role } from '../../models/settings.model';
 import { SettingsService } from '../../services/settings.service';
+import { RbacService } from '../../../../core/services/rbac.service';
 
 @Component({
   selector: 'app-roles-page',
@@ -37,6 +38,7 @@ import { SettingsService } from '../../services/settings.service';
 })
 export class RolesPageComponent implements OnInit {
   private readonly settingsService = inject(SettingsService);
+  private readonly rbacService = inject(RbacService);
 
   readonly Permission = Permission;
 
@@ -55,6 +57,15 @@ export class RolesPageComponent implements OnInit {
 
   readonly isMatrixOpen = signal<boolean>(false);
   readonly selectedRoleForMatrix = signal<Role | null>(null);
+
+  readonly hasAnyActionPermissions = computed(() => {
+    return (
+      this.rbacService.hasPermission(Permission.ROLE_EDIT) ||
+      this.rbacService.hasPermission(Permission.ROLE_DELETE) ||
+      this.rbacService.hasPermission(Permission.ROLE_ACTIVATE) ||
+      this.rbacService.hasPermission(Permission.ROLE_DEACTIVATE)
+    );
+  });
 
   readonly statusOptions: SelectOption[] = [
     { label: 'All Statuses', value: 'ALL' },

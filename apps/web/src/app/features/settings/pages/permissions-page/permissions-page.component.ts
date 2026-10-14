@@ -15,6 +15,7 @@ import { SelectComponent, SelectOption } from '../../../../shared/ui/select/sele
 import { PermissionFormModalComponent } from '../../components/permission-form-modal/permission-form-modal.component';
 import { SystemModule, SystemPermission } from '../../models/settings.model';
 import { SettingsService } from '../../services/settings.service';
+import { RbacService } from '../../../../core/services/rbac.service';
 
 @Component({
   selector: 'app-permissions-page',
@@ -32,6 +33,7 @@ import { SettingsService } from '../../services/settings.service';
 })
 export class PermissionsPageComponent implements OnInit {
   private readonly settingsService = inject(SettingsService);
+  private readonly rbacService = inject(RbacService);
 
   readonly Permission = Permission;
 
@@ -49,6 +51,15 @@ export class PermissionsPageComponent implements OnInit {
 
   readonly isPermissionModalOpen = signal<boolean>(false);
   readonly selectedPermissionToEdit = signal<SystemPermission | null>(null);
+
+  readonly hasAnyActionPermissions = computed(() => {
+    return (
+      this.rbacService.hasPermission(Permission.PERMISSION_EDIT) ||
+      this.rbacService.hasPermission(Permission.PERMISSION_DELETE) ||
+      this.rbacService.hasPermission(Permission.PERMISSION_ACTIVATE) ||
+      this.rbacService.hasPermission(Permission.PERMISSION_DEACTIVATE)
+    );
+  });
 
   getModuleName(p: SystemPermission): string {
     if (p.module && typeof p.module === 'object') return p.module.name;

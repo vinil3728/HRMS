@@ -29,6 +29,8 @@ export class BadgeComponent {
         return 'warning';
       case 'probation':
       case 'info':
+      case 'blue':
+      case 'primary':
       case 'draft':
         return 'info';
       case 'rejected':

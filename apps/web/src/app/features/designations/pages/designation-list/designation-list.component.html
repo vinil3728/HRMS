@@ -124,17 +124,18 @@
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              <th class="text-right">
-                <span class="th-content">
-                  <span>ACTIONS</span>
-                </span>
-              </th>
+              @if (hasAnyActionPermissions()) {
+                <th class="text-right">
+                  ACTIONS
+                </th>
+              }
             </tr>
           </thead>
           <tbody>
             @if (loading()) {
               <tr>
-                <td colspan="6" class="empty-table-cell">
+                <td [attr.colspan]="hasAnyActionPermissions() ? 6 : 5"
+                    class="empty-table-cell">
                   <div class="table-loading">
                     <span class="spinner"></span>
                     <span>Loading designations...</span>
@@ -143,7 +144,8 @@
               </tr>
             } @else if (displayedDesignations().length === 0) {
               <tr>
-                <td colspan="6" class="empty-table-cell">
+                <td [attr.colspan]="hasAnyActionPermissions() ? 6 : 5"
+                    class="empty-table-cell">
                   <div class="table-empty">
                     <div class="empty-icon-wrap">
                       <app-icon [name]="hasActiveFilters() ? 'search' : 'id-card'" [size]="28"></app-icon>
@@ -204,43 +206,55 @@
                   </td>
 
                   <!-- ACTIONS -->
-                  <td class="text-right">
-                    <div class="action-buttons">
-                      <button
-                        *appHasPermission="Permission.DESIGNATION_UPDATE"
-                        type="button"
-                        class="action-icon-btn"
-                        (click)="openEditModal(desig)"
-                        title="Edit Designation"
-                        aria-label="Edit Designation"
-                      >
-                        <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
-                      </button>
-                      @if (desig.isActive) {
+                  @if (hasAnyActionPermissions()) {
+                    <td class="text-right">
+                      <div class="action-buttons">
                         <button
-                          *appHasPermission="Permission.DESIGNATION_DEACTIVATE"
+                          *appHasPermission="Permission.DESIGNATION_EDIT"
                           type="button"
-                          class="action-btn danger"
-                          (click)="toggleStatus(desig)"
-                          title="Deactivate Designation"
+                          class="action-icon-btn"
+                          (click)="openEditModal(desig)"
+                          title="Edit Designation"
+                          aria-label="Edit Designation"
                         >
-                          <app-icon name="x" [size]="15"></app-icon>
-                          <span>Deactivate</span>
+                          <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
                         </button>
-                      } @else {
-                        <button
-                          *appHasPermission="Permission.DESIGNATION_ACTIVATE"
+                         <button
+                          *appHasPermission="Permission.DESIGNATION_DELETE"
                           type="button"
-                          class="action-btn success"
-                          (click)="toggleStatus(desig)"
-                          title="Activate Designation"
+                          class="action-icon-btn"
+                          (click)="openDeleteModal(desig)"
+                          title="Delete Designation"
+                          aria-label="Delete Designation"
                         >
-                          <app-icon name="check" [size]="15"></app-icon>
-                          <span>Activate</span>
+                          <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
                         </button>
-                      }
-                    </div>
-                  </td>
+                        @if (desig.isActive) {
+                          <button
+                            *appHasPermission="Permission.DESIGNATION_DEACTIVATE"
+                            type="button"
+                            class="action-btn danger"
+                            (click)="toggleStatus(desig)"
+                            title="Deactivate Designation"
+                          >
+                            <app-icon name="x" [size]="15"></app-icon>
+                            <span>Deactivate</span>
+                          </button>
+                        } @else {
+                          <button
+                            *appHasPermission="Permission.DESIGNATION_ACTIVATE"
+                            type="button"
+                            class="action-btn success"
+                            (click)="toggleStatus(desig)"
+                            title="Activate Designation"
+                          >
+                            <app-icon name="check" [size]="15"></app-icon>
+                            <span>Activate</span>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  }
                 </tr>
               }
             }

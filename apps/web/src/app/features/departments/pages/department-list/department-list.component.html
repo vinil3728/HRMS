@@ -129,13 +129,18 @@
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              <th class="text-right">ACTIONS</th>
+              @if (hasAnyActionPermissions()) {
+                <th class="text-right">
+                  ACTIONS
+                </th>
+              }
             </tr>
           </thead>
           <tbody>
             @if (loading()) {
               <tr>
-                <td colspan="7" class="empty-table-cell">
+                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                    class="empty-table-cell">
                   <div class="table-loading">
                     <span class="spinner"></span>
                     <span>Loading departments...</span>
@@ -144,7 +149,8 @@
               </tr>
             } @else if (displayedDepartments().length === 0) {
               <tr>
-                <td colspan="7" class="empty-table-cell">
+                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                    class="empty-table-cell">
                   <div class="table-empty">
                     <div class="empty-icon-wrap">
                       <app-icon [name]="hasActiveFilters() ? 'search' : 'building'" [size]="28"></app-icon>
@@ -213,43 +219,55 @@
                   </td>
 
                   <!-- ACTIONS -->
-                  <td class="text-right">
-                    <div class="action-buttons">
-                      <button
-                        *appHasPermission="Permission.DEPARTMENT_UPDATE"
-                        type="button"
-                        class="action-icon-btn"
-                        (click)="openEditModal(dept)"
-                        title="Edit Department"
-                        aria-label="Edit Department"
-                      >
-                        <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
-                      </button>
-                      @if (dept.isActive) {
+                  @if (hasAnyActionPermissions()) {
+                    <td class="text-right">
+                      <div class="action-buttons">
                         <button
-                          *appHasPermission="Permission.DEPARTMENT_DEACTIVATE"
+                          *appHasPermission="Permission.DEPARTMENT_EDIT"
                           type="button"
-                          class="action-btn danger"
-                          (click)="toggleStatus(dept)"
-                          title="Deactivate Department"
+                          class="action-icon-btn"
+                          (click)="openEditModal(dept)"
+                          title="Edit Department"
+                          aria-label="Edit Department"
                         >
-                          <app-icon name="x" [size]="15"></app-icon>
-                          <span>Deactivate</span>
+                          <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
                         </button>
-                      } @else {
-                        <button
-                          *appHasPermission="Permission.DEPARTMENT_ACTIVATE"
+                         <button
+                          *appHasPermission="Permission.DEPARTMENT_DELETE"
                           type="button"
-                          class="action-btn success"
-                          (click)="toggleStatus(dept)"
-                          title="Activate Department"
+                          class="action-icon-btn"
+                          (click)="openDeleteModal(dept)"
+                          title="Delete Department"ś
+                          aria-label="Delete Department"
                         >
-                          <app-icon name="check" [size]="15"></app-icon>
-                          <span>Activate</span>
+                          <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
                         </button>
-                      }
-                    </div>
-                  </td>
+                        @if (dept.isActive) {
+                          <button
+                            *appHasPermission="Permission.DEPARTMENT_DEACTIVATE"
+                            type="button"
+                            class="action-btn danger"ś
+                            (click)="toggleStatus(dept)"
+                            title="Deactivate Department"
+                          >
+                            <app-icon name="x" [size]="15"></app-icon>
+                            <span>Deactivate</span>
+                          </button>
+                        } @else {
+                          <button
+                            *appHasPermission="Permission.DEPARTMENT_ACTIVATE"
+                            type="button"
+                            class="action-btn success"
+                            (click)="toggleStatus(dept)"
+                            title="Activate Department"
+                          >
+                            <app-icon name="check" [size]="15"></app-icon>
+                            <span>Activate</span>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  }
                 </tr>
               }
             }

@@ -16,6 +16,7 @@ import { UserFormModalComponent } from '../../components/user-form-modal/user-fo
 import { UserViewModalComponent } from '../../components/user-view-modal/user-view-modal.component';
 import { Role, SystemUser } from '../../models/settings.model';
 import { SettingsService } from '../../services/settings.service';
+import { RbacService } from '../../../../core/services/rbac.service';
 
 @Component({
   selector: 'app-users-page',
@@ -34,6 +35,7 @@ import { SettingsService } from '../../services/settings.service';
 })
 export class UsersPageComponent implements OnInit {
   private readonly settingsService = inject(SettingsService);
+  private readonly rbacService = inject(RbacService);
 
   readonly Permission = Permission;
 
@@ -53,6 +55,16 @@ export class UsersPageComponent implements OnInit {
     { value: 'ALL', label: 'All Roles' },
     ...this.roles().map((r) => ({ value: r.id, label: r.name })),
   ]);
+
+  readonly hasAnyActionPermissions = computed(() => {
+    return (
+      this.rbacService.hasPermission(Permission.USER_VIEW) ||
+      this.rbacService.hasPermission(Permission.USER_EDIT) ||
+      this.rbacService.hasPermission(Permission.USER_DELETE) ||
+      this.rbacService.hasPermission(Permission.USER_ACTIVATE) ||
+      this.rbacService.hasPermission(Permission.USER_DEACTIVATE)
+    );
+  });
 
   readonly statusOptions: SelectOption[] = [
     { value: 'ALL', label: 'All Statuses' },

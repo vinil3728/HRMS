@@ -117,17 +117,18 @@
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              <th class="text-right">
-                <span class="th-content">
-                  <span>ACTIONS</span>
-                </span>
-              </th>
+              @if (hasAnyActionPermissions()) {
+                <th class="text-right">
+                  ACTIONS
+                </th>
+              }
             </tr>
           </thead>
           <tbody>
             @if (loading()) {
               <tr>
-                <td colspan="7" class="empty-table-cell">
+                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                    class="empty-table-cell">
                   <div class="table-loading">
                     <span class="spinner"></span>
                     <span>Loading branch offices...</span>
@@ -136,7 +137,8 @@
               </tr>
             } @else if (displayedBranches().length === 0) {
               <tr>
-                <td colspan="7" class="empty-table-cell">
+                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                    class="empty-table-cell">
                   <div class="table-empty">
                     <div class="empty-icon-wrap">
                       <app-icon [name]="hasActiveFilters() ? 'search' : 'map-pin'" [size]="28"></app-icon>
@@ -229,53 +231,55 @@
                   </td>
 
                   <!-- ACTIONS -->
-                  <td class="text-right">
-                    <div class="action-buttons">
-                      <button
-                        type="button"
-                        *appHasPermission="Permission.BRANCH_VIEW"
-                        class="action-icon-btn"
-                        (click)="openDetailModal(branch)"
-                        title="View Branch Details & Departments"
-                        aria-label="View Details"
-                      >
-                        <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
-                      </button>
-                      <button
-                        *appHasPermission="Permission.BRANCH_UPDATE"
-                        type="button"
-                        class="action-icon-btn"
-                        (click)="openEditModal(branch)"
-                        title="Edit Branch"
-                        aria-label="Edit Branch"
-                      >
-                        <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
-                      </button>
-                      @if (branch.isActive) {
+                  @if (hasAnyActionPermissions()) {
+                    <td class="text-right" >
+                      <div class="action-buttons">
                         <button
-                          *appHasPermission="Permission.BRANCH_DEACTIVATE"
+                          *appHasPermission="Permission.BRANCH_EDIT"
                           type="button"
-                          class="action-btn danger"
-                          (click)="toggleStatus(branch)"
-                          title="Deactivate Branch"
+                          class="action-icon-btn"
+                          (click)="openEditModal(branch)"
+                          title="Edit Branch"
+                          aria-label="Edit Branch"
                         >
-                          <app-icon name="x" [size]="15"></app-icon>
-                          <span>Deactivate</span>
+                          <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
                         </button>
-                      } @else {
                         <button
-                          *appHasPermission="Permission.BRANCH_ACTIVATE"
+                          *appHasPermission="Permission.BRANCH_DELETE"
                           type="button"
-                          class="action-btn success"
-                          (click)="toggleStatus(branch)"
-                          title="Activate Branch"
+                          class="action-icon-btn"
+                          (click)="openDeleteModal(branch)"
+                          title="Delete Branch"
+                          aria-label="Delete Branch"
                         >
-                          <app-icon name="check" [size]="15"></app-icon>
-                          <span>Activate</span>
+                          <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
                         </button>
-                      }
-                    </div>
-                  </td>
+                        @if (branch.isActive) {
+                          <button
+                            *appHasPermission="Permission.BRANCH_DEACTIVATE"
+                            type="button"
+                            class="action-btn danger"
+                            (click)="toggleStatus(branch)"
+                            title="Deactivate Branch"
+                          >
+                            <app-icon name="x" [size]="15"></app-icon>
+                            <span>Deactivate</span>
+                          </button>
+                        } @else {
+                          <button
+                            *appHasPermission="Permission.BRANCH_ACTIVATE"
+                            type="button"
+                            class="action-btn success"
+                            (click)="toggleStatus(branch)"
+                            title="Activate Branch"
+                          >
+                            <app-icon name="check" [size]="15"></app-icon>
+                            <span>Activate</span>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  }
                 </tr>
               }
             }

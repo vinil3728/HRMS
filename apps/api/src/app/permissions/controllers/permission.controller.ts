@@ -53,7 +53,7 @@ export class PermissionController {
 
     @Patch(':id')
     @UseGuards(PermissionGuard)
-    @Permissions(Permission.PERMISSION_UPDATE)
+    @Permissions(Permission.PERMISSION_EDIT)
     update(
         @Param('id') id: string,
         @Body() dto: UpdatePermissionDto,
@@ -63,7 +63,7 @@ export class PermissionController {
 
     @Patch(':id/activate')
     @UseGuards(PermissionGuard)
-    @AnyPermissions(Permission.PERMISSION_ACTIVATE, Permission.PERMISSION_UPDATE)
+    @Permissions(Permission.PERMISSION_ACTIVATE)
     activate(
         @Param('id') id: string,
     ) {
@@ -72,7 +72,7 @@ export class PermissionController {
 
     @Patch(':id/deactivate')
     @UseGuards(PermissionGuard)
-    @AnyPermissions(Permission.PERMISSION_DEACTIVATE, Permission.PERMISSION_UPDATE)
+    @Permissions(Permission.PERMISSION_DEACTIVATE)
     deactivate(
         @Param('id') id: string,
     ) {
@@ -81,7 +81,7 @@ export class PermissionController {
 
     @Delete(':id')
     @UseGuards(PermissionGuard)
-    @AnyPermissions(Permission.PERMISSION_DELETE, Permission.PERMISSION_UPDATE)
+    @Permissions(Permission.PERMISSION_DELETE)
     remove(
         @Param('id') id: string,
     ) {

@@ -26,36 +26,69 @@ export enum Permission {
     EMPLOYEE_BANK_CREATE = 'EMPLOYEE_BANK_CREATE',
     EMPLOYEE_BANK_UPDATE = 'EMPLOYEE_BANK_UPDATE',
 
-    // =========================================================
-    // Branches
-    // =========================================================
-
+    // Branch Management
     BRANCH_VIEW = 'BRANCH_VIEW',
     BRANCH_CREATE = 'BRANCH_CREATE',
-    BRANCH_UPDATE = 'BRANCH_UPDATE',
-    BRANCH_DELETE = 'BRANCH_DELETE',
+    BRANCH_EDIT = 'BRANCH_EDIT',
     BRANCH_ACTIVATE = 'BRANCH_ACTIVATE',
     BRANCH_DEACTIVATE = 'BRANCH_DEACTIVATE',
+    BRANCH_DELETE = 'BRANCH_DELETE',
 
-    // =========================================================
-    // Departments
-    // =========================================================
-
+    // Department Management
     DEPARTMENT_VIEW = 'DEPARTMENT_VIEW',
     DEPARTMENT_CREATE = 'DEPARTMENT_CREATE',
-    DEPARTMENT_UPDATE = 'DEPARTMENT_UPDATE',
+    DEPARTMENT_EDIT = 'DEPARTMENT_EDIT',
     DEPARTMENT_ACTIVATE = 'DEPARTMENT_ACTIVATE',
     DEPARTMENT_DEACTIVATE = 'DEPARTMENT_DEACTIVATE',
+    DEPARTMENT_DELETE = 'DEPARTMENT_DELETE',
 
-    // =========================================================
-    // Designations
-    // =========================================================
-
+    // Designation Management
     DESIGNATION_VIEW = 'DESIGNATION_VIEW',
     DESIGNATION_CREATE = 'DESIGNATION_CREATE',
-    DESIGNATION_UPDATE = 'DESIGNATION_UPDATE',
+    DESIGNATION_EDIT = 'DESIGNATION_EDIT',
     DESIGNATION_ACTIVATE = 'DESIGNATION_ACTIVATE',
     DESIGNATION_DEACTIVATE = 'DESIGNATION_DEACTIVATE',
+    DESIGNATION_DELETE = 'DESIGNATION_DELETE',
+
+    // Holiday Management
+    HOLIDAY_VIEW = 'HOLIDAY_VIEW',
+    HOLIDAY_CREATE = 'HOLIDAY_CREATE',
+    HOLIDAY_EDIT = 'HOLIDAY_EDIT',
+    HOLIDAY_DELETE = 'HOLIDAY_DELETE',
+
+    // Module Management
+    MODULE_VIEW = 'MODULE_VIEW',
+    MODULE_CREATE = 'MODULE_CREATE',
+    MODULE_EDIT = 'MODULE_EDIT',
+    MODULE_DELETE = 'MODULE_DELETE',
+    MODULE_ACTIVATE = 'MODULE_ACTIVATE',
+    MODULE_DEACTIVATE = 'MODULE_DEACTIVATE',
+
+    // Permission Management
+    PERMISSION_VIEW = 'PERMISSION_VIEW',
+    PERMISSION_CREATE = 'PERMISSION_CREATE',
+    PERMISSION_EDIT = 'PERMISSION_EDIT',
+    PERMISSION_DELETE = 'PERMISSION_DELETE',
+    PERMISSION_ACTIVATE = 'PERMISSION_ACTIVATE',
+    PERMISSION_DEACTIVATE = 'PERMISSION_DEACTIVATE',
+
+    // Role Management
+    ROLE_VIEW = 'ROLE_VIEW',
+    ROLE_CREATE = 'ROLE_CREATE',
+    ROLE_EDIT = 'ROLE_EDIT',
+    ROLE_DELETE = 'ROLE_DELETE',
+    ROLE_ACTIVATE = 'ROLE_ACTIVATE',
+    ROLE_DEACTIVATE = 'ROLE_DEACTIVATE',
+    ROLE_PERMISSION_ASSIGN = 'ROLE_PERMISSION_ASSIGN',
+
+    // User Management
+    USER_VIEW = 'USER_VIEW',
+    USER_CREATE = 'USER_CREATE',
+    USER_EDIT = 'USER_EDIT',
+    USER_DELETE = 'USER_DELETE',
+    USER_ACTIVATE = 'USER_ACTIVATE',
+    USER_DEACTIVATE = 'USER_DEACTIVATE',
+    USER_PASSWORD_RESET = 'USER_PASSWORD_RESET',
 
     // =========================================================
     // Attendance
@@ -201,15 +234,6 @@ export enum Permission {
     PAYROLL_SUMMARY_VIEW = 'PAYROLL_SUMMARY_VIEW',
 
     // =========================================================
-    // Holidays
-    // =========================================================
-
-    HOLIDAY_VIEW = 'HOLIDAY_VIEW',
-    HOLIDAY_CREATE = 'HOLIDAY_CREATE',
-    HOLIDAY_UPDATE = 'HOLIDAY_UPDATE',
-    HOLIDAY_DELETE = 'HOLIDAY_DELETE',
-
-    // =========================================================
     // Loans
     // =========================================================
 
@@ -221,44 +245,4 @@ export enum Permission {
     LOAN_DISBURSE = 'LOAN_DISBURSE',
     LOAN_CONFIGURE_REPAYMENT = 'LOAN_CONFIGURE_REPAYMENT',
     LOAN_MANAGE_PAYMENT = 'LOAN_MANAGE_PAYMENT',
-
-    // =========================================================
-    // Permissions
-    // =========================================================
-    PERMISSION_VIEW = 'PERMISSION_VIEW',
-    PERMISSION_CREATE = 'PERMISSION_CREATE',
-    PERMISSION_UPDATE = 'PERMISSION_UPDATE',
-    PERMISSION_DELETE = 'PERMISSION_DELETE',
-    PERMISSION_ACTIVATE = 'PERMISSION_ACTIVATE',
-    PERMISSION_DEACTIVATE = 'PERMISSION_DEACTIVATE',
-
-    // =========================================================
-    // Roles
-    // =========================================================
-    ROLE_VIEW = 'ROLE_VIEW',
-    ROLE_CREATE = 'ROLE_CREATE',
-    ROLE_UPDATE = 'ROLE_UPDATE',
-    ROLE_DELETE = 'ROLE_DELETE',
-    ROLE_ACTIVATE = 'ROLE_ACTIVATE',
-    ROLE_DEACTIVATE = 'ROLE_DEACTIVATE',
-    ROLE_PERMISSION_ASSIGN = 'ROLE_PERMISSION_ASSIGN',
-
-    // =========================================================
-    // User Accounts
-    // =========================================================
-    USER_ACCOUNT_VIEW = 'USER_ACCOUNT_VIEW',
-    USER_ACCOUNT_CREATE = 'USER_ACCOUNT_CREATE',
-    USER_ACCOUNT_UPDATE = 'USER_ACCOUNT_UPDATE',
-    USER_ACCOUNT_ACTIVATE = 'USER_ACCOUNT_ACTIVATE',
-    USER_ACCOUNT_DEACTIVATE = 'USER_ACCOUNT_DEACTIVATE',
-
-    // =========================================================
-    // Modules
-    // =========================================================
-    MODULE_VIEW = 'MODULE_VIEW',
-    MODULE_CREATE = 'MODULE_CREATE',
-    MODULE_UPDATE = 'MODULE_UPDATE',
-    MODULE_DELETE = 'MODULE_DELETE',
-    MODULE_ACTIVATE = 'MODULE_ACTIVATE',
-    MODULE_DEACTIVATE = 'MODULE_DEACTIVATE',
 }

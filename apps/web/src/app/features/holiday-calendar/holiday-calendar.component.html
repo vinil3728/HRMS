@@ -3,15 +3,15 @@
     <!-- ── Page Header ──────────────────────────────────────────────────── -->
     <div class="page-header">
       <div class="header-info">
-        <h1 class="page-title">Company Holiday Calendar</h1>
+        <h1 class="page-title">Company Holidays Calendar</h1>
         <p class="page-subtitle">
           Manage public, restricted, and company holidays in one calendar.
         </p>
       </div>
 
       <div class="header-actions">
-        @if (canCreateHoliday()) {
-          <button
+         <button
+            *appHasPermission="Permission.HOLIDAY_CREATE"
             type="button"
             class="btn btn-primary"
             (click)="openAddModal()"
@@ -19,7 +19,6 @@
             <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
             <span>Add Holiday</span>
           </button>
-        }
       </div>
     </div>
 
@@ -131,15 +130,6 @@
               </div>
               <h3 class="empty-title">No holidays found</h3>
               <p class="empty-desc">No holidays match the selected filter criteria for {{ holidayYear() }}.</p>
-              @if (canCreateHoliday()) {
-                <button
-                  type="button"
-                  class="btn btn-primary btn-sm"
-                  (click)="openAddModal()"
-                >
-                  + Add Holiday
-                </button>
-              }
             </div>
           } @else {
             <table class="table">
@@ -151,8 +141,10 @@
                   <th style="width: 150px;">CATEGORY</th>
                   <th>DESCRIPTION</th>
                   <th style="width: 130px;">STATUS</th>
-                  @if (canUpdateHoliday() || canDeleteHoliday()) {
-                    <th class="cell-actions" style="width: 160px;">ACTIONS</th>
+                  @if (hasAnyActionPermissions()) {
+                    <th class="cell-actions" style="width: 160px;">
+                      ACTIONS
+                    </th>
                   }
                 </tr>
               </thead>
@@ -184,31 +176,29 @@
                         {{ h.date < todayDateStr ? 'Completed' : 'Upcoming' }}
                       </app-badge>
                     </td>
-                    @if (canUpdateHoliday() || canDeleteHoliday()) {
+                    @if (hasAnyActionPermissions()) {
                       <td class="cell-actions">
                         <div class="actions-group">
-                          @if (canUpdateHoliday()) {
-                            <button
-                              type="button"
-                              class="action-btn edit-btn"
-                              (click)="openEditModal(h)"
-                              title="Edit Holiday"
+                          <button
+                            *appHasPermission="Permission.HOLIDAY_EDIT"
+                            type="button"
+                            class="action-icon-btn"
+                            (click)="openEditModal(h)"
+                            title="Edit Holiday"
+                            aria-label="Edit Holiday"
                             >
-                              <app-icon name="edit" [size]="13"></app-icon>
-                              <span>Edit</span>
-                            </button>
-                          }
-                          @if (canDeleteHoliday()) {
-                            <button
-                              type="button"
-                              class="action-btn cancel-btn"
-                              (click)="onDelete(h)"
-                              title="Delete Holiday"
-                            >
-                              <app-icon name="trash" [size]="13"></app-icon>
-                              <span>Delete</span>
-                            </button>
-                          }
+                              <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+                          <button
+                            *appHasPermission="Permission.HOLIDAY_DELETE"
+                            type="button"
+                            class="action-icon-btn"
+                            (click)="onDelete(h)"
+                            title="Delete Holiday"
+                            aria-label="Delete Holiday"
+                          >
+                            <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
                         </div>
                       </td>
                     }
@@ -268,17 +258,6 @@
             title="Reset Filters"
           >
             <app-icon name="activity" [size]="16"></app-icon>
-          </button>
-        }
-
-        @if (canCreateHoliday()) {
-          <button
-            type="button"
-            class="btn btn-primary btn-sm btn-add-h"
-            (click)="openAddModal()"
-          >
-            <app-icon name="plus" [size]="14"></app-icon>
-            <span>Add Holiday</span>
           </button>
         }
       </div>
@@ -344,15 +323,6 @@
             </div>
             <h3 class="empty-title">No holidays found</h3>
             <p class="empty-desc">No holidays match the selected filter criteria for {{ holidayYear() }}.</p>
-            @if (canCreateHoliday()) {
-              <button
-                type="button"
-                class="btn btn-primary btn-sm"
-                (click)="openAddModal()"
-              >
-                + Add Holiday
-              </button>
-            }
           </div>
         } @else {
           <table class="table">
@@ -364,9 +334,6 @@
                 <th style="width: 150px;">CATEGORY</th>
                 <th>DESCRIPTION</th>
                 <th style="width: 130px;">STATUS</th>
-                @if (canUpdateHoliday() || canDeleteHoliday()) {
-                  <th class="cell-actions" style="width: 160px;">ACTIONS</th>
-                }
               </tr>
             </thead>
             <tbody>
@@ -397,34 +364,6 @@
                       {{ h.date < todayDateStr ? 'Completed' : 'Upcoming' }}
                     </app-badge>
                   </td>
-                  @if (canUpdateHoliday() || canDeleteHoliday()) {
-                    <td class="cell-actions">
-                      <div class="actions-group">
-                        @if (canUpdateHoliday()) {
-                          <button
-                            type="button"
-                            class="action-btn edit-btn"
-                            (click)="openEditModal(h)"
-                            title="Edit Holiday"
-                          >
-                            <app-icon name="edit" [size]="13"></app-icon>
-                            <span>Edit</span>
-                          </button>
-                        }
-                        @if (canDeleteHoliday()) {
-                          <button
-                            type="button"
-                            class="action-btn cancel-btn"
-                            (click)="onDelete(h)"
-                            title="Delete Holiday"
-                          >
-                            <app-icon name="trash" [size]="13"></app-icon>
-                            <span>Delete</span>
-                          </button>
-                        }
-                      </div>
-                    </td>
-                  }
                 </tr>
               }
             </tbody>

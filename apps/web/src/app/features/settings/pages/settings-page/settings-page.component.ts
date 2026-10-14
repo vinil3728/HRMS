@@ -78,8 +78,8 @@ export class SettingsPageComponent implements OnInit {
       Permission.ROLE_VIEW,
       Permission.ROLE_CREATE,
       Permission.ROLE_PERMISSION_ASSIGN,
-      Permission.USER_ACCOUNT_VIEW,
-      Permission.USER_ACCOUNT_CREATE,
+      Permission.USER_VIEW,
+      Permission.USER_CREATE,
     ]);
   });
 

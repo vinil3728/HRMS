@@ -14,7 +14,7 @@
       <button
         type="button"
         class="btn btn-primary"
-        *appHasPermission="[Permission.MODULE_CREATE]"
+        *appHasPermission="Permission.MODULE_CREATE"
         (click)="openCreateModuleModal()"
       >
         <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
@@ -117,13 +117,16 @@
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              <th class="text-right">ACTIONS</th>
+              @if (hasAnyActionPermissions()) {
+                <th class="text-right">ACTIONS</th>
+              }
             </tr>
           </thead>
           <tbody>
             @if (loading()) {
               <tr>
-                <td colspan="7" class="empty-table-cell">
+                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                    class="empty-table-cell">
                   <div class="table-loading">
                     <span class="spinner"></span>
                     <span>Loading modules...</span>
@@ -132,7 +135,8 @@
               </tr>
             } @else if (displayedModules().length === 0) {
               <tr>
-                <td colspan="7" class="empty-table-cell">
+                  <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                      class="empty-table-cell">
                   <div class="table-empty">
                     <div class="empty-icon-wrap">
                       <app-icon [name]="hasActiveFilters() ? 'search' : 'shield'" [size]="28"></app-icon>
@@ -185,82 +189,84 @@
 
                   <!-- STATUS -->
                   <td>
-                    <app-badge [variant]="mod.isActive ? 'active' : 'inactive'">
+                    <app-badge [variant]="mod.isActive ? 'info' : 'gray'">
                       {{ mod.isActive ? 'Active' : 'Inactive' }}
                     </app-badge>
                   </td>
 
                   <!-- DELETED -->
                   <td>
-                    <app-badge [variant]="mod.isDeleted ? 'error' : 'gray'">
+                    <app-badge [variant]="mod.isDeleted ? 'info' : 'gray'">
                       {{ mod.isDeleted ? 'True' : 'False' }}
                     </app-badge>
                   </td>
 
                   <!-- ACTIONS -->
-                  <td class="text-right">
-                    <div class="action-buttons">
-                      @if (mod.isDeleted) {
-                        <!-- For deleted module: ONLY Activate option exists! -->
-                        <button
-                          *appHasPermission="[Permission.MODULE_ACTIVATE, Permission.MODULE_UPDATE]"
-                          type="button"
-                          class="action-btn success"
-                          (click)="toggleModuleActive(mod)"
-                          title="Activate and restore module"
-                        >
-                          <app-icon name="check" [size]="15"></app-icon>
-                          <span>Activate</span>
-                        </button>
-                      } @else {
-                        <button
-                          *appHasPermission="[Permission.MODULE_UPDATE]"
-                          type="button"
-                          class="action-icon-btn"
-                          (click)="openEditModuleModal(mod)"
-                          title="Edit Module"
-                          aria-label="Edit Module"
-                        >
-                          <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
-                        </button>
-
-                        <button
-                          *appHasPermission="[Permission.MODULE_DELETE]"
-                          type="button"
-                          class="action-icon-btn delete-action-btn"
-                          (click)="deleteModule(mod)"
-                          title="Delete Module"
-                          aria-label="Delete Module"
-                        >
-                          <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
-                        </button>
-
-                        @if (mod.isActive) {
+                  @if (hasAnyActionPermissions()) {
+                    <td class="text-right">
+                      <div class="action-buttons">
+                        @if (mod.isDeleted) {
+                          <!-- For deleted module: ONLY Activate option exists! -->
                           <button
-                            *appHasPermission="[Permission.MODULE_DEACTIVATE, Permission.MODULE_UPDATE]"
-                            type="button"
-                            class="action-btn danger"
-                            (click)="toggleModuleActive(mod)"
-                            title="Deactivate Module"
-                          >
-                            <app-icon name="x" [size]="15"></app-icon>
-                            <span>Deactivate</span>
-                          </button>
-                        } @else {
-                          <button
-                            *appHasPermission="[Permission.MODULE_ACTIVATE, Permission.MODULE_UPDATE]"
+                            *appHasPermission="Permission.MODULE_ACTIVATE"
                             type="button"
                             class="action-btn success"
                             (click)="toggleModuleActive(mod)"
-                            title="Activate Module"
+                            title="Activate and restore module"
                           >
                             <app-icon name="check" [size]="15"></app-icon>
                             <span>Activate</span>
                           </button>
+                        } @else {
+                          <button
+                            *appHasPermission="Permission.MODULE_EDIT"
+                            type="button"
+                            class="action-icon-btn"
+                            (click)="openEditModuleModal(mod)"
+                            title="Edit Module"
+                            aria-label="Edit Module"
+                          >
+                            <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+
+                          <button
+                            *appHasPermission="Permission.MODULE_DELETE"
+                            type="button"
+                            class="action-icon-btn"
+                            (click)="deleteModule(mod)"
+                            title="Delete Module"
+                            aria-label="Delete Module"
+                          >
+                            <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+
+                          @if (mod.isActive) {
+                            <button
+                              *appHasPermission="Permission.MODULE_DEACTIVATE"
+                              type="button"
+                              class="action-btn danger"
+                              (click)="toggleModuleActive(mod)"
+                              title="Deactivate Module"
+                            >
+                              <app-icon name="x" [size]="15"></app-icon>
+                              <span>Deactivate</span>
+                            </button>
+                          } @else {
+                            <button
+                              *appHasPermission="Permission.MODULE_ACTIVATE"
+                              type="button"
+                              class="action-btn success"
+                              (click)="toggleModuleActive(mod)"
+                              title="Activate Module"
+                            >
+                              <app-icon name="check" [size]="15"></app-icon>
+                              <span>Activate</span>
+                            </button>
+                          }
                         }
-                      }
-                    </div>
-                  </td>
+                      </div>
+                    </td>
+                  }
                 </tr>
               }
             }

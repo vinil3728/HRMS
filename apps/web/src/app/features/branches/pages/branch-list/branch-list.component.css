@@ -314,7 +314,7 @@
 }
 
 .text-right {
-  text-align: right;
+  text-align: right !important;
 }
 
 /* ── Action Buttons & Status Toggle ──────────────────────────────────────── */

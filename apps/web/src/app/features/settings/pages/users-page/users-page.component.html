@@ -14,7 +14,7 @@
       <button
         type="button"
         class="btn btn-primary"
-        *appHasPermission="[Permission.USER_ACCOUNT_CREATE]"
+        *appHasPermission="Permission.USER_CREATE"
         (click)="openCreateUserModal()"
       >
         <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
@@ -103,7 +103,8 @@
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              <th>LINKED EMPLOYEE</th>
+              <th>EMPLOYEE NAME</th>
+              <th>EMPLOYEE CODE</th>
               <th>ROLE</th>
               <th class="cursor-pointer" (click)="setSort('createdAt')">
                 <span class="th-content">
@@ -117,13 +118,16 @@
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              <th class="text-right">ACTIONS</th>
+              @if (hasAnyActionPermissions()) {
+                <th class="text-right">ACTIONS</th>
+              }
             </tr>
           </thead>
           <tbody>
             @if (loadingUsers()) {
               <tr>
-                <td colspan="6" class="empty-table-cell">
+                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                    class="empty-table-cell">
                   <div class="table-loading">
                     <span class="spinner"></span>
                     <span>Loading user accounts...</span>
@@ -132,7 +136,8 @@
               </tr>
             } @else if (displayedUsers().length === 0) {
               <tr>
-                <td colspan="6" class="empty-table-cell">
+                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                    class="empty-table-cell">
                   <div class="table-empty">
                     <div class="empty-icon-wrap">
                       <app-icon [name]="hasActiveFilters() ? 'search' : 'users'" [size]="28"></app-icon>
@@ -164,18 +169,14 @@
                     <span class="primary-name">{{ u.username }}</span>
                   </td>
 
-                  <!-- LINKED EMPLOYEE -->
+                  <!-- EMPLOYEE NAME -->
                   <td>
-                    @if (u.employee; as emp) {
-                      <div class="emp-cell">
-                        <span class="emp-fullname">{{ emp.firstName }} {{ emp.lastName }}</span>
-                        <span class="emp-sub">
-                          {{ emp.employeeCode }} 
-                        </span>
-                      </div>
-                    } @else {
-                      <span class="text-muted">Unlinked Account</span>
-                    }
+                    <span class="primary-name">{{ u.employee?.firstName }} {{ u.employee?.lastName }}</span>
+                  </td>
+
+                  <!-- EMPLOYEE CODE -->
+                  <td>
+                    <span class="primary-name">{{ u.employee?.employeeCode }}</span>
                   </td>
 
                   <!-- ROLE -->
@@ -202,55 +203,57 @@
                   </td>
 
                   <!-- ACTIONS -->
-                  <td class="text-right">
-                    <div class="action-buttons">
-                      <button
-                        *appHasPermission="[Permission.USER_ACCOUNT_VIEW]"
-                        type="button"
-                        class="action-icon-btn"
-                        (click)="openViewUserModal(u)"
-                        title="View Details"
-                        aria-label="View Details"
-                      >
-                        <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
-                      </button>
-
-                      <button
-                        *appHasPermission="[Permission.USER_ACCOUNT_UPDATE]"
-                        type="button"
-                        class="action-icon-btn"
-                        (click)="openEditUserModal(u)"
-                        title="Edit User"
-                        aria-label="Edit User"
-                      >
-                        <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
-                      </button>
-
-                      @if (u.isActive) {
+                  @if (hasAnyActionPermissions()) {
+                    <td class="text-right">
+                      <div class="action-buttons">
                         <button
-                          *appHasPermission="[Permission.USER_ACCOUNT_DEACTIVATE]"
+                          *appHasPermission="Permission.USER_VIEW"
                           type="button"
-                          class="action-btn danger"
-                          (click)="toggleUserStatus(u)"
-                          title="Deactivate User"
+                          class="action-icon-btn"
+                          (click)="openViewUserModal(u)"
+                          title="View Details"
+                          aria-label="View Details"
                         >
-                          <app-icon name="x" [size]="15"></app-icon>
-                          <span>Deactivate</span>
+                          <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
                         </button>
-                      } @else {
+
                         <button
-                          *appHasPermission="[Permission.USER_ACCOUNT_ACTIVATE]"
+                          *appHasPermission="Permission.USER_EDIT"
                           type="button"
-                          class="action-btn success"
-                          (click)="toggleUserStatus(u)"
-                          title="Activate User"
+                          class="action-icon-btn"
+                          (click)="openEditUserModal(u)"
+                          title="Edit User"
+                          aria-label="Edit User"
                         >
-                          <app-icon name="check" [size]="15"></app-icon>
-                          <span>Activate</span>
+                          <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
                         </button>
-                      }
-                    </div>
-                  </td>
+
+                        @if (u.isActive) {
+                          <button
+                            *appHasPermission="Permission.USER_DEACTIVATE"
+                            type="button"
+                            class="action-btn danger"
+                            (click)="toggleUserStatus(u)"
+                            title="Deactivate User"
+                          >
+                            <app-icon name="x" [size]="15"></app-icon>
+                            <span>Deactivate</span>
+                          </button>
+                        } @else {
+                          <button
+                            *appHasPermission="Permission.USER_ACTIVATE"
+                            type="button"
+                            class="action-btn success"
+                            (click)="toggleUserStatus(u)"
+                            title="Activate User"
+                          >
+                            <app-icon name="check" [size]="15"></app-icon>
+                            <span>Activate</span>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  }
                 </tr>
               }
             }

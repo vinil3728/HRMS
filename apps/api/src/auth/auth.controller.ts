@@ -69,6 +69,7 @@ export class AuthController {
 
     @Post('change-password')
     @UseGuards(JwtAuthGuard)
+    @Permissions(Permission.USER_PASSWORD_RESET)
     changePassword(
         @CurrentUser() user: AuthenticatedRequest['user'],
         @Body() dto: ChangePasswordDto,
@@ -84,7 +85,7 @@ export class AuthController {
         JwtAuthGuard,
         PermissionGuard,
     )
-    @Permissions(Permission.USER_ACCOUNT_CREATE)
+    @Permissions(Permission.USER_CREATE)
     createUser(
         @Body() dto: CreateUserDto,
     ) {
@@ -95,14 +96,14 @@ export class AuthController {
 
     @Get('users')
     @UseGuards(JwtAuthGuard, PermissionGuard)
-    @Permissions(Permission.USER_ACCOUNT_VIEW)
+    @Permissions(Permission.USER_VIEW)
     findAll() {
         return this.authService.findAll();
     }
 
     @Get('users/:id')
     @UseGuards(JwtAuthGuard, PermissionGuard)
-    @Permissions(Permission.USER_ACCOUNT_VIEW)
+    @Permissions(Permission.USER_VIEW)
     findOne(@Param('id') id: string) {
         return this.authService.findUserById(id);
     }
@@ -112,7 +113,7 @@ export class AuthController {
         JwtAuthGuard,
         PermissionGuard,
     )
-    @Permissions(Permission.USER_ACCOUNT_UPDATE)
+    @Permissions(Permission.USER_EDIT)
     updateUser(
         @Param('id') id: string,
         @Body() dto: UpdateUserDto,
@@ -128,7 +129,7 @@ export class AuthController {
         JwtAuthGuard,
         PermissionGuard,
     )
-    @Permissions(Permission.USER_ACCOUNT_ACTIVATE)
+    @Permissions(Permission.USER_ACTIVATE)
     activateUser(@Param('id') id: string) {
         return this.authService.activateUser(id);
     }
@@ -138,7 +139,7 @@ export class AuthController {
         JwtAuthGuard,
         PermissionGuard,
     )
-    @Permissions(Permission.USER_ACCOUNT_DEACTIVATE)
+    @Permissions(Permission.USER_DEACTIVATE)
     deactivateUser(@Param('id') id: string) {
         return this.authService.deactivateUser(id);
     }

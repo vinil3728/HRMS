@@ -19,6 +19,7 @@ import { BranchFormModalComponent } from '../../components/branch-form-modal/bra
 import { BranchDetailModalComponent } from '../../components/branch-detail-modal/branch-detail-modal.component';
 import { Branch } from '../../models/branch.model';
 import { BranchService } from '../../services/branch.service';
+import { RbacService } from '../../../../core/services/rbac.service';
 
 @Component({
   selector: 'app-branch-list',
@@ -37,6 +38,7 @@ import { BranchService } from '../../services/branch.service';
 })
 export class BranchListComponent implements OnInit {
   private readonly branchService = inject(BranchService);
+  private readonly rbacService = inject(RbacService);
 
   readonly Permission = Permission;
 
@@ -63,6 +65,15 @@ export class BranchListComponent implements OnInit {
   readonly hasActiveFilters = computed(
     () => this.searchQuery().trim().length > 0 || this.statusFilter() !== 'ALL'
   );
+
+  readonly hasAnyActionPermissions = computed(() => {
+    return (
+      this.rbacService.hasPermission(Permission.BRANCH_EDIT) ||
+      this.rbacService.hasPermission(Permission.BRANCH_DELETE) ||
+      this.rbacService.hasPermission(Permission.BRANCH_ACTIVATE) ||
+      this.rbacService.hasPermission(Permission.BRANCH_DEACTIVATE)
+    );
+  });
 
   readonly filteredBranches = computed(() => {
     let list = [...this.branches()];
@@ -167,6 +178,11 @@ export class BranchListComponent implements OnInit {
   }
 
   openEditModal(branch: Branch): void {
+    this.selectedBranch.set(branch);
+    this.isFormModalOpen.set(true);
+  }
+
+  openDeleteModal(branch: Branch): void {
     this.selectedBranch.set(branch);
     this.isFormModalOpen.set(true);
   }

@@ -60,7 +60,7 @@ export class DesignationController {
 
     @Patch(':id')
     @UseGuards(PermissionGuard)
-    @Permissions(Permission.DESIGNATION_UPDATE)
+    @Permissions(Permission.DESIGNATION_EDIT)
     update(
         @Param(
             'id',

@@ -15,6 +15,7 @@ import { SelectComponent, SelectOption } from '../../../../shared/ui/select/sele
 import { ModuleFormModalComponent } from '../../components/module-form-modal/module-form-modal.component';
 import { SystemModule } from '../../models/settings.model';
 import { SettingsService } from '../../services/settings.service';
+import { RbacService } from '../../../../core/services/rbac.service';
 
 @Component({
   selector: 'app-modules-page',
@@ -32,6 +33,7 @@ import { SettingsService } from '../../services/settings.service';
 })
 export class ModulesPageComponent implements OnInit {
   private readonly settingsService = inject(SettingsService);
+  private readonly rbacService = inject(RbacService);
 
   readonly Permission = Permission;
 
@@ -54,6 +56,15 @@ export class ModulesPageComponent implements OnInit {
     { value: 'INACTIVE', label: 'Inactive' },
     { value: 'DELETED', label: 'Deleted' },
   ];
+
+  readonly hasAnyActionPermissions = computed(() => {
+    return (
+      this.rbacService.hasPermission(Permission.MODULE_EDIT) ||
+      this.rbacService.hasPermission(Permission.MODULE_DELETE) ||
+      this.rbacService.hasPermission(Permission.MODULE_ACTIVATE) ||
+      this.rbacService.hasPermission(Permission.MODULE_DEACTIVATE)
+    );
+  });
 
   readonly hasActiveFilters = computed(
     () =>

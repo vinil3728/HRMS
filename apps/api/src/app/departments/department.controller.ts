@@ -60,7 +60,7 @@ export class DepartmentController {
 
     @Patch(':id')
     @UseGuards(PermissionGuard)
-    @Permissions(Permission.DEPARTMENT_UPDATE)
+    @Permissions(Permission.DEPARTMENT_EDIT)
     update(
         @Param(
             'id',

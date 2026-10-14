@@ -20,6 +20,7 @@ import { Department } from '../../models/department.model';
 import { DepartmentService } from '../../services/department.service';
 import { BranchService } from '../../../branches/services/branch.service';
 import { Branch } from '../../../branches/models/branch.model';
+import { RbacService } from '../../../../core/services/rbac.service';
 
 @Component({
   selector: 'app-department-list',
@@ -39,6 +40,7 @@ import { Branch } from '../../../branches/models/branch.model';
 export class DepartmentListComponent implements OnInit {
   private readonly departmentService = inject(DepartmentService);
   private readonly branchService = inject(BranchService);
+  private readonly rbacService = inject(RbacService);
 
   readonly Permission = Permission;
 
@@ -77,6 +79,15 @@ export class DepartmentListComponent implements OnInit {
       this.statusFilter() !== 'ALL' ||
       this.branchFilter() !== 'ALL'
   );
+
+  readonly hasAnyActionPermissions = computed(() => {
+    return (
+      this.rbacService.hasPermission(Permission.DEPARTMENT_EDIT) ||
+      this.rbacService.hasPermission(Permission.DEPARTMENT_DELETE) ||
+      this.rbacService.hasPermission(Permission.DEPARTMENT_ACTIVATE) ||
+      this.rbacService.hasPermission(Permission.DEPARTMENT_DEACTIVATE)
+    );
+  });
 
   readonly filteredDepartments = computed(() => {
     let list = [...this.departments()];
@@ -206,6 +217,11 @@ export class DepartmentListComponent implements OnInit {
   }
 
   openEditModal(dept: Department): void {
+    this.selectedDepartment.set(dept);
+    this.isModalOpen.set(true);
+  }
+
+  openDeleteModal(dept: Department): void {
     this.selectedDepartment.set(dept);
     this.isModalOpen.set(true);
   }

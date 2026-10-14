@@ -20,6 +20,7 @@ import {
 } from '../../shared/ui/select/select.component';
 import { CompanyHoliday } from '../../core/models/holiday.model';
 import { HolidayFormModalComponent } from './components/holiday-form-modal/holiday-form-modal.component';
+import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
 
 @Component({
   selector: 'app-holiday-calendar',
@@ -31,6 +32,7 @@ import { HolidayFormModalComponent } from './components/holiday-form-modal/holid
     BadgeComponent,
     SelectComponent,
     HolidayFormModalComponent,
+    HasPermissionDirective,
   ],
   templateUrl: './holiday-calendar.component.html',
   styleUrl: './holiday-calendar.component.css',
@@ -56,16 +58,13 @@ export class HolidayCalendarComponent implements OnInit {
   readonly selectedHoliday = signal<CompanyHoliday | null>(null);
 
   readonly currentUser = this.authService.currentUser;
-
-  readonly canCreateHoliday = computed(() =>
-    this.rbacService.hasPermission(Permission.HOLIDAY_CREATE)
-  );
-  readonly canUpdateHoliday = computed(() =>
-    this.rbacService.hasPermission(Permission.HOLIDAY_UPDATE)
-  );
-  readonly canDeleteHoliday = computed(() =>
-    this.rbacService.hasPermission(Permission.HOLIDAY_DELETE)
-  );
+ 
+  readonly hasAnyActionPermissions = computed(() => {
+    return (
+      this.rbacService.hasPermission(Permission.HOLIDAY_EDIT) ||
+      this.rbacService.hasPermission(Permission.HOLIDAY_DELETE)
+    );
+  });
 
   readonly holidayTypeOptions: SelectOption[] = [
     { label: 'All Holiday Types', value: 'ALL' },

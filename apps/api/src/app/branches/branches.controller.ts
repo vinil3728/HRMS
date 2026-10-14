@@ -16,7 +16,7 @@ import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { Permissions } from '../permissions/decorators/permissions.decorator';
+import { Permissions, AnyPermissions } from '../permissions/decorators/permissions.decorator';
 import { Permission } from '../permissions/enums/permission.enum';
 import { PermissionGuard } from '../permissions/guards/permission.guard';
 
@@ -53,7 +53,7 @@ export class BranchesController {
 
   @Patch(':id')
   @UseGuards(PermissionGuard)
-  @Permissions(Permission.BRANCH_UPDATE)
+  @Permissions(Permission.BRANCH_EDIT)
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateBranchDto,
@@ -63,7 +63,7 @@ export class BranchesController {
 
   @Patch(':id/status')
   @UseGuards(PermissionGuard)
-  @Permissions(Permission.BRANCH_UPDATE)
+  @AnyPermissions(Permission.BRANCH_ACTIVATE, Permission.BRANCH_DEACTIVATE)
   toggleStatus(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body('isActive') isActive: boolean,

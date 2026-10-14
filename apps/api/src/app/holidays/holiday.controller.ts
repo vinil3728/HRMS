@@ -50,7 +50,7 @@ export class HolidayController {
 
     @Patch(':id')
     @UseGuards(PermissionGuard)
-    @Permissions(Permission.HOLIDAY_UPDATE)
+    @Permissions(Permission.HOLIDAY_EDIT)
     update(
         @Param('id', new ParseUUIDPipe()) id: string,
         @Body() dto: UpdateHolidayDto,

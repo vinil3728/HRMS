@@ -21,14 +21,13 @@ import { Permission } from '../permissions/enums/permission.enum';
 import { PermissionGuard } from '../permissions/guards/permission.guard';
 
 @Controller('departments')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class DepartmentController {
     constructor(
         private readonly departmentService: DepartmentService,
     ) {}
 
     @Post()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.DEPARTMENT_CREATE)
     create(
         @Body() dto: CreateDepartmentDto,
@@ -37,7 +36,6 @@ export class DepartmentController {
     }
 
     @Get()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.DEPARTMENT_VIEW)
     findAll(
         @Query('branchId') branchId?: string,
@@ -46,7 +44,6 @@ export class DepartmentController {
     }
 
     @Get(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.DEPARTMENT_VIEW)
     findOne(
         @Param(
@@ -59,7 +56,6 @@ export class DepartmentController {
     }
 
     @Patch(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.DEPARTMENT_EDIT)
     update(
         @Param(

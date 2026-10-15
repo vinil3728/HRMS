@@ -15,24 +15,20 @@ import { CreateEmployeeProfileDetailsDto } from '../dto/create-employee-profile-
 import { UpdateEmployeeProfileDetailsDto } from '../dto/update-employee-profile-details.dto';
 
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-import { EmployeeAccessGuard } from '../../../auth/guards/employee-access.guard';
+import { ScopeAccessGuard } from '../../../auth/guards/scope-access.guard';
 
 import { Permissions } from '../../permissions/decorators/permissions.decorator';
 import { PermissionGuard } from '../../permissions/guards/permission.guard';
 import { Permission } from '../../permissions/enums/permission.enum';
 
 @Controller('employees/:employeeId/profile')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard, ScopeAccessGuard)
 export class EmployeeProfileDetailsController {
     constructor(
         private readonly profileService: EmployeeProfileDetailsService,
     ) {}
 
     @Post()
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.EMPLOYEE_PROFILE_CREATE)
     create(
         @Param(
@@ -50,10 +46,6 @@ export class EmployeeProfileDetailsController {
     }
 
     @Get()
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.EMPLOYEE_PROFILE_VIEW)
     findOne(
         @Param(
@@ -68,10 +60,6 @@ export class EmployeeProfileDetailsController {
     }
 
     @Patch()
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.EMPLOYEE_PROFILE_UPDATE)
     update(
         @Param(

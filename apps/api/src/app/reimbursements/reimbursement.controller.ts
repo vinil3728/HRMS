@@ -25,8 +25,7 @@ import { UpdateReimbursementDto } from './dto/update-reimbursement.dto';
 import { RejectReimbursementDto } from './dto/reject-reimbursement.dto';
 
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { EmployeeAccessGuard } from '../../auth/guards/employee-access.guard';
-import { ManagerAccessGuard } from '../../auth/guards/manager-access.guard';
+import { ScopeAccessGuard } from '../../auth/guards/scope-access.guard';
 
 import { Permissions } from '../permissions/decorators/permissions.decorator';
 import { Permission } from '../permissions/enums/permission.enum';
@@ -40,17 +39,17 @@ type UploadedFile = {
 };
 
 @Controller('employees/:employeeId/reimbursements')
+@UseGuards(
+    JwtAuthGuard,
+    PermissionGuard,
+    ScopeAccessGuard,
+)
 export class ReimbursementController {
     constructor(
         private readonly reimbursementService: ReimbursementService,
     ) {}
 
     @Post()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.REIMBURSEMENT_CREATE,
     )
@@ -67,11 +66,6 @@ export class ReimbursementController {
     }
 
     @Get()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.REIMBURSEMENT_VIEW,
     )
@@ -88,11 +82,6 @@ export class ReimbursementController {
     }
 
     @Get(':reimbursementId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.REIMBURSEMENT_VIEW,
     )
@@ -109,11 +98,6 @@ export class ReimbursementController {
     }
 
     @Patch(':reimbursementId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.REIMBURSEMENT_UPDATE,
     )
@@ -133,11 +117,6 @@ export class ReimbursementController {
     }
 
     @Delete(':reimbursementId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.REIMBURSEMENT_DELETE,
     )
@@ -154,11 +133,6 @@ export class ReimbursementController {
     }
 
     @Post(':reimbursementId/submit')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.REIMBURSEMENT_SUBMIT,
     )
@@ -175,11 +149,6 @@ export class ReimbursementController {
     }
 
     @Post(':reimbursementId/receipt')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.REIMBURSEMENT_RECEIPT_UPLOAD,
     )
@@ -208,11 +177,6 @@ export class ReimbursementController {
     }
 
     @Get(':reimbursementId/receipt')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.REIMBURSEMENT_VIEW,
     )
@@ -232,11 +196,6 @@ export class ReimbursementController {
     }
 
     @Post(':reimbursementId/approve')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        ManagerAccessGuard,
-    )
     @Permissions(
         Permission.REIMBURSEMENT_APPROVE,
     )
@@ -253,11 +212,6 @@ export class ReimbursementController {
     }
 
     @Post(':reimbursementId/reject')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        ManagerAccessGuard,
-    )
     @Permissions(
         Permission.REIMBURSEMENT_REJECT,
     )
@@ -277,10 +231,6 @@ export class ReimbursementController {
     }
 
     @Post(':reimbursementId/pay')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-    )
     @Permissions(
         Permission.REIMBURSEMENT_PAY,
     )

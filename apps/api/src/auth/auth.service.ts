@@ -547,7 +547,7 @@ export class AuthService {
         /*
          * Load permissions assigned to the user's role.
          */
-        const permissions =
+        const { permissions, permissionScopes } =
             await this.getUserPermissions(
                 user.role.id,
             );
@@ -611,6 +611,7 @@ export class AuthService {
                     user.role.code,
 
                 permissions,
+                permissionScopes,
             },
         };
     }
@@ -692,7 +693,7 @@ export class AuthService {
          * changed from the RBAC UI without changing the
          * user's stored tokens.
          */
-        const permissions =
+        const { permissions, permissionScopes } =
             await this.getUserPermissions(
                 user.role.id,
             );
@@ -767,6 +768,7 @@ export class AuthService {
                     user.role.code,
 
                 permissions,
+                permissionScopes,
             },
         };
     }
@@ -1000,7 +1002,7 @@ export class AuthService {
      */
     private async getUserPermissions(
         roleId: string,
-    ): Promise<string[]> {
+    ): Promise<{ permissions: string[]; permissionScopes: Record<string, string[]> }> {
         const rolePermissions =
             await this.rolePermissionRepository
                 .createQueryBuilder('rolePermission')
@@ -1041,10 +1043,17 @@ export class AuthService {
                 )
                 .getMany();
 
-        return rolePermissions.map(
+        const permissions = rolePermissions.map(
             (rolePermission) =>
                 rolePermission.permission.code,
         );
+
+        const permissionScopes: Record<string, string[]> = {};
+        for (const rp of rolePermissions) {
+            permissionScopes[rp.permission.code] = rp.scopes || [];
+        }
+
+        return { permissions, permissionScopes };
     }
 
     private async createAccessToken(

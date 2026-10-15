@@ -20,21 +20,19 @@ import { AnyPermissions, Permissions } from '../decorators/permissions.decorator
 import { Permission } from '../../permissions/enums/permission.enum';
 
 @Controller('permissions')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class PermissionController {
     constructor(
         private readonly permissionService: PermissionService,
     ) {}
 
     @Get()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.PERMISSION_VIEW)
     findAll(@Query('all') all?: string) {
         return this.permissionService.findAll(all === 'true');
     }
 
     @Get(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.PERMISSION_VIEW)
     findById(
         @Param('id') id: string,
@@ -43,7 +41,6 @@ export class PermissionController {
     }
 
     @Post()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.PERMISSION_CREATE)
     create(
         @Body() dto: CreatePermissionDto,
@@ -52,7 +49,6 @@ export class PermissionController {
     }
 
     @Patch(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.PERMISSION_EDIT)
     update(
         @Param('id') id: string,
@@ -62,7 +58,6 @@ export class PermissionController {
     }
 
     @Patch(':id/activate')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.PERMISSION_ACTIVATE)
     activate(
         @Param('id') id: string,
@@ -71,7 +66,6 @@ export class PermissionController {
     }
 
     @Patch(':id/deactivate')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.PERMISSION_DEACTIVATE)
     deactivate(
         @Param('id') id: string,
@@ -80,7 +74,6 @@ export class PermissionController {
     }
 
     @Delete(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.PERMISSION_DELETE)
     remove(
         @Param('id') id: string,

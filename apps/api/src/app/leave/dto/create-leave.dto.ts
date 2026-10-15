@@ -23,4 +23,11 @@ export class CreateLeaveDto {
     @IsOptional()
     @IsString()
     reason?: string;
+
+    @IsOptional()
+    isHalfDay?: boolean;
+
+    @IsOptional()
+    @IsString()
+    halfDaySession?: string | null;
 }

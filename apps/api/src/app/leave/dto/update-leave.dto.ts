@@ -1,10 +1,17 @@
 import {
     IsDateString,
+    IsEnum,
     IsOptional,
     IsString,
 } from 'class-validator';
 
+import { LeaveType } from '../enums/leave-type.enum';
+
 export class UpdateLeaveDto {
+    @IsOptional()
+    @IsEnum(LeaveType)
+    leaveType?: LeaveType;
+
     @IsOptional()
     @IsDateString()
     startDate?: string;
@@ -16,4 +23,11 @@ export class UpdateLeaveDto {
     @IsOptional()
     @IsString()
     reason?: string | null;
+
+    @IsOptional()
+    isHalfDay?: boolean;
+
+    @IsOptional()
+    @IsString()
+    halfDaySession?: string | null;
 }

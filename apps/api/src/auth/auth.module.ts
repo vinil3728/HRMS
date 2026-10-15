@@ -12,10 +12,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-
-import { EmployeeAccessGuard } from './guards/employee-access.guard';
-
-import { ManagerAccessGuard } from './guards/manager-access.guard';
+import { ScopeAccessGuard } from './guards/scope-access.guard';
 
 import { User } from './entities/user.entity';
 
@@ -62,16 +59,14 @@ import { PermissionsModule } from '../app/permissions/permissions.module';
     providers: [
         AuthService,
         JwtAuthGuard,
-        EmployeeAccessGuard,
-        ManagerAccessGuard,
+        ScopeAccessGuard,
     ],
 
     exports: [
         AuthService,
         JwtModule,
         JwtAuthGuard,
-        EmployeeAccessGuard,
-        ManagerAccessGuard,
+        ScopeAccessGuard,
     ],
 })
 export class AuthModule {}

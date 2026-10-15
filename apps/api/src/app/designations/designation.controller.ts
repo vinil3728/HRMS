@@ -21,14 +21,13 @@ import { Permission } from '../permissions/enums/permission.enum';
 import { PermissionGuard } from '../permissions/guards/permission.guard';
 
 @Controller('designations')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class DesignationController {
     constructor(
         private readonly designationService: DesignationService,
     ) {}
 
     @Post()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.DESIGNATION_CREATE)
     create(
         @Body() dto: CreateDesignationDto,
@@ -37,7 +36,6 @@ export class DesignationController {
     }
 
     @Get()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.DESIGNATION_VIEW)
     findAll(
         @Query('departmentId') departmentId?: string,
@@ -46,7 +44,6 @@ export class DesignationController {
     }
 
     @Get(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.DESIGNATION_VIEW)
     findOne(
         @Param(
@@ -59,7 +56,6 @@ export class DesignationController {
     }
 
     @Patch(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.DESIGNATION_EDIT)
     update(
         @Param(

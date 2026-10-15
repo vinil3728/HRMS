@@ -15,7 +15,7 @@ import {
     AuthenticatedRequest,
     JwtAuthGuard,
 } from '../../../auth/guards/jwt-auth.guard';
-import { EmployeeAccessGuard } from '../../../auth/guards/employee-access.guard';
+import { ScopeAccessGuard } from '../../../auth/guards/scope-access.guard';
 import {
     AnyPermissions,
     Permissions,
@@ -216,7 +216,7 @@ export class PayrollController {
     }
 
     @Get('salary-structures/employee/:employeeId')
-    @UseGuards(JwtAuthGuard, PermissionGuard, EmployeeAccessGuard)
+    @UseGuards(JwtAuthGuard, PermissionGuard, ScopeAccessGuard)
     @Permissions(Permission.PAYROLL_VIEW)
     getSalaryStructureByEmployee(
         @Param('employeeId') employeeId: string,

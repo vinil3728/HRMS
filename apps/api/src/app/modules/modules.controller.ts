@@ -21,12 +21,11 @@ import { Permissions } from '../permissions/decorators/permissions.decorator';
 import { Permission } from '../permissions/enums/permission.enum';
 
 @Controller('modules')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class ModulesController {
     constructor(private readonly modulesService: ModulesService) {}
 
     @Get()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.MODULE_VIEW)
     findAll(
         @Query('search') search?: string,
@@ -36,21 +35,18 @@ export class ModulesController {
     }
 
     @Get(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.MODULE_VIEW)
     findOne(@Param('id', new ParseUUIDPipe()) id: string) {
         return this.modulesService.findOne(id);
     }
 
     @Post()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.MODULE_CREATE)
     create(@Body() dto: CreateModuleDto) {
         return this.modulesService.create(dto);
     }
 
     @Patch(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.MODULE_EDIT)
     update(
         @Param('id', new ParseUUIDPipe()) id: string,
@@ -60,21 +56,18 @@ export class ModulesController {
     }
 
     @Patch(':id/activate')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.MODULE_ACTIVATE)
     activate(@Param('id', new ParseUUIDPipe()) id: string) {
         return this.modulesService.activate(id);
     }
 
     @Patch(':id/deactivate')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.MODULE_DEACTIVATE)
     deactivate(@Param('id', new ParseUUIDPipe()) id: string) {
         return this.modulesService.deactivate(id);
     }
 
     @Delete(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.MODULE_DELETE)
     remove(@Param('id', new ParseUUIDPipe()) id: string) {
         return this.modulesService.remove(id);

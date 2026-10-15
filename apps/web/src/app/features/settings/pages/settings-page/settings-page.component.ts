@@ -46,7 +46,7 @@ export class SettingsPageComponent implements OnInit {
   readonly canAccessManagerPerspective = computed<boolean>(() => {
     return this.rbacService.hasAnyPermission([
       Permission.SETTINGS_MANAGER_VIEW,
-      Permission.APPROVE_TEAM_LEAVES,
+      Permission.LEAVE_APPROVE,
       Permission.REIMBURSEMENT_APPROVE,
       Permission.TIMESHEET_APPROVE,
       Permission.ATTENDANCE_TEAM_VIEW,

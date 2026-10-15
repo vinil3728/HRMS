@@ -38,4 +38,7 @@ export class UpdatePermissionDto {
     @IsString()
     @MaxLength(50)
     scopes?: string;
+
+    @IsOptional()
+    allowedScopes?: string[];
 }

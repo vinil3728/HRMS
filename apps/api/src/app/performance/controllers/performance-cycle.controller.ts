@@ -21,14 +21,13 @@ import { Permission } from '../../permissions/enums/permission.enum';
 import { PermissionGuard } from '../../permissions/guards/permission.guard';
 
 @Controller('performance-cycles')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class PerformanceCycleController {
     constructor(
         private readonly performanceCycleService: PerformanceCycleService,
     ) {}
 
     @Post()
-    @UseGuards(PermissionGuard)
     @Permissions(
         Permission.PERFORMANCE_CYCLE_CREATE,
     )
@@ -41,7 +40,6 @@ export class PerformanceCycleController {
     }
 
     @Get()
-    @UseGuards(PermissionGuard)
     @Permissions(
         Permission.PERFORMANCE_CYCLE_VIEW,
     )
@@ -50,7 +48,6 @@ export class PerformanceCycleController {
     }
 
     @Get(':cycleId')
-    @UseGuards(PermissionGuard)
     @Permissions(
         Permission.PERFORMANCE_CYCLE_VIEW,
     )
@@ -67,7 +64,6 @@ export class PerformanceCycleController {
     }
 
     @Patch(':cycleId')
-    @UseGuards(PermissionGuard)
     @Permissions(
         Permission.PERFORMANCE_CYCLE_UPDATE,
     )
@@ -86,7 +82,6 @@ export class PerformanceCycleController {
     }
 
     @Delete(':cycleId')
-    @UseGuards(PermissionGuard)
     @Permissions(
         Permission.PERFORMANCE_CYCLE_DELETE,
     )

@@ -24,21 +24,19 @@ import { PermissionGuard } from '../guards/permission.guard';
 import { Permission } from '../../permissions/enums/permission.enum';
 
 @Controller('roles')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class RoleController {
     constructor(
         private readonly roleService: RoleService,
     ) {}
 
     @Get()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.ROLE_VIEW)
     findAll(@Query('all') all?: string) {
         return this.roleService.findAll(all !== 'false');
     }
 
     @Get(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.ROLE_VIEW)
     findById(
         @Param('id') id: string,
@@ -47,7 +45,6 @@ export class RoleController {
     }
 
     @Post()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.ROLE_CREATE)
     create(
         @Body() dto: CreateRoleDto,
@@ -56,7 +53,6 @@ export class RoleController {
     }
 
     @Patch(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.ROLE_EDIT)
     update(
         @Param('id') id: string,
@@ -69,7 +65,6 @@ export class RoleController {
     }
 
     @Patch(':id/activate')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.ROLE_ACTIVATE)
     activate(
         @Param('id') id: string,
@@ -78,7 +73,6 @@ export class RoleController {
     }
 
     @Patch(':id/deactivate')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.ROLE_DEACTIVATE)
     deactivate(
         @Param('id') id: string,
@@ -87,7 +81,6 @@ export class RoleController {
     }
 
     @Delete(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.ROLE_DELETE)
     remove(
         @Param('id') id: string,
@@ -96,7 +89,6 @@ export class RoleController {
     }
 
     @Put(':id/permissions')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.ROLE_PERMISSION_ASSIGN)
     assignPermissions(
         @Param('id') id: string,
@@ -104,12 +96,11 @@ export class RoleController {
     ) {
         return this.roleService.assignPermissions(
             id,
-            dto.permissionIds,
+            dto.permissions || dto.permissionIds || [],
         );
     }
 
     @Get(':id/permissions')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.PERMISSION_VIEW)
     getPermissions(
         @Param('id') id: string,

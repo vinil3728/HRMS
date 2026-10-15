@@ -21,14 +21,13 @@ import { Permission } from '../../permissions/enums/permission.enum';
 import { PermissionGuard } from '../../permissions/guards/permission.guard';
 
 @Controller('policy-acknowledgements')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class PolicyAcknowledgementController {
     constructor(
         private readonly policyAcknowledgementService: PolicyAcknowledgementService,
     ) {}
 
     @Post('employees/:employeeId/policies/:policyId')
-    @UseGuards(PermissionGuard)
     @Permissions(
         Permission.POLICY_ACKNOWLEDGEMENT_CREATE,
     )
@@ -52,7 +51,6 @@ export class PolicyAcknowledgementController {
     }
 
     @Get('employees/:employeeId')
-    @UseGuards(PermissionGuard)
     @Permissions(
         Permission.POLICY_ACKNOWLEDGEMENT_VIEW,
     )
@@ -74,7 +72,6 @@ export class PolicyAcknowledgementController {
     }
 
     @Get('policies/:policyId')
-    @UseGuards(PermissionGuard)
     @Permissions(
         Permission.POLICY_ACKNOWLEDGEMENT_POLICY_VIEW,
     )
@@ -91,7 +88,6 @@ export class PolicyAcknowledgementController {
     @Get(
         'employees/:employeeId/policies/:policyId/status',
     )
-    @UseGuards(PermissionGuard)
     @Permissions(
         Permission.POLICY_ACKNOWLEDGEMENT_STATUS_VIEW,
     )

@@ -19,7 +19,7 @@ import {
     JwtAuthGuard,
 } from '../../../auth/guards/jwt-auth.guard';
 
-import { EmployeeAccessGuard } from '../../../auth/guards/employee-access.guard';
+import { ScopeAccessGuard } from '../../../auth/guards/scope-access.guard';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 
 import { Permissions } from '../../permissions/decorators/permissions.decorator';
@@ -29,16 +29,13 @@ import { PermissionGuard } from '../../permissions/guards/permission.guard';
 @Controller(
     'employees/:employeeId/performance-cycles/:cycleId/goals/:goalId/evaluations',
 )
+@UseGuards(JwtAuthGuard, PermissionGuard, ScopeAccessGuard)
 export class PerformanceEvaluationController {
     constructor(
         private readonly performanceEvaluationService: PerformanceEvaluationService,
     ) {}
 
     @Post()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-    )
     @Permissions(
         Permission.PERFORMANCE_EVALUATION_CREATE,
     )
@@ -78,11 +75,6 @@ export class PerformanceEvaluationController {
     }
 
     @Get()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.PERFORMANCE_EVALUATION_VIEW,
     )
@@ -111,11 +103,6 @@ export class PerformanceEvaluationController {
     }
 
     @Get(':evaluationId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.PERFORMANCE_EVALUATION_VIEW,
     )
@@ -150,10 +137,6 @@ export class PerformanceEvaluationController {
     }
 
     @Patch(':evaluationId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-    )
     @Permissions(
         Permission.PERFORMANCE_EVALUATION_UPDATE,
     )
@@ -194,11 +177,6 @@ export class PerformanceEvaluationController {
     }
 
     @Post(':evaluationId/submit')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.PERFORMANCE_EVALUATION_SUBMIT,
     )

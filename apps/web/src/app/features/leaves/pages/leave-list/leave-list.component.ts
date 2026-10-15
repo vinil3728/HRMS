@@ -69,29 +69,37 @@ export class LeaveListComponent implements OnInit {
   // ── Current user identity ──────────────────────────────────────────────────
   readonly myEmployeeId = computed(() => this.authService.currentUser()?.employeeId ?? '');
 
-  readonly canManageAllEmployees = computed(() =>
+  readonly hasOrgLeaveAccess = computed(() =>
+    this.rbacService.hasScope(Permission.LEAVE_VIEW, 'ORG') ||
+    this.rbacService.hasScope(Permission.LEAVE_APPROVE, 'ORG') ||
+    this.rbacService.hasScope(Permission.LEAVE_BALANCE_VIEW, 'ORG') ||
+    this.rbacService.hasScope(Permission.LEAVE_BALANCE_ADJUST, 'ORG') ||
     this.rbacService.hasAnyPermission([
-      Permission.MANAGE_ALL_LEAVES,
-      Permission.ALL_LEAVE_BALANCE_VIEW,
-      Permission.ALL_LEAVE_BALANCE_ADJUST,
-      Permission.APPROVE_ALL_LEAVES,
-      Permission.REJECT_ALL_LEAVES,
+      Permission.EMPLOYEE_VIEWS,
+    ])
+  );
+
+  readonly hasTeamLeaveAccess = computed(() =>
+    this.rbacService.hasScope(Permission.LEAVE_VIEW, 'TEAM') ||
+    this.rbacService.hasScope(Permission.LEAVE_APPROVE, 'TEAM') ||
+    this.rbacService.hasScope(Permission.LEAVE_BALANCE_VIEW, 'TEAM') ||
+    this.rbacService.hasScope(Permission.LEAVE_BALANCE_ADJUST, 'TEAM')
+  );
+
+  readonly canManageAllEmployees = computed(() =>
+    this.hasOrgLeaveAccess() ||
+    this.rbacService.hasAnyPermission([
       Permission.EMPLOYEE_VIEWS,
       Permission.EMPLOYEE_UPDATE,
     ])
   );
 
   readonly canViewTeamOrOrgLeavesTab = computed(
-    () => this.rbacService.hasAnyPermission([
-      Permission.MANAGE_ALL_LEAVES,
-      Permission.MANAGE_TEAM_LEAVES,
-      Permission.ALL_LEAVE_BALANCE_VIEW,
-      Permission.TEAM_LEAVE_BALANCE_VIEW,
-    ])
+    () => this.hasOrgLeaveAccess() || this.hasTeamLeaveAccess()
   );
 
   readonly teamOrOrgTabLabel = computed(() =>
-    this.rbacService.hasPermission(Permission.MANAGE_ALL_LEAVES)
+    this.hasOrgLeaveAccess()
       ? 'Employees Leaves'
       : 'Team Leaves'
   );
@@ -99,8 +107,9 @@ export class LeaveListComponent implements OnInit {
   readonly hasAnyActionPermissions = computed<boolean>(() => {
     if (this.viewMode() === 'self') {
       return this.rbacService.hasAnyPermission([
+        Permission.LEAVE_UPDATE,
         Permission.LEAVE_EDIT,
-        Permission.LEAVE_CANCEL
+        Permission.LEAVE_CANCEL,
       ]);
     }
     if (this.viewMode() === 'team') {
@@ -109,22 +118,34 @@ export class LeaveListComponent implements OnInit {
     return false;
   });
 
+  readonly canEditLeave = computed(() =>
+    this.rbacService.hasAnyPermission([
+      Permission.LEAVE_UPDATE,
+      Permission.LEAVE_EDIT,
+    ])
+  );
+
+  readonly canCancelLeave = computed(() =>
+    this.rbacService.hasAnyPermission([
+      Permission.LEAVE_CANCEL,
+      Permission.LEAVE_DELETE,
+    ])
+  );
+
   readonly canViewLeaveSummary = computed(
     () => this.rbacService.hasPermission(Permission.LEAVE_SUMMARY_VIEW)
   );
 
   readonly canApproveLeaves = computed(() =>
-    this.rbacService.hasAnyPermission([
-      Permission.APPROVE_TEAM_LEAVES,
-      Permission.APPROVE_ALL_LEAVES
-    ])
+    this.rbacService.hasScope(Permission.LEAVE_APPROVE, 'TEAM') ||
+    this.rbacService.hasScope(Permission.LEAVE_APPROVE, 'ORG') ||
+    this.rbacService.hasPermission(Permission.LEAVE_APPROVE)
   );
 
   readonly canRejectLeaves = computed(() =>
-    this.rbacService.hasAnyPermission([
-      Permission.REJECT_TEAM_LEAVES,
-      Permission.REJECT_ALL_LEAVES
-    ])
+    this.rbacService.hasScope(Permission.LEAVE_REJECT, 'TEAM') ||
+    this.rbacService.hasScope(Permission.LEAVE_REJECT, 'ORG') ||
+    this.rbacService.hasPermission(Permission.LEAVE_REJECT)
   );
 
   // ── Employee data ──────────────────────────────────────────────────────────
@@ -262,7 +283,7 @@ export class LeaveListComponent implements OnInit {
 
   readonly isApplyModalOpen = signal<boolean>(false);
   readonly isActionModalOpen = signal<boolean>(false);
-  readonly actionType = signal<'REJECT' | 'ALLOCATE_BALANCE'>('REJECT');
+  readonly actionType = signal<'REJECT' | 'ALLOCATE_BALANCE' | 'ADJUST_BALANCE'>('REJECT');
   readonly selectedLeave = signal<Leave | null>(null);
 
   // ── Static options ─────────────────────────────────────────────────────────
@@ -572,6 +593,16 @@ export class LeaveListComponent implements OnInit {
     this.isActionModalOpen.set(true);
   }
 
+  openAdjustModal(): void {
+    this.selectedLeave.set(null);
+    this.actionType.set('ADJUST_BALANCE');
+    this.isActionModalOpen.set(true);
+  }
+
+  readonly canAdjustBalance = computed(() =>
+    this.rbacService.hasPermission(Permission.LEAVE_BALANCE_ADJUST)
+  );
+
   closeActionModal(): void {
     this.isActionModalOpen.set(false);
     this.selectedLeave.set(null);
@@ -582,26 +613,56 @@ export class LeaveListComponent implements OnInit {
     this.refreshCurrentView();
   }
 
+  // ── Non-blocking Confirmation Dialog State ────────────────────────────────
+  readonly isConfirmModalOpen = signal<boolean>(false);
+  readonly confirmModalTitle = signal<string>('');
+  readonly confirmModalMessage = signal<string>('');
+  readonly confirmModalButtonText = signal<string>('Confirm');
+  readonly confirmModalVariant = signal<'primary' | 'danger'>('primary');
+  private pendingConfirmAction: (() => void) | null = null;
+
   onApprove(leave: Leave): void {
-    const confirmApprove = window.confirm(
+    this.confirmModalTitle.set('Approve Leave Application');
+    this.confirmModalMessage.set(
       `Approve ${leave.numberOfDays} day(s) of ${this.formatLeaveType(leave.leaveType)} for this employee?`
     );
-    if (!confirmApprove) return;
-    const empId = this.activeLoadId();
-    this.leaveService.approveLeave(empId, leave.id).subscribe({
-      next: () => this.refreshCurrentView(),
-    });
+    this.confirmModalButtonText.set('Approve');
+    this.confirmModalVariant.set('primary');
+    this.pendingConfirmAction = () => {
+      const empId = leave.employee?.id || this.activeLoadId();
+      this.leaveService.approveLeave(empId, leave.id).subscribe({
+        next: () => this.refreshCurrentView(),
+      });
+    };
+    this.isConfirmModalOpen.set(true);
   }
 
   onCancelLeave(leave: Leave): void {
-    const confirmCancel = window.confirm(
-      'Are you sure you want to cancel this leave application?'
+    this.confirmModalTitle.set('Cancel Leave Application');
+    this.confirmModalMessage.set(
+      'Are you sure you want to cancel this leave application? Consumed quota will be refunded if already approved.'
     );
-    if (!confirmCancel) return;
-    const empId = this.activeLoadId();
-    this.leaveService.cancelLeave(empId, leave.id).subscribe({
-      next: () => this.refreshCurrentView(),
-    });
+    this.confirmModalButtonText.set('Yes, Cancel Request');
+    this.confirmModalVariant.set('danger');
+    this.pendingConfirmAction = () => {
+      const empId = leave.employee?.id || this.activeLoadId();
+      this.leaveService.cancelLeave(empId, leave.id).subscribe({
+        next: () => this.refreshCurrentView(),
+      });
+    };
+    this.isConfirmModalOpen.set(true);
+  }
+
+  closeConfirmModal(): void {
+    this.isConfirmModalOpen.set(false);
+    this.pendingConfirmAction = null;
+  }
+
+  executeConfirmAction(): void {
+    if (this.pendingConfirmAction) {
+      this.pendingConfirmAction();
+    }
+    this.closeConfirmModal();
   }
 
   // ── Computed: active employee for context card ─────────────────────────────

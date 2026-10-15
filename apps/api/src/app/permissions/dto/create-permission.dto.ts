@@ -36,4 +36,7 @@ export class CreatePermissionDto {
     @IsString()
     @MaxLength(50)
     scopes?: string;
+
+    @IsOptional()
+    allowedScopes?: string[];
 }

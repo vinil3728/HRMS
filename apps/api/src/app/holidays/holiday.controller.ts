@@ -19,12 +19,11 @@ import { Permissions } from '../permissions/decorators/permissions.decorator';
 import { Permission } from '../permissions/enums/permission.enum';
 
 @Controller('holidays')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class HolidayController {
     constructor(private readonly holidayService: HolidayService) {}
 
     @Get()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.HOLIDAY_VIEW)
     findAll(
         @Query('year') year?: string,
@@ -35,21 +34,18 @@ export class HolidayController {
     }
 
     @Get(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.HOLIDAY_VIEW)
     findOne(@Param('id', new ParseUUIDPipe()) id: string) {
         return this.holidayService.findOne(id);
     }
 
     @Post()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.HOLIDAY_CREATE)
     create(@Body() dto: CreateHolidayDto) {
         return this.holidayService.create(dto);
     }
 
     @Patch(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.HOLIDAY_EDIT)
     update(
         @Param('id', new ParseUUIDPipe()) id: string,
@@ -59,7 +55,6 @@ export class HolidayController {
     }
 
     @Delete(':id')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.HOLIDAY_DELETE)
     remove(@Param('id', new ParseUUIDPipe()) id: string) {
         return this.holidayService.remove(id);

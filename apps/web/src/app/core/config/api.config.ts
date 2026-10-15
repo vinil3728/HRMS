@@ -59,6 +59,8 @@ export const API_CONFIG = {
       reject: (employeeId: string, leaveId: string) =>
         `/employees/${employeeId}/leaves/${leaveId}/reject`,
       balances: (employeeId: string) => `/employees/${employeeId}/leave-balances`,
+      adjustBalance: (employeeId: string, balanceId: string) =>
+        `/employees/${employeeId}/leave-balances/${balanceId}/adjust`,
     },
     performance: {
       cycles: '/performance-cycles',

@@ -302,7 +302,7 @@ export class EmployeeService {
                 .andWhere('role.is_active = true')
                 .andWhere('permission.is_active = true')
                 .andWhere('permission.is_deleted = false')
-                .andWhere("permission.scopes LIKE '%ORGANIZATION%'")
+                .andWhere("('ORG' = ANY(rolePermission.scopes) OR 'ORGANIZATION' = ANY(rolePermission.scopes) OR 'GLOBAL' = ANY(rolePermission.scopes) OR permission.scopes LIKE '%ORGANIZATION%')")
                 .getCount();
 
         const hasOrgWideAccess = orgPermsCount > 0;

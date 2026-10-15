@@ -54,7 +54,7 @@ http://localhost:3000/api
 For `GET/PATCH /employees/:id`:
 
 * MANAGER can access only employees whose `manager.id` equals the logged-in manager's employee ID.
-* EMPLOYEE is currently rejected by `EmployeeAccessGuard`.
+* EMPLOYEE is currently rejected by `ScopeAccessGuard`.
 
 ---
 
@@ -213,10 +213,10 @@ This should be corrected before production.
 | Method | Endpoint                                                                                              | Description       | ADMIN | HR | MANAGER | EMPLOYEE | Access Rule                                                         |
 | ------ | ----------------------------------------------------------------------------------------------------- | ----------------- | :---: | :-: | :-----: | :------: | ------------------------------------------------------------------- |
 | POST   | `/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId/evaluations`                      | Create evaluation |  ✅  | ✅ |  ⚠️  |   ⚠️   | Service validates evaluation type and employee/manager relationship |
-| GET    | `/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId/evaluations`                      | List evaluations  |  ✅  | ✅ |  ⚠️  |    ❌    | EmployeeAccessGuard currently blocks EMPLOYEE                       |
-| GET    | `/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId/evaluations/:evaluationId`        | Get evaluation    |  ✅  | ✅ |  ⚠️  |    ❌    | EmployeeAccessGuard currently blocks EMPLOYEE                       |
+| GET    | `/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId/evaluations`                      | List evaluations  |  ✅  | ✅ |  ⚠️  |    ❌    | ScopeAccessGuard currently blocks EMPLOYEE                       |
+| GET    | `/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId/evaluations/:evaluationId`        | Get evaluation    |  ✅  | ✅ |  ⚠️  |    ❌    | ScopeAccessGuard currently blocks EMPLOYEE                       |
 | PATCH  | `/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId/evaluations/:evaluationId`        | Update evaluation |  ✅  | ✅ |  ⚠️  |   ⚠️   | Service validates SELF/MANAGER access                               |
-| POST   | `/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId/evaluations/:evaluationId/submit` | Submit evaluation |  ✅  | ✅ |  ⚠️  |    ❌    | EmployeeAccessGuard currently blocks EMPLOYEE                       |
+| POST   | `/employees/:employeeId/performance-cycles/:cycleId/goals/:goalId/evaluations/:evaluationId/submit` | Submit evaluation |  ✅  | ✅ |  ⚠️  |    ❌    | ScopeAccessGuard currently blocks EMPLOYEE                       |
 
 ### Evaluation creation rules
 
@@ -272,7 +272,7 @@ evaluations belonging to direct reports.
 
 ### Important authorization inconsistency
 
-The service supports EMPLOYEE SELF-evaluation creation/update, but the following endpoints use `EmployeeAccessGuard`:
+The service supports EMPLOYEE SELF-evaluation creation/update, but the following endpoints use `ScopeAccessGuard`:
 
 ```text
 GET evaluations
@@ -280,7 +280,7 @@ GET evaluation
 POST submit
 ```
 
-Since the current `EmployeeAccessGuard` rejects EMPLOYEE, those operations are currently unavailable to normal employees.
+Since the current `ScopeAccessGuard` rejects EMPLOYEE, those operations are currently unavailable to normal employees.
 
 ---
 
@@ -494,7 +494,7 @@ These should be reviewed before considering the API authorization model complete
 
 ### Gap 1 — Employee self-service is currently blocked
 
-`EmployeeAccessGuard` currently behaves as:
+`ScopeAccessGuard` currently behaves as:
 
 ```text
 ADMIN  → any employee
@@ -544,7 +544,7 @@ MANAGER  → MANAGER evaluation for direct reports
 HR/ADMIN → any evaluation
 ```
 
-But some controller endpoints use `EmployeeAccessGuard`, which currently rejects EMPLOYEE.
+But some controller endpoints use `ScopeAccessGuard`, which currently rejects EMPLOYEE.
 
 The intended authorization model should be decided before final Swagger/Postman documentation.
 
@@ -591,8 +591,7 @@ The role is used by:
 
 ```text
 RolesGuard
-EmployeeAccessGuard
-ManagerAccessGuard
+ScopeAccessGuard (Unified Resource & Scope Guard)
 ```
 
 ---

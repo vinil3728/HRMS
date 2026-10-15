@@ -15,7 +15,7 @@ import { UpdatePerformanceGoalDto } from '../dto/update-performance-goal.dto';
 import { PerformanceGoalService } from '../services/performance-goal.service';
 
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-import { EmployeeAccessGuard } from '../../../auth/guards/employee-access.guard';
+import { ScopeAccessGuard } from '../../../auth/guards/scope-access.guard';
 
 import { Permissions } from '../../permissions/decorators/permissions.decorator';
 import { Permission } from '../../permissions/enums/permission.enum';
@@ -24,17 +24,13 @@ import { PermissionGuard } from '../../permissions/guards/permission.guard';
 @Controller(
     'employees/:employeeId/performance-cycles/:cycleId/goals',
 )
+@UseGuards(JwtAuthGuard, PermissionGuard, ScopeAccessGuard)
 export class PerformanceGoalController {
     constructor(
         private readonly performanceGoalService: PerformanceGoalService,
     ) {}
 
     @Post()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.PERFORMANCE_GOAL_CREATE,
     )
@@ -60,11 +56,6 @@ export class PerformanceGoalController {
     }
 
     @Get()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.PERFORMANCE_GOAL_VIEW,
     )
@@ -87,11 +78,6 @@ export class PerformanceGoalController {
     }
 
     @Get(':goalId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.PERFORMANCE_GOAL_VIEW,
     )
@@ -120,11 +106,6 @@ export class PerformanceGoalController {
     }
 
     @Patch(':goalId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.PERFORMANCE_GOAL_UPDATE,
     )
@@ -156,11 +137,6 @@ export class PerformanceGoalController {
     }
 
     @Delete(':goalId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.PERFORMANCE_GOAL_DELETE,
     )

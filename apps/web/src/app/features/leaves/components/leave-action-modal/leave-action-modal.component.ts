@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   inject,
   input,
@@ -17,8 +18,10 @@ import {
 import { IconComponent } from '../../../../shared/ui/icon/icon.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/select/select.component';
 import {
+  AdjustLeaveBalanceDto,
   CreateLeaveBalanceDto,
   Leave,
+  LeaveBalance,
   LeaveType,
 } from '../../models/leave.model';
 import { LeaveService } from '../../services/leave.service';
@@ -35,10 +38,11 @@ export class LeaveActionModalComponent {
   private readonly leaveService = inject(LeaveService);
 
   readonly isOpen = input<boolean>(false);
-  readonly actionType = input<'REJECT' | 'ALLOCATE_BALANCE'>('REJECT');
+  readonly actionType = input<'REJECT' | 'ALLOCATE_BALANCE' | 'ADJUST_BALANCE'>('REJECT');
   readonly leave = input<Leave | null>(null);
   readonly employeeId = input.required<string>();
   readonly employeeOptions = input<SelectOption[]>([]);
+  readonly balances = input<LeaveBalance[]>([]);
 
   readonly closeModal = output<void>();
   readonly actionCompleted = output<void>();
@@ -55,6 +59,13 @@ export class LeaveActionModalComponent {
     { value: 'OTHER', label: 'Other Leave' },
   ];
 
+  readonly balanceOptions = computed<SelectOption[]>(() =>
+    this.balances().map((b) => ({
+      value: b.id,
+      label: `${b.leaveType} (${b.year}) — Available: ${b.availableDays} / ${b.totalDays} days`,
+    }))
+  );
+
   readonly rejectForm: FormGroup = this.fb.group({
     rejectionReason: ['', [Validators.required, Validators.minLength(5)]],
   });
@@ -64,6 +75,12 @@ export class LeaveActionModalComponent {
     leaveType: [LeaveType.CASUAL, [Validators.required]],
     year: [new Date().getFullYear(), [Validators.required]],
     totalDays: [12, [Validators.required, Validators.min(0.5)]],
+  });
+
+  readonly adjustForm: FormGroup = this.fb.group({
+    balanceId: ['', [Validators.required]],
+    adjustmentDays: [1, [Validators.required]],
+    reason: ['', [Validators.required, Validators.minLength(5)]],
   });
 
   constructor() {
@@ -81,12 +98,24 @@ export class LeaveActionModalComponent {
           year: new Date().getFullYear(),
           totalDays: 12,
         });
+
+        const defaultBalance = this.balances()[0]?.id || '';
+        this.adjustForm.reset({
+          balanceId: defaultBalance,
+          adjustmentDays: 1,
+          reason: '',
+        });
       }
     });
   }
 
   isRejectInvalid(field: string): boolean {
     const c = this.rejectForm.get(field);
+    return !!(c && c.invalid && (c.dirty || c.touched));
+  }
+
+  isAdjustInvalid(field: string): boolean {
+    const c = this.adjustForm.get(field);
     return !!(c && c.invalid && (c.dirty || c.touched));
   }
 
@@ -123,15 +152,18 @@ export class LeaveActionModalComponent {
   }
 
   onBalanceSubmit(): void {
+    const empId = this.balanceForm.value.employeeId || this.employeeId();
+    if (!empId) {
+      this.errorMessage.set('Employee is required for quota allocation');
+      return;
+    }
+
     if (this.balanceForm.invalid || this.submitting()) {
       this.balanceForm.markAllAsTouched();
       return;
     }
 
     const val = this.balanceForm.value;
-    const empId = val.employeeId || this.employeeId();
-    if (!empId) return;
-
     this.submitting.set(true);
     this.errorMessage.set('');
 
@@ -150,6 +182,38 @@ export class LeaveActionModalComponent {
         this.submitting.set(false);
         this.errorMessage.set(
           err.error?.message || 'Failed to allocate leave balance'
+        );
+      },
+    });
+  }
+
+  onAdjustSubmit(): void {
+    if (this.adjustForm.invalid || this.submitting()) {
+      this.adjustForm.markAllAsTouched();
+      return;
+    }
+
+    const empId = this.employeeId();
+    if (!empId) return;
+
+    const val = this.adjustForm.value;
+    this.submitting.set(true);
+    this.errorMessage.set('');
+
+    const dto: AdjustLeaveBalanceDto = {
+      adjustmentDays: Number(val.adjustmentDays),
+      reason: val.reason.trim(),
+    };
+
+    this.leaveService.adjustLeaveBalance(empId, val.balanceId, dto).subscribe({
+      next: () => {
+        this.submitting.set(false);
+        this.actionCompleted.emit();
+      },
+      error: (err) => {
+        this.submitting.set(false);
+        this.errorMessage.set(
+          err.error?.message || 'Failed to adjust leave balance'
         );
       },
     });

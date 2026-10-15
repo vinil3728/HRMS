@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from '../../../core/services/api.service';
 import { API_CONFIG } from '../../../core/config/api.config';
 import {
+  AssignPermissionsDto,
   CreateModuleDto,
   CreatePermissionDto,
   CreateRoleDto,
@@ -164,11 +165,10 @@ export class SettingsService {
 
   assignPermissions(
     roleId: string,
-    permissionIds: string[]
+    payload: string[] | AssignPermissionsDto
   ): Observable<Role> {
-    return this.api.put<Role>(this.endpoints.rolePermissions(roleId), {
-      permissionIds,
-    });
+    const body = Array.isArray(payload) ? { permissionIds: payload } : payload;
+    return this.api.put<Role>(this.endpoints.rolePermissions(roleId), body);
   }
 
   // --- Modules ---

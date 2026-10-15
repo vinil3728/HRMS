@@ -1,4 +1,5 @@
 import {
+    Column,
     CreateDateColumn,
     Entity,
     JoinColumn,
@@ -44,6 +45,13 @@ export class RolePermission {
         name: 'permission_id',
     })
     permission!: PermissionEntity;
+
+    @Column({
+        type: 'text',
+        array: true,
+        default: () => "ARRAY['SELF']::text[]",
+    })
+    scopes!: string[];
 
     @CreateDateColumn({
         name: 'created_at',

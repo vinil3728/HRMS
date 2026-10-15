@@ -186,42 +186,69 @@
 
                     <div class="module-items-grid">
                       @for (perm of mod.permissions; track perm.id) {
-                        <label
+                        <div
                           class="perm-checkbox-item"
-                          [for]="'role-perm-' + perm.id"
                           [class.selected]="isPermissionSelected(perm.id)"
                           [class.disabled]="isPermissionDisabled(perm)"
                           [attr.title]="getDisabledReason(perm) ? 'Disabled (' + getDisabledReason(perm) + ')' : null"
                         >
-                          <input
-                            type="checkbox"
-                            [id]="'role-perm-' + perm.id"
-                            class="checkbox-input"
-                            [checked]="isPermissionSelected(perm.id)"
-                            [disabled]="isPermissionDisabled(perm)"
-                            (change)="togglePermission(perm.id)"
-                          />
-                          <div class="perm-item-content">
-                            <div class="perm-title-row">
-                              <div class="perm-title-group">
-                                <span class="perm-title">{{ perm.name }}</span>
-                                @if (getDisabledReason(perm); as reason) {
-                                  <span
-                                    class="perm-status-pill"
-                                    [class.pill-error]="reason.includes('Deleted')"
-                                    [class.pill-warning]="reason.includes('Inactive')"
+                          <label
+                            class="perm-item-main"
+                            [for]="'role-perm-' + perm.id"
+                          >
+                            <input
+                              type="checkbox"
+                              [id]="'role-perm-' + perm.id"
+                              class="checkbox-input"
+                              [checked]="isPermissionSelected(perm.id)"
+                              [disabled]="isPermissionDisabled(perm)"
+                              (change)="togglePermission(perm.id)"
+                            />
+                            <div class="perm-item-content">
+                              <div class="perm-title-row">
+                                <div class="perm-title-group">
+                                  <span class="perm-title">{{ perm.name }}</span>
+                                  @if (getDisabledReason(perm); as reason) {
+                                    <span
+                                      class="perm-status-pill"
+                                      [class.pill-error]="reason.includes('Deleted')"
+                                      [class.pill-warning]="reason.includes('Inactive')"
+                                    >
+                                      {{ reason }}
+                                    </span>
+                                  }
+                                </div>
+                                <span class="perm-code">{{ perm.code }}</span>
+                              </div>
+                              @if (perm.description) {
+                                <p class="perm-desc">{{ perm.description }}</p>
+                              }
+                            </div>
+                          </label>
+
+                          @if (isPermissionSelected(perm.id) && !isPermissionDisabled(perm)) {
+                            <div class="perm-scopes-bar" (click)="$event.stopPropagation()">
+                              <span class="scopes-label">Scopes:</span>
+                              <div class="scopes-options">
+                                @for (scope of getAllowedScopes(perm); track scope) {
+                                  <label
+                                    class="scope-checkbox-pill"
+                                    [class.selected]="isScopeSelected(perm.id, scope)"
+                                    [attr.title]="'Toggle ' + scope + ' scope for ' + perm.code"
                                   >
-                                    {{ reason }}
-                                  </span>
+                                    <input
+                                      type="checkbox"
+                                      class="scope-input"
+                                      [checked]="isScopeSelected(perm.id, scope)"
+                                      (change)="toggleScope(perm.id, scope, $event)"
+                                    />
+                                    <span class="scope-text">{{ scope }}</span>
+                                  </label>
                                 }
                               </div>
-                              <span class="perm-code">{{ perm.code }}</span>
                             </div>
-                            @if (perm.description) {
-                              <p class="perm-desc">{{ perm.description }}</p>
-                            }
-                          </div>
-                        </label>
+                          }
+                        </div>
                       }
                     </div>
                   </div>

@@ -16,7 +16,7 @@ import {
     AuthenticatedRequest,
     JwtAuthGuard,
 } from '../../../auth/guards/jwt-auth.guard';
-import { EmployeeAccessGuard } from '../../../auth/guards/employee-access.guard';
+import { ScopeAccessGuard } from '../../../auth/guards/scope-access.guard';
 
 import { CreateTimesheetDto } from '../dto/create-timesheet.dto';
 import { RejectTimesheetDto } from '../dto/reject-timesheet.dto';
@@ -28,17 +28,17 @@ import { PermissionGuard } from '../../permissions/guards/permission.guard';
 import { Permissions } from '../../permissions/decorators/permissions.decorator';
 
 @Controller('employees/:employeeId/timesheets')
-@UseGuards(JwtAuthGuard)
+@UseGuards(
+    JwtAuthGuard,
+    PermissionGuard,
+    ScopeAccessGuard,
+)
 export class TimesheetController {
     constructor(
         private readonly timesheetService: TimesheetService,
     ) { }
 
     @Post()
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.TIMESHEET_CREATE)
     create(
         @Param('employeeId', ParseUUIDPipe)
@@ -52,10 +52,6 @@ export class TimesheetController {
     }
 
     @Get()
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.TIMESHEET_VIEW)
     findAll(
         @Param('employeeId', ParseUUIDPipe)
@@ -69,10 +65,6 @@ export class TimesheetController {
     }
 
     @Get('summary')
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.TIMESHEET_SUMMARY_VIEW,
     )
@@ -86,10 +78,6 @@ export class TimesheetController {
     }
 
     @Get(':timesheetId')
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.TIMESHEET_VIEW)
     findOne(
         @Param('employeeId', ParseUUIDPipe)
@@ -104,10 +92,6 @@ export class TimesheetController {
     }
 
     @Patch(':timesheetId')
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.TIMESHEET_UPDATE)
     update(
         @Param('employeeId', ParseUUIDPipe)
@@ -124,10 +108,6 @@ export class TimesheetController {
     }
 
     @Delete(':timesheetId')
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.TIMESHEET_DELETE)
     remove(
         @Param('employeeId', ParseUUIDPipe)
@@ -142,10 +122,6 @@ export class TimesheetController {
     }
 
     @Post(':timesheetId/submit')
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.TIMESHEET_SUBMIT)
     submit(
         @Param('employeeId', ParseUUIDPipe)
@@ -160,10 +136,6 @@ export class TimesheetController {
     }
 
     @Post(':timesheetId/approve')
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.TIMESHEET_APPROVE)
     approve(
         @Param('employeeId', ParseUUIDPipe)
@@ -181,10 +153,6 @@ export class TimesheetController {
     }
 
     @Post(':timesheetId/reject')
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.TIMESHEET_REJECT)
     reject(
         @Param('employeeId', ParseUUIDPipe)

@@ -15,23 +15,22 @@ import { RejectRegularizationDto } from './dto/reject-regularization.dto';
 import { RegularizationQueryDto } from './dto/regularization-query.dto';
 import { JwtAuthGuard, AuthenticatedRequest } from '../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../permissions/guards/permission.guard';
-import { EmployeeAccessGuard } from '../../auth/guards/employee-access.guard';
-import { ManagerAccessGuard } from '../../auth/guards/manager-access.guard';
+import { ScopeAccessGuard } from '../../auth/guards/scope-access.guard';
 import { Permissions } from '../permissions/decorators/permissions.decorator';
 import { Permission } from '../permissions/enums/permission.enum';
 
 @Controller('employees/:employeeId/attendance-regularizations')
+@UseGuards(
+    JwtAuthGuard,
+    PermissionGuard,
+    ScopeAccessGuard,
+)
 export class AttendanceRegularizationController {
     constructor(
         private readonly regularizationService: AttendanceRegularizationService,
     ) {}
 
     @Post()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.ATTENDANCE_REGULARIZATION_CREATE)
     create(
         @Param('employeeId', new ParseUUIDPipe()) employeeId: string,
@@ -41,11 +40,6 @@ export class AttendanceRegularizationController {
     }
 
     @Get()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.ATTENDANCE_REGULARIZATION_VIEW)
     findAll(
         @Param('employeeId', new ParseUUIDPipe()) employeeId: string,
@@ -55,11 +49,6 @@ export class AttendanceRegularizationController {
     }
 
     @Get(':id')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.ATTENDANCE_REGULARIZATION_VIEW)
     findOne(
         @Param('employeeId', new ParseUUIDPipe()) employeeId: string,
@@ -69,11 +58,6 @@ export class AttendanceRegularizationController {
     }
 
     @Post(':id/cancel')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.ATTENDANCE_REGULARIZATION_CANCEL)
     cancel(
         @Param('employeeId', new ParseUUIDPipe()) employeeId: string,
@@ -83,11 +67,6 @@ export class AttendanceRegularizationController {
     }
 
     @Post(':id/approve')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        ManagerAccessGuard,
-    )
     @Permissions(Permission.ATTENDANCE_REGULARIZATION_APPROVE)
     approve(
         @Param('employeeId', new ParseUUIDPipe()) employeeId: string,
@@ -105,11 +84,6 @@ export class AttendanceRegularizationController {
     }
 
     @Post(':id/reject')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        ManagerAccessGuard,
-    )
     @Permissions(Permission.ATTENDANCE_REGULARIZATION_REJECT)
     reject(
         @Param('employeeId', new ParseUUIDPipe()) employeeId: string,

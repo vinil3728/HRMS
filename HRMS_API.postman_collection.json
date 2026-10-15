@@ -1823,7 +1823,7 @@
                     }
                   ]
                 },
-                "description": "Approves an employee's leave request (requires LEAVE_APPROVE and ManagerAccessGuard)."
+                "description": "Approves an employee's leave request (requires LEAVE_APPROVE and ScopeAccessGuard)."
               }
             },
             {
@@ -1863,7 +1863,7 @@
                     }
                   ]
                 },
-                "description": "Rejects a leave request with an explicit rejection reason (requires LEAVE_REJECT and ManagerAccessGuard)."
+                "description": "Rejects a leave request with an explicit rejection reason (requires LEAVE_REJECT and ScopeAccessGuard)."
               }
             }
           ]
@@ -3283,7 +3283,7 @@
                 }
               ]
             },
-            "description": "Approves submitted reimbursement (requires REIMBURSEMENT_APPROVE and ManagerAccessGuard)."
+            "description": "Approves submitted reimbursement (requires REIMBURSEMENT_APPROVE and ScopeAccessGuard)."
           }
         },
         {
@@ -3323,7 +3323,7 @@
                 }
               ]
             },
-            "description": "Rejects reimbursement claim with reason (requires REIMBURSEMENT_REJECT and ManagerAccessGuard)."
+            "description": "Rejects reimbursement claim with reason (requires REIMBURSEMENT_REJECT and ScopeAccessGuard)."
           }
         },
         {

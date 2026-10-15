@@ -115,6 +115,15 @@ export class PermissionService {
             );
         }
 
+        const allowedScopes =
+            dto.allowedScopes && dto.allowedScopes.length > 0
+                ? dto.allowedScopes
+                : dto.scopes === 'ORGANIZATION' || dto.scopes === 'GLOBAL'
+                ? ['ORG']
+                : dto.scopes === 'TEAM'
+                ? ['SELF', 'TEAM']
+                : ['SELF'];
+
         const permission = this.permissionRepository.create({
             code,
             name,
@@ -122,6 +131,7 @@ export class PermissionService {
             module: moduleEntity,
             description: dto.description?.trim() ?? null,
             scopes: dto.scopes?.trim() || 'SELF',
+            allowedScopes,
             isActive: true,
         });
 
@@ -221,8 +231,16 @@ export class PermissionService {
             permission.description = dto.description?.trim() ?? null;
         }
 
-        if (dto.scopes !== undefined) {
+        if (dto.allowedScopes !== undefined) {
+            permission.allowedScopes = dto.allowedScopes;
+        } else if (dto.scopes !== undefined) {
             permission.scopes = dto.scopes?.trim() || 'SELF';
+            permission.allowedScopes =
+                permission.scopes === 'ORGANIZATION' || permission.scopes === 'GLOBAL'
+                    ? ['ORG']
+                    : permission.scopes === 'TEAM'
+                    ? ['SELF', 'TEAM']
+                    : ['SELF'];
         }
 
         await this.permissionRepository.save(permission);

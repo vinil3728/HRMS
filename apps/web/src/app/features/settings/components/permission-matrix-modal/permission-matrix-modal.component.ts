@@ -40,12 +40,14 @@ export class PermissionMatrixModalComponent {
 
   readonly allPermissions = signal<SystemPermission[]>([]);
   readonly modules = signal<SystemModule[]>([]);
-  readonly selectedIds = signal<Set<string>>(new Set<string>());
-  readonly initialIds = signal<Set<string>>(new Set<string>());
+  readonly selectedPermissionsMap = signal<Map<string, Set<string>>>(new Map());
+  readonly initialPermissionsMap = signal<Map<string, Set<string>>>(new Map());
   readonly searchQuery = signal<string>('');
   readonly loading = signal<boolean>(false);
   readonly submitting = signal<boolean>(false);
   readonly errorMessage = signal<string>('');
+
+  readonly selectedIds = computed(() => new Set(this.selectedPermissionsMap().keys()));
 
   readonly grantPercentage = computed(() => {
     const total = this.allPermissions().length;
@@ -54,11 +56,16 @@ export class PermissionMatrixModalComponent {
   });
 
   readonly hasChanges = computed(() => {
-    const current = this.selectedIds();
-    const initial = this.initialIds();
+    const current = this.selectedPermissionsMap();
+    const initial = this.initialPermissionsMap();
     if (current.size !== initial.size) return true;
-    for (const id of current) {
-      if (!initial.has(id)) return true;
+    for (const [id, currentScopes] of current.entries()) {
+      const initialScopes = initial.get(id);
+      if (!initialScopes) return true;
+      if (currentScopes.size !== initialScopes.size) return true;
+      for (const scope of currentScopes) {
+        if (!initialScopes.has(scope)) return true;
+      }
     }
     return false;
   });
@@ -96,6 +103,18 @@ export class PermissionMatrixModalComponent {
     if (perm.isDeleted) return 'Deleted';
     if (!perm.isActive) return 'Inactive';
     return null;
+  }
+
+  getAllowedScopes(perm: SystemPermission): string[] {
+    if (perm.allowedScopes && perm.allowedScopes.length > 0) {
+      return perm.allowedScopes;
+    }
+    if (typeof perm.scopes === 'string') {
+      if (perm.scopes === 'ORGANIZATION' || perm.scopes === 'GLOBAL') return ['ORG'];
+      if (perm.scopes === 'TEAM') return ['SELF', 'TEAM'];
+      return ['SELF'];
+    }
+    return ['SELF', 'TEAM', 'ORG'];
   }
 
   allModulePermissionsDisabled(mod: PermissionModuleGroup): boolean {
@@ -170,8 +189,8 @@ export class PermissionMatrixModalComponent {
       } else {
         this.searchQuery.set('');
         this.errorMessage.set('');
-        this.selectedIds.set(new Set());
-        this.initialIds.set(new Set());
+        this.selectedPermissionsMap.set(new Map());
+        this.initialPermissionsMap.set(new Map());
       }
     });
   }
@@ -188,9 +207,17 @@ export class PermissionMatrixModalComponent {
       next: ({ all, assigned, modules }) => {
         this.modules.set(modules);
         this.allPermissions.set(all);
-        const set = new Set<string>(assigned.map((p) => p.id));
-        this.selectedIds.set(new Set(set));
-        this.initialIds.set(new Set(set));
+
+        const map = new Map<string, Set<string>>();
+        for (const p of assigned) {
+          const scopes = p.assignedScopes || (Array.isArray(p.scopes) ? p.scopes : (p.scopes ? [p.scopes] : ['SELF']));
+          map.set(p.id, new Set(scopes));
+        }
+
+        this.selectedPermissionsMap.set(map);
+        this.initialPermissionsMap.set(
+          new Map(Array.from(map.entries()).map(([k, v]) => [k, new Set(v)]))
+        );
         this.loading.set(false);
       },
       error: (err) => {
@@ -203,7 +230,11 @@ export class PermissionMatrixModalComponent {
   }
 
   isPermissionSelected(id: string): boolean {
-    return this.selectedIds().has(id);
+    return this.selectedPermissionsMap().has(id);
+  }
+
+  isScopeSelected(id: string, scope: string): boolean {
+    return this.selectedPermissionsMap().get(id)?.has(scope) ?? false;
   }
 
   togglePermission(id: string): void {
@@ -212,19 +243,48 @@ export class PermissionMatrixModalComponent {
       return;
     }
 
-    const current = new Set(this.selectedIds());
+    const current = new Map(this.selectedPermissionsMap());
     if (current.has(id)) {
       current.delete(id);
     } else {
-      current.add(id);
+      const scopes = perm ? this.getAllowedScopes(perm) : ['SELF'];
+      current.set(id, new Set(scopes));
     }
-    this.selectedIds.set(current);
+    this.selectedPermissionsMap.set(current);
+  }
+
+  toggleScope(id: string, scope: string, event: Event): void {
+    event.stopPropagation();
+    const perm = this.allPermissions().find((p) => p.id === id);
+    if (perm && this.isPermissionDisabled(perm)) {
+      return;
+    }
+
+    const current = new Map(this.selectedPermissionsMap());
+    let scopes = current.get(id);
+    if (!scopes) {
+      scopes = new Set<string>();
+      current.set(id, scopes);
+    } else {
+      scopes = new Set<string>(scopes);
+      current.set(id, scopes);
+    }
+
+    if (scopes.has(scope)) {
+      scopes.delete(scope);
+      if (scopes.size === 0) {
+        current.delete(id);
+      }
+    } else {
+      scopes.add(scope);
+    }
+    this.selectedPermissionsMap.set(current);
   }
 
   getModuleSelectedCount(moduleName: string): number {
     const mod = this.groupedModules().find((m) => m.name === moduleName);
     if (!mod) return 0;
-    const current = this.selectedIds();
+    const current = this.selectedPermissionsMap();
     return mod.permissions.filter((p) => current.has(p.id)).length;
   }
 
@@ -232,31 +292,31 @@ export class PermissionMatrixModalComponent {
     const mod = this.groupedModules().find((m) => m.name === moduleName);
     if (!mod) return;
 
-    const current = new Set(this.selectedIds());
+    const current = new Map(this.selectedPermissionsMap());
     for (const p of mod.permissions) {
       if (selectAll) {
         if (!this.isPermissionDisabled(p)) {
-          current.add(p.id);
+          current.set(p.id, new Set(this.getAllowedScopes(p)));
         }
       } else {
         current.delete(p.id);
       }
     }
-    this.selectedIds.set(current);
+    this.selectedPermissionsMap.set(current);
   }
 
   grantAll(): void {
-    const current = new Set(this.selectedIds());
+    const current = new Map(this.selectedPermissionsMap());
     for (const p of this.allPermissions()) {
       if (!this.isPermissionDisabled(p)) {
-        current.add(p.id);
+        current.set(p.id, new Set(this.getAllowedScopes(p)));
       }
     }
-    this.selectedIds.set(current);
+    this.selectedPermissionsMap.set(current);
   }
 
   revokeAll(): void {
-    this.selectedIds.set(new Set());
+    this.selectedPermissionsMap.set(new Map());
   }
 
   onSearchInput(event: Event): void {
@@ -279,13 +339,23 @@ export class PermissionMatrixModalComponent {
     this.submitting.set(true);
     this.errorMessage.set('');
 
-    const permissionIds = Array.from(this.selectedIds()).filter((id) => {
-      const p = this.allPermissions().find((x) => x.id === id);
-      return p ? !this.isPermissionDisabled(p) : true;
-    });
+    const permissions = Array.from(this.selectedPermissionsMap().entries())
+      .filter(([id]) => {
+        const p = this.allPermissions().find((x) => x.id === id);
+        return p ? !this.isPermissionDisabled(p) : true;
+      })
+      .map(([permissionId, scopesSet]) => ({
+        permissionId,
+        scopes: Array.from(scopesSet),
+      }));
+
+    const permissionIds = permissions.map((p) => p.permissionId);
 
     this.settingsService
-      .assignPermissions(currentRole.id, permissionIds)
+      .assignPermissions(currentRole.id, {
+        permissions,
+        permissionIds,
+      })
       .subscribe({
         next: (updatedRole) => {
           this.submitting.set(false);

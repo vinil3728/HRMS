@@ -18,7 +18,7 @@ import { RejectLeaveDto } from '../dto/reject-leave.dto';
 
 import { LeaveService } from '../services/leave.service';
 
-import { EmployeeAccessGuard } from '../../../auth/guards/employee-access.guard';
+import { ScopeAccessGuard } from '../../../auth/guards/scope-access.guard';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 
 import { Permissions, AnyPermissions } from '../../permissions/decorators/permissions.decorator';
@@ -26,17 +26,17 @@ import { Permission } from '../../permissions/enums/permission.enum';
 import { PermissionGuard } from '../../permissions/guards/permission.guard';
 
 @Controller('employees/:employeeId/leaves')
+@UseGuards(
+    JwtAuthGuard,
+    PermissionGuard,
+    ScopeAccessGuard,
+)
 export class LeaveController {
     constructor(
         private readonly leaveService: LeaveService,
     ) {}
 
     @Post()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.LEAVE_CREATE)
     create(
         @Param(
@@ -54,16 +54,7 @@ export class LeaveController {
     }
 
     @Get()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
-    @AnyPermissions(
-        Permission.LEAVE_VIEW,
-        Permission.MANAGE_TEAM_LEAVES,
-        Permission.MANAGE_ALL_LEAVES,
-    )
+    @Permissions(Permission.LEAVE_VIEW)
     findAll(
         @Param(
             'employeeId',
@@ -80,16 +71,7 @@ export class LeaveController {
     }
 
     @Get('summary')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
-    @AnyPermissions(
-        Permission.LEAVE_SUMMARY_VIEW,
-        Permission.MANAGE_TEAM_LEAVE_SUMMARY,
-        Permission.MANAGE_ALL_LEAVE_SUMMARY,
-    )
+    @Permissions(Permission.LEAVE_SUMMARY_VIEW)
     getSummary(
         @Param(
             'employeeId',
@@ -106,16 +88,7 @@ export class LeaveController {
     }
 
     @Get(':leaveId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
-    @AnyPermissions(
-        Permission.LEAVE_VIEW,
-        Permission.MANAGE_TEAM_LEAVES,
-        Permission.MANAGE_ALL_LEAVES,
-    )
+    @Permissions(Permission.LEAVE_VIEW)
     findOne(
         @Param(
             'employeeId',
@@ -135,12 +108,10 @@ export class LeaveController {
     }
 
     @Patch(':leaveId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
+    @AnyPermissions(
+        Permission.LEAVE_UPDATE,
+        Permission.LEAVE_EDIT
     )
-    @Permissions(Permission.LEAVE_EDIT)
     update(
         @Param(
             'employeeId',
@@ -163,12 +134,10 @@ export class LeaveController {
     }
 
     @Delete(':leaveId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
+    @AnyPermissions(
+        Permission.LEAVE_CANCEL,
+        Permission.LEAVE_DELETE
     )
-    @Permissions(Permission.LEAVE_CANCEL)
     cancel(
         @Param(
             'employeeId',
@@ -188,15 +157,7 @@ export class LeaveController {
     }
 
     @Post(':leaveId/approve')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
-    @AnyPermissions(
-        Permission.APPROVE_ALL_LEAVES,
-        Permission.APPROVE_TEAM_LEAVES
-    )
+    @Permissions(Permission.LEAVE_APPROVE)
     approve(
         @Param(
             'employeeId',
@@ -216,15 +177,7 @@ export class LeaveController {
     }
 
     @Post(':leaveId/reject')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
-    @AnyPermissions(
-        Permission.REJECT_ALL_LEAVES,
-        Permission.REJECT_TEAM_LEAVES
-    )
+    @Permissions(Permission.LEAVE_REJECT)
     reject(
         @Param(
             'employeeId',

@@ -61,8 +61,15 @@ export class LeaveApplyModalComponent {
     { value: 'OTHER', label: 'Other Leave' },
   ];
 
+  readonly sessionOptions: SelectOption[] = [
+    { value: 'FIRST_HALF', label: 'First Half (Morning)' },
+    { value: 'SECOND_HALF', label: 'Second Half (Afternoon)' },
+  ];
+
   readonly form: FormGroup = this.fb.group({
     leaveType: [LeaveType.CASUAL, [Validators.required]],
+    isHalfDay: [false],
+    halfDaySession: ['FIRST_HALF'],
     startDate: [
       new Date().toISOString().substring(0, 10),
       [Validators.required],
@@ -72,6 +79,7 @@ export class LeaveApplyModalComponent {
   });
 
   readonly currentLeaveType = signal<LeaveType>(LeaveType.CASUAL);
+  readonly isHalfDayActive = signal<boolean>(false);
   readonly currentStartDate = signal<string>(
     new Date().toISOString().substring(0, 10)
   );
@@ -85,24 +93,50 @@ export class LeaveApplyModalComponent {
   });
 
   readonly computedDays = computed(() => {
+    if (this.isHalfDayActive()) {
+      return 0.5;
+    }
+
     const startStr = this.currentStartDate();
     const endStr = this.currentEndDate();
     if (!startStr || !endStr) return 0;
 
-    const start = new Date(startStr);
-    const end = new Date(endStr);
+    const start = new Date(`${startStr}T00:00:00`);
+    const end = new Date(`${endStr}T00:00:00`);
     if (end < start) return 0;
 
-    const diff = end.getTime() - start.getTime();
-    return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
+    let count = 0;
+    const current = new Date(start);
+    while (current <= end) {
+      const day = current.getDay();
+      if (day !== 0 && day !== 6) {
+        count++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    return count > 0 ? count : 1;
   });
 
   constructor() {
     this.form.get('leaveType')?.valueChanges.subscribe((v) => {
       this.currentLeaveType.set(v);
     });
+    this.form.get('isHalfDay')?.valueChanges.subscribe((v) => {
+      this.isHalfDayActive.set(Boolean(v));
+      if (v) {
+        const start = this.form.get('startDate')?.value;
+        if (start) {
+          this.form.get('endDate')?.setValue(start);
+        }
+      }
+    });
     this.form.get('startDate')?.valueChanges.subscribe((v) => {
       this.currentStartDate.set(v);
+      if (this.isHalfDayActive()) {
+        this.form.get('endDate')?.setValue(v, { emitEvent: false });
+        this.currentEndDate.set(v);
+      }
     });
     this.form.get('endDate')?.valueChanges.subscribe((v) => {
       this.currentEndDate.set(v);
@@ -122,11 +156,14 @@ export class LeaveApplyModalComponent {
 
         this.form.patchValue({
           leaveType: l.leaveType,
+          isHalfDay: Boolean(l.isHalfDay),
+          halfDaySession: l.halfDaySession || 'FIRST_HALF',
           startDate: startStr,
           endDate: endStr,
           reason: l.reason || '',
         });
         this.currentLeaveType.set(l.leaveType);
+        this.isHalfDayActive.set(Boolean(l.isHalfDay));
         this.currentStartDate.set(startStr);
         this.currentEndDate.set(endStr);
         this.errorMessage.set('');
@@ -134,11 +171,14 @@ export class LeaveApplyModalComponent {
         const todayStr = new Date().toISOString().substring(0, 10);
         this.form.reset({
           leaveType: LeaveType.CASUAL,
+          isHalfDay: false,
+          halfDaySession: 'FIRST_HALF',
           startDate: todayStr,
           endDate: todayStr,
           reason: '',
         });
         this.currentLeaveType.set(LeaveType.CASUAL);
+        this.isHalfDayActive.set(false);
         this.currentStartDate.set(todayStr);
         this.currentEndDate.set(todayStr);
         this.errorMessage.set('');
@@ -176,12 +216,17 @@ export class LeaveApplyModalComponent {
     const empId = this.employeeId();
     const currentLeave = this.leave();
 
+    const isHalf = Boolean(val.isHalfDay);
+    const session = isHalf ? val.halfDaySession : null;
+
     if (currentLeave) {
       const dto: UpdateLeaveDto = {
         leaveType: val.leaveType,
         startDate: val.startDate,
-        endDate: val.endDate,
+        endDate: isHalf ? val.startDate : val.endDate,
         reason: val.reason.trim(),
+        isHalfDay: isHalf,
+        halfDaySession: session,
       };
 
       this.leaveService.updateLeave(empId, currentLeave.id, dto).subscribe({
@@ -200,8 +245,10 @@ export class LeaveApplyModalComponent {
       const dto: CreateLeaveDto = {
         leaveType: val.leaveType,
         startDate: val.startDate,
-        endDate: val.endDate,
+        endDate: isHalf ? val.startDate : val.endDate,
         reason: val.reason.trim(),
+        isHalfDay: isHalf,
+        halfDaySession: session,
       };
 
       this.leaveService.applyLeave(empId, dto).subscribe({

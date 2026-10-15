@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import {
     IsArray,
     IsOptional,
@@ -5,7 +6,9 @@ import {
     IsUUID,
     MaxLength,
     MinLength,
+    ValidateNested,
 } from 'class-validator';
+import { PermissionAssignmentItemDto } from './assign-permissions.dto';
 
 export class CreateRoleDto {
     @IsString()
@@ -27,4 +30,10 @@ export class CreateRoleDto {
     @IsArray()
     @IsUUID('4', { each: true })
     permissionIds?: string[];
+
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => PermissionAssignmentItemDto)
+    permissions?: PermissionAssignmentItemDto[];
 }

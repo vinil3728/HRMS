@@ -324,4 +324,4 @@ Security is layered throughout both client and server tiers:
 2. **NestJS API Guarding**:
    - `JwtAuthGuard`: Validates Bearer token authenticity and expiry.
    - `PermissionGuard`: Verifies that the authenticated user possesses the specific `Permission` assigned via `@Permissions(...)`.
-   - `EmployeeAccessGuard`: Validates relationship scoping—Admins and HR have org-wide access, Managers can review their direct reports, and Employees are restricted to their own resource records.
+   - `ScopeAccessGuard`: Validates relationship scoping—Admins and HR have org-wide access, Managers can review their direct reports, and Employees are restricted to their own resource records based on dynamic database scopes.

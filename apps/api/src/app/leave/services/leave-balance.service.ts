@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ConflictException,
     Injectable,
     NotFoundException,
@@ -9,6 +10,7 @@ import { Repository } from 'typeorm';
 
 import { LeaveBalance } from '../entities/leave-balance.entity';
 import { CreateLeaveBalanceDto } from '../dto/create-leave-balance.dto';
+import { AdjustLeaveBalanceDto } from '../dto/adjust-leave-balance.dto';
 import { Employee } from '../../employees/entities/employee.entity';
 
 @Injectable()
@@ -42,9 +44,9 @@ export class LeaveBalanceService {
         });
 
         if (existing) {
-            throw new ConflictException(
-                'Leave balance already exists for this employee, leave type and year',
-            );
+            existing.totalDays = dto.totalDays;
+            existing.availableDays = Number(existing.totalDays) - Number(existing.usedDays);
+            return this.leaveBalanceRepository.save(existing);
         }
 
         const balance = this.leaveBalanceRepository.create({
@@ -55,6 +57,31 @@ export class LeaveBalanceService {
             usedDays: 0,
             availableDays: dto.totalDays,
         });
+
+        return this.leaveBalanceRepository.save(balance);
+    }
+
+    async adjust(
+        employeeId: string,
+        balanceId: string,
+        dto: AdjustLeaveBalanceDto,
+    ): Promise<LeaveBalance> {
+        const balance = await this.findOne(employeeId, balanceId);
+
+        const newTotal = Number(balance.totalDays) + Number(dto.adjustmentDays);
+        if (newTotal < 0) {
+            throw new BadRequestException('Total days cannot be reduced below 0');
+        }
+
+        const newAvailable = Number(newTotal) - Number(balance.usedDays);
+        if (newAvailable < 0) {
+            throw new BadRequestException(
+                'Adjustment would cause available balance to become negative based on already consumed days',
+            );
+        }
+
+        balance.totalDays = newTotal;
+        balance.availableDays = newAvailable;
 
         return this.leaveBalanceRepository.save(balance);
     }

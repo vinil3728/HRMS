@@ -42,38 +42,56 @@
           }
         </div>
 
+        <div class="form-row half-day-toggle-row">
+          <label class="half-day-checkbox-label">
+            <input type="checkbox" formControlName="isHalfDay" class="custom-checkbox" />
+            <span>Apply as Half Day (0.5 working day)</span>
+          </label>
+          @if (isHalfDayActive()) {
+            <div class="half-day-session-wrap">
+              <app-select
+                formControlName="halfDaySession"
+                [options]="sessionOptions"
+                minWidth="200px"
+              ></app-select>
+            </div>
+          }
+        </div>
+
         <div class="form-row">
           <div class="form-group flex-1">
-            <label class="form-label">Start Date <span class="required">*</span></label>
+            <label class="form-label">{{ isHalfDayActive() ? 'Date' : 'Start Date' }} <span class="required">*</span></label>
             <app-date-picker
               formControlName="startDate"
               mode="single"
               [fullWidth]="true"
-              placeholder="Select start date"
+              placeholder="Select date"
             ></app-date-picker>
             @if (isFieldInvalid('startDate')) {
               <span class="field-error">Start date is required</span>
             }
           </div>
 
-          <div class="form-group flex-1">
-            <label class="form-label">End Date <span class="required">*</span></label>
-            <app-date-picker
-              formControlName="endDate"
-              mode="single"
-              [fullWidth]="true"
-              placeholder="Select end date"
-            ></app-date-picker>
-            @if (isFieldInvalid('endDate')) {
-              <span class="field-error">End date is required</span>
-            }
-          </div>
+          @if (!isHalfDayActive()) {
+            <div class="form-group flex-1">
+              <label class="form-label">End Date <span class="required">*</span></label>
+              <app-date-picker
+                formControlName="endDate"
+                mode="single"
+                [fullWidth]="true"
+                placeholder="Select end date"
+              ></app-date-picker>
+              @if (isFieldInvalid('endDate')) {
+                <span class="field-error">End date is required</span>
+              }
+            </div>
+          }
         </div>
 
         @if (computedDays() > 0) {
           <div class="duration-callout">
             <app-icon name="calendar" [size]="16"></app-icon>
-            <span>Total Duration: <strong>{{ computedDays() }} calendar day(s)</strong></span>
+            <span>Total Duration: <strong>{{ computedDays() }} working day(s)</strong></span>
           </div>
         }
 

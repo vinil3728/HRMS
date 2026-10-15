@@ -8,4 +8,5 @@ export interface User {
   roleId?: string;
   role: string;
   permissions: string[];
+  permissionScopes?: Record<string, string[]>;
 }

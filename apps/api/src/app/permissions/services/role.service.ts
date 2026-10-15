@@ -75,6 +75,7 @@ export class RoleService {
         code: string;
         description?: string | null;
         permissionIds?: string[];
+        permissions?: { permissionId: string; scopes?: string[] }[];
     }): Promise<Role> {
         const existingRole = await this.roleRepository.findOne({
             where: [
@@ -100,7 +101,12 @@ export class RoleService {
 
         const savedRole = await this.roleRepository.save(role);
 
-        if (data.permissionIds?.length) {
+        if (data.permissions?.length) {
+            await this.assignPermissions(
+                savedRole.id,
+                data.permissions,
+            );
+        } else if (data.permissionIds?.length) {
             await this.assignPermissions(
                 savedRole.id,
                 data.permissionIds,
@@ -219,11 +225,11 @@ export class RoleService {
 
     async assignPermissions(
         roleId: string,
-        permissionIds: string[],
+        assignments: string[] | { permissionId: string; scopes?: string[] }[],
     ): Promise<Role> {
         const role = await this.findById(roleId);
 
-        if (!permissionIds.length) {
+        if (!assignments || !assignments.length) {
             await this.rolePermissionRepository.delete({
                 role: {
                     id: roleId,
@@ -233,15 +239,28 @@ export class RoleService {
             return this.findById(roleId);
         }
 
-        const uniquePermissionIds = [
-            ...new Set(permissionIds),
-        ];
+        const normalizedAssignments: { permissionId: string; scopes?: string[] }[] = [];
+        for (const item of assignments) {
+            if (typeof item === 'string') {
+                normalizedAssignments.push({ permissionId: item });
+            } else if (item && typeof item === 'object' && item.permissionId) {
+                normalizedAssignments.push(item);
+            }
+        }
+
+        const uniqueMap = new Map<string, string[] | undefined>();
+        for (const item of normalizedAssignments) {
+            uniqueMap.set(item.permissionId, item.scopes);
+        }
+
+        const uniquePermissionIds = Array.from(uniqueMap.keys());
 
         const permissions =
             await this.permissionRepository.find({
                 where: {
                     id: In(uniquePermissionIds),
                     isActive: true,
+                    isDeleted: false,
                 },
             });
 
@@ -249,8 +268,24 @@ export class RoleService {
             permissions.length !== uniquePermissionIds.length
         ) {
             throw new BadRequestException(
-                'One or more permission IDs are invalid or inactive',
+                'One or more permission IDs are invalid, inactive, or deleted',
             );
+        }
+
+        // Validate that assigned scopes are a subset of permission's allowedScopes
+        for (const permission of permissions) {
+            const requestedScopes = uniqueMap.get(permission.id);
+            const allowed = permission.allowedScopes || ['SELF', 'TEAM', 'ORG'];
+
+            if (requestedScopes && requestedScopes.length > 0) {
+                for (const scope of requestedScopes) {
+                    if (!allowed.includes(scope)) {
+                        throw new BadRequestException(
+                            `Scope "${scope}" is not supported for permission "${permission.code}". Supported scopes: ${allowed.join(', ')}`,
+                        );
+                    }
+                }
+            }
         }
 
         await this.rolePermissionRepository.delete({
@@ -260,12 +295,21 @@ export class RoleService {
         });
 
         const rolePermissions =
-            permissions.map((permission) =>
-                this.rolePermissionRepository.create({
+            permissions.map((permission) => {
+                const requestedScopes = uniqueMap.get(permission.id);
+                const finalScopes =
+                    requestedScopes && requestedScopes.length > 0
+                        ? [...new Set(requestedScopes)]
+                        : permission.allowedScopes && permission.allowedScopes.length > 0
+                        ? permission.allowedScopes
+                        : ['SELF'];
+
+                return this.rolePermissionRepository.create({
                     role,
                     permission,
-                }),
-            );
+                    scopes: finalScopes,
+                });
+            });
 
         await this.rolePermissionRepository.save(
             rolePermissions,
@@ -276,17 +320,23 @@ export class RoleService {
 
     async getPermissions(
         roleId: string,
-    ): Promise<PermissionEntity[]> {
+    ): Promise<any[]> {
         const role = await this.findById(roleId);
 
         return role.rolePermissions
             .filter(
                 (rolePermission) =>
-                    rolePermission.permission.isActive,
+                    rolePermission.permission.isActive &&
+                    !rolePermission.permission.isDeleted,
             )
-            .map(
-                (rolePermission) =>
-                    rolePermission.permission,
-            );
+            .map((rolePermission) => {
+                const p = rolePermission.permission;
+                return {
+                    ...p,
+                    scopes: rolePermission.scopes || ['SELF'],
+                    assignedScopes: rolePermission.scopes || ['SELF'],
+                    allowedScopes: p.allowedScopes || ['SELF', 'TEAM', 'ORG'],
+                };
+            });
     }
 }

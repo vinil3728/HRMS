@@ -10,30 +10,32 @@ import {
     UseGuards,
 } from '@nestjs/common';
 
+import { AdjustLeaveBalanceDto } from '../dto/adjust-leave-balance.dto';
 import { CreateLeaveBalanceDto } from '../dto/create-leave-balance.dto';
 import { LeaveBalanceService } from '../services/leave-balance.service';
 
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-import { EmployeeAccessGuard } from '../../../auth/guards/employee-access.guard';
+import { ScopeAccessGuard } from '../../../auth/guards/scope-access.guard';
 
-import { Permissions, AnyPermissions } from '../../permissions/decorators/permissions.decorator';
+import { AnyPermissions, Permissions } from '../../permissions/decorators/permissions.decorator';
 import { Permission } from '../../permissions/enums/permission.enum';
 import { PermissionGuard } from '../../permissions/guards/permission.guard';
 
 @Controller('employees/:employeeId/leave-balances')
+@UseGuards(
+    JwtAuthGuard,
+    PermissionGuard,
+    ScopeAccessGuard,
+)
 export class LeaveBalanceController {
     constructor(
         private readonly leaveBalanceService: LeaveBalanceService,
     ) {}
 
     @Post()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
-    @Permissions(
+    @AnyPermissions(
         Permission.LEAVE_BALANCE_CREATE,
+        Permission.LEAVE_BALANCE_ADJUST,
     )
     create(
         @Param(
@@ -50,17 +52,31 @@ export class LeaveBalanceController {
         );
     }
 
+    @Post(':balanceId/adjust')
+    @Permissions(Permission.LEAVE_BALANCE_ADJUST)
+    adjust(
+        @Param(
+            'employeeId',
+            new ParseUUIDPipe(),
+        )
+        employeeId: string,
+        @Param(
+            'balanceId',
+            new ParseUUIDPipe(),
+        )
+        balanceId: string,
+        @Body()
+        dto: AdjustLeaveBalanceDto,
+    ) {
+        return this.leaveBalanceService.adjust(
+            employeeId,
+            balanceId,
+            dto,
+        );
+    }
+
     @Get()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
-    @AnyPermissions(
-        Permission.LEAVE_BALANCE_VIEW,
-        Permission.TEAM_LEAVE_BALANCE_VIEW,
-        Permission.ALL_LEAVE_BALANCE_VIEW,
-    )
+    @Permissions(Permission.LEAVE_BALANCE_VIEW)
     findAll(
         @Param(
             'employeeId',
@@ -82,16 +98,7 @@ export class LeaveBalanceController {
     }
 
     @Get(':balanceId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
-    @AnyPermissions(
-        Permission.LEAVE_BALANCE_VIEW,
-        Permission.TEAM_LEAVE_BALANCE_VIEW,
-        Permission.ALL_LEAVE_BALANCE_VIEW,
-    )
+    @Permissions(Permission.LEAVE_BALANCE_VIEW)
     findOne(
         @Param(
             'employeeId',

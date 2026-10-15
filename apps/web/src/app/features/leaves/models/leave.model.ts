@@ -21,9 +21,17 @@ export interface Leave {
   startDate: string;
   endDate: string;
   numberOfDays: number;
+  isHalfDay?: boolean;
+  halfDaySession?: string | null;
   status: LeaveStatus;
   reason: string | null;
   rejectionReason: string | null;
+  employee?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    employeeCode: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -71,6 +79,8 @@ export interface CreateLeaveDto {
   startDate: string;
   endDate: string;
   reason?: string;
+  isHalfDay?: boolean;
+  halfDaySession?: string | null;
 }
 
 export interface UpdateLeaveDto {
@@ -78,10 +88,17 @@ export interface UpdateLeaveDto {
   startDate?: string;
   endDate?: string;
   reason?: string;
+  isHalfDay?: boolean;
+  halfDaySession?: string | null;
 }
 
 export interface CreateLeaveBalanceDto {
   leaveType: LeaveType;
   year: number;
   totalDays: number;
+}
+
+export interface AdjustLeaveBalanceDto {
+  adjustmentDays: number;
+  reason: string;
 }

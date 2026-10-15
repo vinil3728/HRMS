@@ -12,7 +12,7 @@ import { PerformanceSummaryService } from '../services/performance-summary.servi
 import { CreatePerformanceSummaryDto } from '../dto/create-performance-summary.dto';
 
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-import { EmployeeAccessGuard } from '../../../auth/guards/employee-access.guard';
+import { ScopeAccessGuard } from '../../../auth/guards/scope-access.guard';
 
 import { Permissions } from '../../permissions/decorators/permissions.decorator';
 import { Permission } from '../../permissions/enums/permission.enum';
@@ -21,16 +21,13 @@ import { PermissionGuard } from '../../permissions/guards/permission.guard';
 @Controller(
     'employees/:employeeId/performance-cycles/:cycleId/summary',
 )
+@UseGuards(JwtAuthGuard, PermissionGuard, ScopeAccessGuard)
 export class PerformanceSummaryController {
     constructor(
         private readonly performanceSummaryService: PerformanceSummaryService,
     ) {}
 
     @Post('finalize')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-    )
     @Permissions(
         Permission.PERFORMANCE_SUMMARY_FINALIZE,
     )
@@ -56,11 +53,6 @@ export class PerformanceSummaryController {
     }
 
     @Get()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.PERFORMANCE_SUMMARY_VIEW,
     )

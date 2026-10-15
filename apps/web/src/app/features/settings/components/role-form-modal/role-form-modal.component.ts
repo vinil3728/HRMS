@@ -54,7 +54,7 @@ export class RoleFormModalComponent {
 
   readonly allPermissions = signal<SystemPermission[]>([]);
   readonly modules = signal<SystemModule[]>([]);
-  readonly selectedPermissionIds = signal<Set<string>>(new Set<string>());
+  readonly selectedPermissionsMap = signal<Map<string, Set<string>>>(new Map());
   readonly permissionSearch = signal<string>('');
   readonly loadingPermissions = signal<boolean>(false);
   readonly submitting = signal<boolean>(false);
@@ -62,6 +62,9 @@ export class RoleFormModalComponent {
 
   readonly isEditMode = computed(() => !!this.role());
   readonly isSystemRole = computed(() => !!this.role()?.isSystemRole);
+  readonly selectedPermissionIds = computed(
+    () => new Set(this.selectedPermissionsMap().keys())
+  );
 
   getModuleName(p: SystemPermission): string {
     if (p.module && typeof p.module === 'object') return p.module.name;
@@ -96,6 +99,18 @@ export class RoleFormModalComponent {
     if (perm.isDeleted) return 'Deleted';
     if (!perm.isActive) return 'Inactive';
     return null;
+  }
+
+  getAllowedScopes(perm: SystemPermission): string[] {
+    if (perm.allowedScopes && perm.allowedScopes.length > 0) {
+      return perm.allowedScopes;
+    }
+    if (typeof perm.scopes === 'string') {
+      if (perm.scopes === 'ORGANIZATION' || perm.scopes === 'GLOBAL') return ['ORG'];
+      if (perm.scopes === 'TEAM') return ['SELF', 'TEAM'];
+      return ['SELF'];
+    }
+    return ['SELF', 'TEAM', 'ORG'];
   }
 
   allModulePermissionsDisabled(mod: PermissionModuleGroup): boolean {
@@ -193,7 +208,7 @@ export class RoleFormModalComponent {
             description: '',
           });
           this.form.get('code')?.enable();
-          this.selectedPermissionIds.set(new Set());
+          this.selectedPermissionsMap.set(new Map());
           this.errorMessage.set('');
         }
       } else {
@@ -214,11 +229,20 @@ export class RoleFormModalComponent {
       next: ({ all, modules, assigned }) => {
         this.modules.set(modules);
         this.allPermissions.set(all);
-        if (assigned) {
-          this.selectedPermissionIds.set(
-            new Set(assigned.map((p) => p.id))
-          );
+
+        if (assigned && assigned.length > 0) {
+          const map = new Map<string, Set<string>>();
+          for (const p of assigned) {
+            const scopes =
+              p.assignedScopes ||
+              (Array.isArray(p.scopes) ? p.scopes : (p.scopes ? [p.scopes] : ['SELF']));
+            map.set(p.id, new Set(scopes));
+          }
+          this.selectedPermissionsMap.set(map);
+        } else if (!roleId) {
+          this.selectedPermissionsMap.set(new Map());
         }
+
         this.loadingPermissions.set(false);
       },
       error: () => {
@@ -233,7 +257,11 @@ export class RoleFormModalComponent {
   }
 
   isPermissionSelected(id: string): boolean {
-    return this.selectedPermissionIds().has(id);
+    return this.selectedPermissionsMap().has(id);
+  }
+
+  isScopeSelected(id: string, scope: string): boolean {
+    return this.selectedPermissionsMap().get(id)?.has(scope) ?? false;
   }
 
   togglePermission(id: string): void {
@@ -242,19 +270,48 @@ export class RoleFormModalComponent {
       return;
     }
 
-    const current = new Set(this.selectedPermissionIds());
+    const current = new Map(this.selectedPermissionsMap());
     if (current.has(id)) {
       current.delete(id);
     } else {
-      current.add(id);
+      const scopes = perm ? this.getAllowedScopes(perm) : ['SELF'];
+      current.set(id, new Set(scopes));
     }
-    this.selectedPermissionIds.set(current);
+    this.selectedPermissionsMap.set(current);
+  }
+
+  toggleScope(id: string, scope: string, event: Event): void {
+    event.stopPropagation();
+    const perm = this.allPermissions().find((p) => p.id === id);
+    if (perm && this.isPermissionDisabled(perm)) {
+      return;
+    }
+
+    const current = new Map(this.selectedPermissionsMap());
+    let scopes = current.get(id);
+    if (!scopes) {
+      scopes = new Set<string>();
+      current.set(id, scopes);
+    } else {
+      scopes = new Set<string>(scopes);
+      current.set(id, scopes);
+    }
+
+    if (scopes.has(scope)) {
+      scopes.delete(scope);
+      if (scopes.size === 0) {
+        current.delete(id);
+      }
+    } else {
+      scopes.add(scope);
+    }
+    this.selectedPermissionsMap.set(current);
   }
 
   getModuleSelectedCount(moduleName: string): number {
     const mod = this.groupedModules().find((m) => m.name === moduleName);
     if (!mod) return 0;
-    const current = this.selectedPermissionIds();
+    const current = this.selectedPermissionsMap();
     return mod.permissions.filter((p) => current.has(p.id)).length;
   }
 
@@ -262,31 +319,31 @@ export class RoleFormModalComponent {
     const mod = this.groupedModules().find((m) => m.name === moduleName);
     if (!mod) return;
 
-    const current = new Set(this.selectedPermissionIds());
+    const current = new Map(this.selectedPermissionsMap());
     for (const p of mod.permissions) {
       if (selectAll) {
         if (!this.isPermissionDisabled(p)) {
-          current.add(p.id);
+          current.set(p.id, new Set(this.getAllowedScopes(p)));
         }
       } else {
         current.delete(p.id);
       }
     }
-    this.selectedPermissionIds.set(current);
+    this.selectedPermissionsMap.set(current);
   }
 
   selectAllPermissions(): void {
-    const current = new Set(this.selectedPermissionIds());
+    const current = new Map(this.selectedPermissionsMap());
     for (const p of this.allPermissions()) {
       if (!this.isPermissionDisabled(p)) {
-        current.add(p.id);
+        current.set(p.id, new Set(this.getAllowedScopes(p)));
       }
     }
-    this.selectedPermissionIds.set(current);
+    this.selectedPermissionsMap.set(current);
   }
 
   clearAllPermissions(): void {
-    this.selectedPermissionIds.set(new Set());
+    this.selectedPermissionsMap.set(new Map());
   }
 
   onSearchInput(event: Event): void {
@@ -313,12 +370,18 @@ export class RoleFormModalComponent {
 
     const current = this.role();
     const rawValue = this.form.getRawValue();
-    const permissionIds = Array.from(this.selectedPermissionIds()).filter(
-      (id) => {
+
+    const permissions = Array.from(this.selectedPermissionsMap().entries())
+      .filter(([id]) => {
         const p = this.allPermissions().find((x) => x.id === id);
         return p ? !this.isPermissionDisabled(p) : true;
-      }
-    );
+      })
+      .map(([permissionId, scopesSet]) => ({
+        permissionId,
+        scopes: Array.from(scopesSet),
+      }));
+
+    const permissionIds = permissions.map((p) => p.permissionId);
 
     if (current) {
       const dto: UpdateRoleDto = {
@@ -331,10 +394,10 @@ export class RoleFormModalComponent {
         .updateRole(current.id, dto)
         .pipe(
           switchMap((updatedRole) => {
-            return this.settingsService.assignPermissions(
-              updatedRole.id,
-              permissionIds
-            );
+            return this.settingsService.assignPermissions(updatedRole.id, {
+              permissions,
+              permissionIds,
+            });
           })
         )
         .subscribe({
@@ -355,6 +418,7 @@ export class RoleFormModalComponent {
         code: rawValue.code.trim().toUpperCase(),
         description: rawValue.description?.trim() || null,
         permissionIds,
+        permissions,
       };
 
       this.settingsService.createRole(dto).subscribe({

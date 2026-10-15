@@ -18,25 +18,24 @@ import { Response } from 'express';
 import { EmployeeDocumentService } from './employee-document.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../permissions/guards/permission.guard';
-import { EmployeeAccessGuard } from '../../auth/guards/employee-access.guard';
+import { ScopeAccessGuard } from '../../auth/guards/scope-access.guard';
 import { Permission } from '../permissions/enums/permission.enum';
 import { Permissions } from '../permissions/decorators/permissions.decorator';
 import { EmployeeDocumentType } from './enums/employee-document-type.enum';
 import { CreateEmployeeDocumentDto } from './dto/create-employee-document.dto';
 
-
 @Controller('employees/:employeeId/documents')
+@UseGuards(
+    JwtAuthGuard,
+    PermissionGuard,
+    ScopeAccessGuard,
+)
 export class EmployeeDocumentController {
     constructor(
         private readonly documentService: EmployeeDocumentService,
     ) {}
 
     @Post()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.EMPLOYEE_DOCUMENT_CREATE,
     )
@@ -56,11 +55,6 @@ export class EmployeeDocumentController {
     }
 
     @Post('upload')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.EMPLOYEE_DOCUMENT_UPLOAD,
     )
@@ -107,11 +101,6 @@ export class EmployeeDocumentController {
     }
 
     @Get()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.EMPLOYEE_DOCUMENT_VIEW,
     )
@@ -128,11 +117,6 @@ export class EmployeeDocumentController {
     }
 
     @Get(':documentId/download')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.EMPLOYEE_DOCUMENT_DOWNLOAD,
     )
@@ -163,11 +147,6 @@ export class EmployeeDocumentController {
     }
 
     @Get(':documentId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.EMPLOYEE_DOCUMENT_VIEW,
     )
@@ -190,11 +169,6 @@ export class EmployeeDocumentController {
     }
 
     @Delete(':documentId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.EMPLOYEE_DOCUMENT_DELETE,
     )

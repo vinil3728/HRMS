@@ -16,7 +16,7 @@ import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 import { AttendanceQueryDto } from './dto/attendance-query.dto';
 import { AttendanceService } from './attendance.service';
 
-import { EmployeeAccessGuard } from '../../auth/guards/employee-access.guard';
+import { ScopeAccessGuard } from '../../auth/guards/scope-access.guard';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 import {
@@ -27,17 +27,17 @@ import { Permission } from '../permissions/enums/permission.enum';
 import { PermissionGuard } from '../permissions/guards/permission.guard';
 
 @Controller('employees/:employeeId/attendance')
+@UseGuards(
+    JwtAuthGuard,
+    PermissionGuard,
+    ScopeAccessGuard,
+)
 export class AttendanceController {
     constructor(
         private readonly attendanceService: AttendanceService,
     ) {}
 
     @Post()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.ATTENDANCE_CREATE)
     create(
         @Param(
@@ -55,11 +55,6 @@ export class AttendanceController {
     }
 
     @Get()
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @AnyPermissions(
         Permission.ATTENDANCE_VIEW,
         Permission.ATTENDANCE_TEAM_VIEW,
@@ -81,11 +76,6 @@ export class AttendanceController {
     }
 
     @Get('summary')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.ATTENDANCE_SUMMARY_VIEW,
     )
@@ -105,11 +95,6 @@ export class AttendanceController {
     }
 
     @Post('check-in')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.ATTENDANCE_CHECK_IN,
     )
@@ -126,11 +111,6 @@ export class AttendanceController {
     }
 
     @Post('check-out')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
         Permission.ATTENDANCE_CHECK_OUT,
     )
@@ -147,11 +127,6 @@ export class AttendanceController {
     }
 
     @Get(':attendanceId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @AnyPermissions(
         Permission.ATTENDANCE_VIEW,
         Permission.ATTENDANCE_TEAM_VIEW,
@@ -176,11 +151,6 @@ export class AttendanceController {
     }
 
     @Patch(':attendanceId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.ATTENDANCE_UPDATE)
     update(
         @Param(
@@ -204,11 +174,6 @@ export class AttendanceController {
     }
 
     @Delete(':attendanceId')
-    @UseGuards(
-        JwtAuthGuard,
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(Permission.ATTENDANCE_DELETE)
     remove(
         @Param(

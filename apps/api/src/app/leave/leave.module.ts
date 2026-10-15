@@ -6,6 +6,7 @@ import { AuthModule } from '../../auth/auth.module';
 import { Leave } from './entities/leave.entity';
 import { LeaveBalance } from './entities/leave-balance.entity';
 import { Employee } from '../employees/entities/employee.entity';
+import { CompanyHoliday } from '../holidays/entities/company-holiday.entity';
 import { LeaveController } from './controllers/leave.controller';
 import { LeaveService } from './services/leave.service';
 import { PermissionsModule } from '../permissions/permissions.module';
@@ -19,6 +20,7 @@ import { LeaveBalanceService } from './services/leave-balance.service';
       Leave,
       LeaveBalance,
       Employee,
+      CompanyHoliday,
     ]),
 
     EmployeesModule,

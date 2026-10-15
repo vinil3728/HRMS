@@ -15,25 +15,22 @@ import { CreateEmployeeBankDetailsDto } from '../dto/create-employee-bank-detail
 import { UpdateEmployeeBankDetailsDto } from '../dto/update-employee-bank-details.dto';
 
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
-import { EmployeeAccessGuard } from '../../../auth/guards/employee-access.guard';
+import { ScopeAccessGuard } from '../../../auth/guards/scope-access.guard';
 
 import { Permissions } from '../../permissions/decorators/permissions.decorator';
 import { PermissionGuard } from '../../permissions/guards/permission.guard';
+import { Permission } from '../../permissions/enums/permission.enum';
 
 @Controller('employees/:employeeId/bank-details')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard, ScopeAccessGuard)
 export class EmployeeBankDetailsController {
     constructor(
         private readonly bankDetailsService: EmployeeBankDetailsService,
     ) {}
 
     @Post()
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
-        'EMPLOYEE_BANK_CREATE',
+        Permission.EMPLOYEE_BANK_CREATE,
     )
     create(
         @Param(
@@ -51,12 +48,8 @@ export class EmployeeBankDetailsController {
     }
 
     @Get()
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
-        'EMPLOYEE_BANK_VIEW',
+        Permission.EMPLOYEE_BANK_VIEW,
     )
     findOne(
         @Param(
@@ -71,12 +64,8 @@ export class EmployeeBankDetailsController {
     }
 
     @Patch()
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
     @Permissions(
-        'EMPLOYEE_BANK_UPDATE',
+        Permission.EMPLOYEE_BANK_UPDATE,
     )
     update(
         @Param(

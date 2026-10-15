@@ -21,7 +21,7 @@ import {
     AuthenticatedRequest,
     JwtAuthGuard,
 } from '../../../auth/guards/jwt-auth.guard';
-import { EmployeeAccessGuard } from '../../../auth/guards/employee-access.guard';
+import { ScopeAccessGuard } from '../../../auth/guards/scope-access.guard';
 import { CurrentUser } from '../../../auth/decorators/current-user.decorator';
 
 import {
@@ -32,14 +32,13 @@ import { Permission } from '../../permissions/enums/permission.enum';
 import { PermissionGuard } from '../../permissions/guards/permission.guard';
 
 @Controller('employees')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class EmployeeController {
     constructor(
         private readonly employeeService: EmployeeService,
     ) {}
 
     @Post()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.EMPLOYEE_CREATE)
     create(
         @Body() createEmployeeDto: CreateEmployeeDto,
@@ -50,7 +49,6 @@ export class EmployeeController {
     }
 
     @Get()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.EMPLOYEE_VIEWS)
     findAll(
         @Query() query: EmployeeQueryDto,
@@ -70,7 +68,6 @@ export class EmployeeController {
     }
 
     @Get('directory')
-    @UseGuards(PermissionGuard)
     @AnyPermissions(
         Permission.EMPLOYEE_DIRECTORY_VIEW,
         Permission.ATTENDANCE_ALL_VIEW,
@@ -81,14 +78,11 @@ export class EmployeeController {
         Permission.EMPLOYEE_VIEWS,
         Permission.EMPLOYEE_UPDATE,
         Permission.LEAVE_BALANCE_CREATE,
-        Permission.MANAGE_ALL_LEAVES,
-        Permission.MANAGE_TEAM_LEAVES,
-        Permission.APPROVE_ALL_LEAVES,
-        Permission.APPROVE_TEAM_LEAVES,
-        Permission.REJECT_ALL_LEAVES,
-        Permission.REJECT_TEAM_LEAVES,
-        Permission.ALL_LEAVE_BALANCE_VIEW,
-        Permission.TEAM_LEAVE_BALANCE_VIEW,
+        Permission.LEAVE_VIEW,
+        Permission.LEAVE_APPROVE,
+        Permission.LEAVE_REJECT,
+        Permission.LEAVE_BALANCE_VIEW,
+        Permission.LEAVE_BALANCE_ADJUST,
         Permission.TIMESHEET_APPROVE,
         Permission.TIMESHEET_REJECT,
         Permission.REIMBURSEMENT_APPROVE,
@@ -114,10 +108,7 @@ export class EmployeeController {
     }
 
     @Get(':id')
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
+    @UseGuards(ScopeAccessGuard)
     @Permissions(Permission.EMPLOYEE_VIEW)
     findOne(
         @Param(
@@ -130,10 +121,7 @@ export class EmployeeController {
     }
 
     @Patch(':id')
-    @UseGuards(
-        PermissionGuard,
-        EmployeeAccessGuard,
-    )
+    @UseGuards(ScopeAccessGuard)
     @Permissions(Permission.EMPLOYEE_UPDATE)
     update(
         @Param(
@@ -151,7 +139,6 @@ export class EmployeeController {
     }
 
     @Patch(':id/status')
-    @UseGuards(PermissionGuard)
     @Permissions(
         Permission.EMPLOYEE_STATUS_UPDATE,
     )

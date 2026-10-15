@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from '../../../core/services/api.service';
 import { API_CONFIG } from '../../../core/config/api.config';
 import {
+  AdjustLeaveBalanceDto,
   CreateLeaveBalanceDto,
   CreateLeaveDto,
   Leave,
@@ -108,6 +109,17 @@ export class LeaveService {
     dto: CreateLeaveBalanceDto
   ): Observable<LeaveBalance> {
     return this.api.post<LeaveBalance>(this.endpoints.balances(employeeId), dto);
+  }
+
+  adjustLeaveBalance(
+    employeeId: string,
+    balanceId: string,
+    dto: AdjustLeaveBalanceDto
+  ): Observable<LeaveBalance> {
+    return this.api.post<LeaveBalance>(
+      this.endpoints.adjustBalance(employeeId, balanceId),
+      dto
+    );
   }
 
   getLeaveSummary(employeeId: string, year: number): Observable<LeaveSummary> {

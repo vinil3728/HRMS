@@ -21,19 +21,17 @@ import { Permission } from '../permissions/enums/permission.enum';
 import { PermissionGuard } from '../permissions/guards/permission.guard';
 
 @Controller('branches')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class BranchesController {
   constructor(private readonly branchesService: BranchesService) {}
 
   @Post()
-  @UseGuards(PermissionGuard)
   @Permissions(Permission.BRANCH_CREATE)
   create(@Body() dto: CreateBranchDto) {
     return this.branchesService.create(dto);
   }
 
   @Get()
-  @UseGuards(PermissionGuard)
   @Permissions(Permission.BRANCH_VIEW)
   findAll(
     @Query('search') search?: string,
@@ -45,14 +43,12 @@ export class BranchesController {
   }
 
   @Get(':id')
-  @UseGuards(PermissionGuard)
   @Permissions(Permission.BRANCH_VIEW)
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.branchesService.findOne(id);
   }
 
   @Patch(':id')
-  @UseGuards(PermissionGuard)
   @Permissions(Permission.BRANCH_EDIT)
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -62,7 +58,6 @@ export class BranchesController {
   }
 
   @Patch(':id/status')
-  @UseGuards(PermissionGuard)
   @AnyPermissions(Permission.BRANCH_ACTIVATE, Permission.BRANCH_DEACTIVATE)
   toggleStatus(
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -72,7 +67,6 @@ export class BranchesController {
   }
 
   @Delete(':id')
-  @UseGuards(PermissionGuard)
   @Permissions(Permission.BRANCH_DELETE)
   remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.branchesService.remove(id);

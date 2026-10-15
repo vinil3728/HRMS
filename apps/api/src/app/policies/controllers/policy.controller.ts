@@ -27,14 +27,13 @@ import { Permission } from '../../permissions/enums/permission.enum';
 import { PermissionGuard } from '../../permissions/guards/permission.guard';
 
 @Controller('policies')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class PolicyController {
     constructor(
         private readonly policyService: PolicyService,
     ) {}
 
     @Post()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.POLICY_CREATE)
     create(
         @Body() dto: CreatePolicyDto,
@@ -43,7 +42,6 @@ export class PolicyController {
     }
 
     @Get()
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.POLICY_VIEW)
     findAll(
         @Query() query: PolicyQueryDto,
@@ -56,7 +54,6 @@ export class PolicyController {
     }
 
     @Get(':policyId')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.POLICY_VIEW)
     findOne(
         @Param('policyId')
@@ -70,7 +67,6 @@ export class PolicyController {
     }
 
     @Patch(':policyId')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.POLICY_UPDATE)
     update(
         @Param('policyId')
@@ -85,7 +81,6 @@ export class PolicyController {
     }
 
     @Delete(':policyId')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.POLICY_DELETE)
     remove(
         @Param('policyId')
@@ -97,7 +92,6 @@ export class PolicyController {
     }
 
     @Post(':policyId/publish')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.POLICY_PUBLISH)
     publish(
         @Param('policyId')
@@ -109,7 +103,6 @@ export class PolicyController {
     }
 
     @Post(':policyId/archive')
-    @UseGuards(PermissionGuard)
     @Permissions(Permission.POLICY_ARCHIVE)
     archive(
         @Param('policyId')

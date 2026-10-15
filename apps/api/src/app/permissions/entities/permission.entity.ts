@@ -71,6 +71,14 @@ export class PermissionEntity {
     })
     scopes!: string;
 
+    @Column({
+        name: 'allowed_scopes',
+        type: 'text',
+        array: true,
+        default: () => "ARRAY['SELF', 'TEAM', 'ORG']::text[]",
+    })
+    allowedScopes!: string[];
+
     @OneToMany(
         () => RolePermission,
         (rolePermission) => rolePermission.permission,

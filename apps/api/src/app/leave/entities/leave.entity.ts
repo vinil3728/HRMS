@@ -52,6 +52,21 @@ export class Leave {
     numberOfDays!: number;
 
     @Column({
+        name: 'is_half_day',
+        type: 'boolean',
+        default: false,
+    })
+    isHalfDay!: boolean;
+
+    @Column({
+        name: 'half_day_session',
+        type: 'varchar',
+        length: 20,
+        nullable: true,
+    })
+    halfDaySession!: string | null;
+
+    @Column({
         type: 'enum',
         enum: LeaveStatus,
         default: LeaveStatus.PENDING,

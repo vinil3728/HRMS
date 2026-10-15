@@ -31,7 +31,19 @@ export interface SystemPermission {
   module?: SystemModule | string;
   isActive: boolean;
   isDeleted?: boolean;
-  scopes?: string;
+  scopes?: string | string[];
+  allowedScopes?: string[];
+  assignedScopes?: string[];
+}
+
+export interface PermissionAssignmentItem {
+  permissionId: string;
+  scopes: string[];
+}
+
+export interface AssignPermissionsDto {
+  permissionIds?: string[];
+  permissions?: PermissionAssignmentItem[];
 }
 
 export interface CreatePermissionDto {
@@ -41,6 +53,7 @@ export interface CreatePermissionDto {
   module?: string;
   description?: string | null;
   scopes?: string;
+  allowedScopes?: string[];
 }
 
 export interface UpdatePermissionDto {
@@ -50,11 +63,13 @@ export interface UpdatePermissionDto {
   module?: string;
   description?: string | null;
   scopes?: string;
+  allowedScopes?: string[];
 }
 
 export interface RolePermission {
   id: string;
   permission: SystemPermission;
+  scopes?: string[];
 }
 
 export interface Role {
@@ -75,6 +90,7 @@ export interface CreateRoleDto {
   code: string;
   description?: string | null;
   permissionIds?: string[];
+  permissions?: PermissionAssignmentItem[];
 }
 
 export interface UpdateRoleDto {

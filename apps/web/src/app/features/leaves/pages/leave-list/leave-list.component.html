@@ -9,6 +9,19 @@
     </div>
 
     <div class="header-actions">
+       @if (canAdjustBalance()) {
+         <button
+           type="button"
+           class="btn btn-secondary"
+           (click)="openAdjustModal()"
+           [disabled]="!contextEmployeeId"
+           title="Credit, debit or adjust leave quotas for selected employee"
+         >
+           <app-icon name="edit" [size]="16" [strokeWidth]="2"></app-icon>
+           <span>Adjust Quota</span>
+         </button>
+       }
+
        <button
           *appHasPermission="Permission.LEAVE_BALANCE_CREATE"
           type="button"
@@ -204,6 +217,9 @@
             <table class="table">
               <thead>
                 <tr>
+                  @if (viewMode() === 'team') {
+                    <th>Employee</th>
+                  }
                   <th>Leave Category</th>
                   <th>Date Range</th>
                   <th>Duration</th>
@@ -218,6 +234,18 @@
               <tbody>
                 @for (item of filteredLeaves(); track item.id) {
                   <tr class="table-row">
+                    @if (viewMode() === 'team') {
+                      <td>
+                        <div class="emp-table-cell">
+                          <span class="emp-name-main">
+                            {{ item.employee ? (item.employee.firstName + ' ' + item.employee.lastName) : (contextEmployee ? (contextEmployee.firstName + ' ' + contextEmployee.lastName) : '—') }}
+                          </span>
+                          <span class="emp-code-sub">
+                            {{ item.employee?.employeeCode || contextEmployee?.employeeCode || '' }}
+                          </span>
+                        </div>
+                      </td>
+                    }
                     <td>
                       <span class="category-tag">{{ formatLeaveType(item.leaveType) }}</span>
                     </td>
@@ -229,7 +257,12 @@
                       </div>
                     </td>
                     <td>
-                      <span class="days-pill">{{ item.numberOfDays }} day(s)</span>
+                      <div class="duration-cell">
+                        <span class="days-pill">{{ item.numberOfDays }} day(s)</span>
+                        @if (item.isHalfDay) {
+                          <span class="half-day-pill">Half Day</span>
+                        }
+                      </div>
                     </td>
                     <td>
                       <app-badge [variant]="getStatusVariant(item.status)">
@@ -255,9 +288,8 @@
                         <div class="actions-group">
                           <!-- Self Leaves actions: edit & cancel only (based on permission) -->
                           @if (viewMode() === 'self') {
-                            @if (item.status === 'PENDING') {
+                            @if (item.status === 'PENDING' && canEditLeave()) {
                               <button
-                                *appHasPermission="Permission.LEAVE_EDIT"
                                 type="button"
                                 class="action-btn edit-btn"
                                 (click)="openEditModal(item)"
@@ -268,9 +300,8 @@
                               </button>
                             }
 
-                            @if ((item.status === 'PENDING' || item.status === 'APPROVED')) {
+                            @if ((item.status === 'PENDING' || item.status === 'APPROVED') && canCancelLeave()) {
                               <button
-                                *appHasPermission="Permission.LEAVE_CANCEL"
                                 type="button"
                                 class="action-btn cancel-btn"
                                 (click)="onCancelLeave(item)"
@@ -369,7 +400,38 @@
     [leave]="selectedLeave()"
     [employeeId]="contextEmployeeId"
     [employeeOptions]="employeeOptions()"
+    [balances]="balances()"
     (closeModal)="closeActionModal()"
     (actionCompleted)="onActionCompleted()"
   ></app-leave-action-modal>
+}
+
+<!-- ── Non-blocking Action Confirmation Dialog ──────────────────────── -->
+@if (isConfirmModalOpen()) {
+  <div class="modal-overlay confirm-dialog-overlay" role="dialog" aria-modal="true">
+    <button class="modal-backdrop" (click)="closeConfirmModal()" aria-label="Close dialog backdrop"></button>
+    <div class="modal-card confirm-modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">{{ confirmModalTitle() }}</h3>
+        <button class="close-btn" (click)="closeConfirmModal()" aria-label="Close">
+          <app-icon name="close" [size]="18"></app-icon>
+        </button>
+      </div>
+      <div class="modal-body confirm-modal-body">
+        <p class="confirm-message">{{ confirmModalMessage() }}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeConfirmModal()">
+          Cancel
+        </button>
+        <button
+          type="button"
+          [class]="confirmModalVariant() === 'danger' ? 'btn btn-danger' : 'btn btn-primary'"
+          (click)="executeConfirmAction()"
+        >
+          {{ confirmModalButtonText() }}
+        </button>
+      </div>
+    </div>
+  </div>
 }

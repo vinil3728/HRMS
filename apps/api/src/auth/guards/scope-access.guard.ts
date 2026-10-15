@@ -15,8 +15,26 @@ import { User } from '../entities/user.entity';
 
 import { AuthenticatedRequest } from './jwt-auth.guard';
 
+/**
+ * ScopeAccessGuard (Unified Dynamic Resource & Scope Access Guard)
+ *
+ * Dynamically validates that the authenticated caller has the necessary scope
+ * (SELF, TEAM, or ORG) on the requested route's permission(s) for the target employee:
+ *
+ * 1. Self Access (target employee is current user):
+ *    Requires 'SELF' or 'GLOBAL' scope in role_permissions.scopes.
+ *
+ * 2. Direct Report / Team Access (target reports to current user):
+ *    Requires 'TEAM', 'ORG', 'ORGANIZATION', or 'GLOBAL' scope in role_permissions.scopes.
+ *
+ * 3. Organization-Wide Access (target is any other employee in organization):
+ *    Requires 'ORG', 'ORGANIZATION', or 'GLOBAL' scope in role_permissions.scopes.
+ *
+ * Replaces and unifies both EmployeeAccessGuard and ManagerAccessGuard into a single,
+ * role-independent, database-driven guard.
+ */
 @Injectable()
-export class EmployeeAccessGuard implements CanActivate {
+export class ScopeAccessGuard implements CanActivate {
     constructor(
         private readonly reflector: Reflector,
 
@@ -35,7 +53,14 @@ export class EmployeeAccessGuard implements CanActivate {
             throw new ForbiddenException('User is not authenticated');
         }
 
-        const employeeId = request.params['employeeId'] ?? request.params['id'];
+        const rawEmployeeId =
+            request.params?.['employeeId'] ??
+            request.params?.['id'] ??
+            request.query?.['employeeId'] ??
+            (request.body as { employeeId?: string })?.employeeId;
+
+        const employeeId = typeof rawEmployeeId === 'string' ? rawEmployeeId : undefined;
+
         if (!employeeId) {
             throw new ForbiddenException('Employee ID is required');
         }
@@ -91,16 +116,18 @@ export class EmployeeAccessGuard implements CanActivate {
                 return true;
             }
             qb.andWhere(
-                "(permission.scopes LIKE '%SELF%' OR permission.scopes LIKE '%GLOBAL%')"
+                "('SELF' = ANY(rolePermission.scopes) OR 'GLOBAL' = ANY(rolePermission.scopes) OR permission.scopes LIKE '%SELF%' OR permission.scopes LIKE '%GLOBAL%')"
             );
         } else if (isDirectReport) {
-            // For direct report access, user must hold a permission with TEAM or ORGANIZATION scope
+            // For direct report access, user must hold a permission with TEAM or ORG scope
             qb.andWhere(
-                "(permission.scopes LIKE '%TEAM%' OR permission.scopes LIKE '%ORGANIZATION%')"
+                "('TEAM' = ANY(rolePermission.scopes) OR 'ORG' = ANY(rolePermission.scopes) OR 'ORGANIZATION' = ANY(rolePermission.scopes) OR 'GLOBAL' = ANY(rolePermission.scopes) OR permission.scopes LIKE '%TEAM%' OR permission.scopes LIKE '%ORGANIZATION%')"
             );
         } else {
-            // For third-party employee access, user must hold a permission with ORGANIZATION scope
-            qb.andWhere("permission.scopes LIKE '%ORGANIZATION%'");
+            // For third-party employee access, user must hold a permission with ORG scope
+            qb.andWhere(
+                "('ORG' = ANY(rolePermission.scopes) OR 'ORGANIZATION' = ANY(rolePermission.scopes) OR 'GLOBAL' = ANY(rolePermission.scopes) OR permission.scopes LIKE '%ORGANIZATION%')"
+            );
         }
 
         const matchingPermsCount = await qb.getCount();

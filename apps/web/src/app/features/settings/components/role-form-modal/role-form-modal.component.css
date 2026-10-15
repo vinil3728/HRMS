@@ -437,14 +437,20 @@
 
 .perm-checkbox-item {
   display: flex;
-  align-items: flex-start;
-  gap: 0.625rem;
+  flex-direction: column;
   padding: 0.5rem 0.625rem;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
-  cursor: pointer;
   background: #ffffff;
   transition: all 0.15s ease;
+}
+
+.perm-item-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  width: 100%;
+  cursor: pointer;
 }
 
 .perm-checkbox-item:hover {
@@ -455,6 +461,67 @@
 .perm-checkbox-item.selected {
   background: #eff6ff;
   border-color: #bfdbfe;
+}
+
+.perm-scopes-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed #bfdbfe;
+  width: 100%;
+}
+
+.scopes-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.04em;
+}
+
+.scopes-options {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.scope-checkbox-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.45rem;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.scope-checkbox-pill:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #f0f7ff;
+}
+
+.scope-checkbox-pill.selected {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.scope-input {
+  accent-color: #2563eb;
+  cursor: pointer;
+  width: 12px;
+  height: 12px;
+  margin: 0;
 }
 
 .perm-checkbox-item.disabled {

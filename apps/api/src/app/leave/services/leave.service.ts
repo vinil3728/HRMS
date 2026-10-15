@@ -25,6 +25,8 @@ import { LeaveType } from '../enums/leave-type.enum';
 import { EmployeeService } from '../../employees/services/employee.service';
 
 
+import { CompanyHoliday } from '../../holidays/entities/company-holiday.entity';
+
 @Injectable()
 export class LeaveService {
   constructor(
@@ -33,6 +35,9 @@ export class LeaveService {
 
     @InjectRepository(LeaveBalance)
     private readonly leaveBalanceRepository: Repository<LeaveBalance>,
+
+    @InjectRepository(CompanyHoliday)
+    private readonly companyHolidayRepository: Repository<CompanyHoliday>,
 
     private readonly dataSource: DataSource,
 
@@ -59,10 +64,12 @@ export class LeaveService {
       endDate,
     );
 
+    const isHalfDay = Boolean(dto.isHalfDay);
     const numberOfDays =
-      this.calculateDays(
+      await this.calculateDays(
         startDate,
         endDate,
+        isHalfDay,
       );
 
     await this.validateOverlap(
@@ -72,30 +79,38 @@ export class LeaveService {
     );
 
     if (dto.leaveType !== LeaveType.UNPAID) {
-      const balance =
-        await this.leaveBalanceRepository.findOne({
-          where: {
-            employee: {
-              id: employeeId,
+      const yearDays = await this.calculateDaysByYear(
+        startDate,
+        endDate,
+        isHalfDay,
+      );
+
+      for (const [year, days] of yearDays.entries()) {
+        const balance =
+          await this.leaveBalanceRepository.findOne({
+            where: {
+              employee: {
+                id: employeeId,
+              },
+              leaveType: dto.leaveType,
+              year,
             },
-            leaveType: dto.leaveType,
-            year: startDate.getFullYear(),
-          },
-        });
+          });
 
-      if (!balance) {
-        throw new BadRequestException(
-          `No ${dto.leaveType} leave balance configured for ${startDate.getFullYear()}`,
-        );
-      }
+        if (!balance) {
+          throw new BadRequestException(
+            `No ${dto.leaveType} leave balance configured for year ${year}`,
+          );
+        }
 
-      if (
-        Number(balance.availableDays) <
-        numberOfDays
-      ) {
-        throw new BadRequestException(
-          `Insufficient ${dto.leaveType} leave balance`,
-        );
+        if (
+          Number(balance.availableDays) <
+          days
+        ) {
+          throw new BadRequestException(
+            `Insufficient ${dto.leaveType} leave balance for year ${year} (Requested: ${days}, Available: ${balance.availableDays})`,
+          );
+        }
       }
     }
 
@@ -106,6 +121,8 @@ export class LeaveService {
         startDate,
         endDate,
         numberOfDays,
+        isHalfDay,
+        halfDaySession: dto.halfDaySession ?? null,
         status: LeaveStatus.PENDING,
         reason: dto.reason ?? null,
         rejectionReason: null,
@@ -265,45 +282,68 @@ export class LeaveService {
       leaveId,
     );
 
+    const isHalfDay =
+      dto.isHalfDay !== undefined
+        ? Boolean(dto.isHalfDay)
+        : leave.isHalfDay;
+
     const numberOfDays =
-      this.calculateDays(
+      await this.calculateDays(
         startDate,
         endDate,
+        isHalfDay,
       );
 
+    const targetLeaveType =
+      dto.leaveType || leave.leaveType;
+
     if (
-      leave.leaveType !== LeaveType.UNPAID
+      targetLeaveType !== LeaveType.UNPAID
     ) {
-      const balance =
-        await this.leaveBalanceRepository.findOne({
-          where: {
-            employee: {
-              id: employeeId,
+      const yearDays = await this.calculateDaysByYear(
+        startDate,
+        endDate,
+        isHalfDay,
+      );
+
+      for (const [year, days] of yearDays.entries()) {
+        const balance =
+          await this.leaveBalanceRepository.findOne({
+            where: {
+              employee: {
+                id: employeeId,
+              },
+              leaveType: targetLeaveType,
+              year,
             },
-            leaveType: leave.leaveType,
-            year: startDate.getFullYear(),
-          },
-        });
+          });
 
-      if (!balance) {
-        throw new BadRequestException(
-          `No ${leave.leaveType} leave balance configured`,
-        );
-      }
+        if (!balance) {
+          throw new BadRequestException(
+            `No ${targetLeaveType} leave balance configured for year ${year}`,
+          );
+        }
 
-      if (
-        Number(balance.availableDays) <
-        numberOfDays
-      ) {
-        throw new BadRequestException(
-          `Insufficient ${leave.leaveType} leave balance`,
-        );
+        if (
+          Number(balance.availableDays) <
+          days
+        ) {
+          throw new BadRequestException(
+            `Insufficient ${targetLeaveType} leave balance for year ${year} (Requested: ${days}, Available: ${balance.availableDays})`,
+          );
+        }
       }
     }
 
     leave.startDate = startDate;
     leave.endDate = endDate;
     leave.numberOfDays = numberOfDays;
+    leave.leaveType = targetLeaveType;
+    leave.isHalfDay = isHalfDay;
+
+    if (dto.halfDaySession !== undefined) {
+      leave.halfDaySession = dto.halfDaySession;
+    }
 
     if (dto.reason !== undefined) {
       leave.reason =
@@ -365,49 +405,54 @@ export class LeaveService {
             leave.leaveType !==
             LeaveType.UNPAID
           ) {
-            const balance =
-              await manager.findOne(
-                LeaveBalance,
-                {
-                  where: {
-                    employee: {
-                      id: employeeId,
+            const yearDays =
+              await this.calculateDaysByYear(
+                this.parseDate(leave.startDate),
+                this.parseDate(leave.endDate),
+                leave.isHalfDay,
+              );
+
+            for (const [year, days] of yearDays.entries()) {
+              const balance =
+                await manager.findOne(
+                  LeaveBalance,
+                  {
+                    where: {
+                      employee: {
+                        id: employeeId,
+                      },
+                      leaveType:
+                        leave.leaveType,
+                      year,
                     },
-                    leaveType:
-                      leave.leaveType,
-                    year:
-                      this.parseDate(leave.startDate).getFullYear(),
+                    lock: {
+                      mode: 'pessimistic_write',
+                    },
                   },
-                },
-              );
+                );
 
-            if (!balance) {
-              throw new BadRequestException(
-                `No ${leave.leaveType} leave balance configured`,
-              );
+              if (balance) {
+                const usedDays =
+                  Number(balance.usedDays) -
+                  days;
+
+                balance.usedDays =
+                  Math.max(0, usedDays);
+
+                balance.availableDays =
+                  Number(
+                    balance.totalDays,
+                  ) -
+                  Number(
+                    balance.usedDays,
+                  );
+
+                await manager.save(
+                  LeaveBalance,
+                  balance,
+                );
+              }
             }
-
-            const usedDays =
-              Number(balance.usedDays) -
-              Number(
-                leave.numberOfDays,
-              );
-
-            balance.usedDays =
-              Math.max(0, usedDays);
-
-            balance.availableDays =
-              Number(
-                balance.totalDays,
-              ) -
-              Number(
-                balance.usedDays,
-              );
-
-            await manager.save(
-              LeaveBalance,
-              balance,
-            );
           }
         }
 
@@ -519,61 +564,63 @@ export class LeaveService {
           leave.leaveType !==
           LeaveType.UNPAID
         ) {
-          const balance =
-            await manager.findOne(
-              LeaveBalance,
-              {
-                where: {
-                  employee: {
-                    id: employeeId,
+          const yearDays =
+            await this.calculateDaysByYear(
+              this.parseDate(leave.startDate),
+              this.parseDate(leave.endDate),
+              leave.isHalfDay,
+            );
+
+          for (const [year, days] of yearDays.entries()) {
+            const balance =
+              await manager.findOne(
+                LeaveBalance,
+                {
+                  where: {
+                    employee: {
+                      id: employeeId,
+                    },
+                    leaveType:
+                      leave.leaveType,
+                    year,
                   },
-                  leaveType:
-                    leave.leaveType,
-                  year:
-                    this.parseDate(leave.startDate).getFullYear(),
+                  lock: {
+                    mode: 'pessimistic_write',
+                  },
                 },
-              },
-            );
+              );
 
-          if (!balance) {
-            throw new BadRequestException(
-              `No ${leave.leaveType} leave balance configured`,
+            if (!balance) {
+              throw new BadRequestException(
+                `No ${leave.leaveType} leave balance configured for year ${year}`,
+              );
+            }
+
+            if (
+              Number(
+                balance.availableDays,
+              ) < days
+            ) {
+              throw new BadRequestException(
+                `Insufficient ${leave.leaveType} leave balance for year ${year} (Requested: ${days}, Available: ${balance.availableDays})`,
+              );
+            }
+
+            balance.usedDays =
+              Number(
+                balance.usedDays,
+              ) + days;
+
+            balance.availableDays =
+              Number(
+                balance.availableDays,
+              ) - days;
+
+            await manager.save(
+              LeaveBalance,
+              balance,
             );
           }
-
-          if (
-            Number(
-              balance.availableDays,
-            ) <
-            Number(
-              leave.numberOfDays,
-            )
-          ) {
-            throw new BadRequestException(
-              `Insufficient ${leave.leaveType} leave balance`,
-            );
-          }
-
-          balance.usedDays =
-            Number(
-              balance.usedDays,
-            ) +
-            Number(
-              leave.numberOfDays,
-            );
-
-          balance.availableDays =
-            Number(
-              balance.availableDays,
-            ) -
-            Number(
-              leave.numberOfDays,
-            );
-
-          await manager.save(
-            LeaveBalance,
-            balance,
-          );
         }
 
         leave.status =
@@ -729,24 +776,80 @@ export class LeaveService {
     }
   }
 
-  private calculateDays(
+  private async calculateDaysByYear(
     startDate: Date,
     endDate: Date,
-  ): number {
-    const millisecondsPerDay =
-      1000 * 60 * 60 * 24;
+    isHalfDay?: boolean,
+  ): Promise<Map<number, number>> {
+    const yearDays = new Map<number, number>();
 
-    const difference =
-      endDate.getTime() -
-      startDate.getTime();
+    if (isHalfDay) {
+      yearDays.set(startDate.getFullYear(), 0.5);
+      return yearDays;
+    }
 
-    return Number(
-      (
-        difference /
-          millisecondsPerDay +
-        1
-      ).toFixed(1),
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    const startStr = start.toISOString().substring(0, 10);
+    const endStr = end.toISOString().substring(0, 10);
+
+    const holidays = await this.companyHolidayRepository
+      .createQueryBuilder('holiday')
+      .where('holiday.is_active = true')
+      .andWhere('holiday.date >= :startStr AND holiday.date <= :endStr', {
+        startStr,
+        endStr,
+      })
+      .getMany();
+
+    const holidayDates = new Set(
+      holidays.map((h) => String(h.date).substring(0, 10)),
     );
+
+    const current = new Date(start);
+    while (current <= end) {
+      const dayOfWeek = current.getDay(); // 0 = Sunday, 6 = Saturday
+      const currentStr = current.toISOString().substring(0, 10);
+      const year = current.getFullYear();
+
+      // Skip weekends and approved company holidays
+      if (
+        dayOfWeek !== 0 &&
+        dayOfWeek !== 6 &&
+        !holidayDates.has(currentStr)
+      ) {
+        yearDays.set(year, (yearDays.get(year) || 0) + 1);
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    // Default to at least 1 day if range consists entirely of non-working days
+    if (yearDays.size === 0) {
+      yearDays.set(startDate.getFullYear(), 1);
+    }
+
+    return yearDays;
+  }
+
+  private async calculateDays(
+    startDate: Date,
+    endDate: Date,
+    isHalfDay?: boolean,
+  ): Promise<number> {
+    const yearDays = await this.calculateDaysByYear(
+      startDate,
+      endDate,
+      isHalfDay,
+    );
+
+    let total = 0;
+    for (const days of yearDays.values()) {
+      total += days;
+    }
+    return Number(total.toFixed(1));
   }
 
   private parseDate(
@@ -757,7 +860,12 @@ export class LeaveService {
     }
 
     const str = String(value).trim();
-    const date = str.includes('T') ? new Date(str) : new Date(`${str}T00:00:00`);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      const [y, m, d] = str.split('-').map(Number);
+      return new Date(Date.UTC(y, m - 1, d));
+    }
+
+    const date = str.includes('T') ? new Date(str) : new Date(`${str}T00:00:00Z`);
 
     if (
       Number.isNaN(
@@ -765,7 +873,7 @@ export class LeaveService {
       )
     ) {
       throw new BadRequestException(
-        'Invalid date',
+        'Invalid date format',
       );
     }
 

@@ -31,4 +31,17 @@ export class RbacService {
     const userPerms = this.permissions();
     return permissions.every((p) => userPerms.includes(p));
   }
+
+  hasScope(permission: Permission | string, scope: 'SELF' | 'TEAM' | 'ORG'): boolean {
+    if (!permission) return false;
+    const user = this.authService.currentUser();
+    const scopes = user?.permissionScopes?.[permission];
+    if (scopes && Array.isArray(scopes)) {
+      if (scopes.includes(scope)) return true;
+      if (scope === 'ORG' && (scopes.includes('ORGANIZATION') || scopes.includes('GLOBAL'))) return true;
+      if (scope === 'TEAM' && scopes.includes('TEAM')) return true;
+      if (scope === 'SELF' && scopes.includes('SELF')) return true;
+    }
+    return false;
+  }
 }

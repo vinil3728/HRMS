@@ -90,6 +90,29 @@ export enum Permission {
     USER_DEACTIVATE = 'USER_DEACTIVATE',
     USER_PASSWORD_RESET = 'USER_PASSWORD_RESET',
 
+    // Leave Management
+    LEAVE_VIEW =  'LEAVE_VIEW',
+    LEAVE_CREATE =  'LEAVE_CREATE',
+    LEAVE_EDIT =  'LEAVE_EDIT',
+    LEAVE_CANCEL =  'LEAVE_CANCEL',
+    LEAVE_SUMMARY_VIEW =  'LEAVE_SUMMARY_VIEW',
+    MANAGE_TEAM_LEAVES =  'MANAGE_TEAM_LEAVES',
+    MANAGE_TEAM_LEAVE_SUMMARY =  'MANAGE_TEAM_LEAVE_SUMMARY',
+    APPROVE_TEAM_LEAVES =  'APPROVE_TEAM_LEAVES',
+    REJECT_TEAM_LEAVES =  'REJECT_TEAM_LEAVES',
+    MANAGE_ALL_LEAVES =  'MANAGE_ALL_LEAVES',
+    MANAGE_ALL_LEAVE_SUMMARY =  'MANAGE_ALL_LEAVE_SUMMARY',
+    APPROVE_ALL_LEAVES =  'APPROVE_ALL_LEAVES',
+    REJECT_ALL_LEAVES = 'REJECT_ALL_LEAVES',
+
+    // Leave Balance Management
+    LEAVE_BALANCE_CREATE =  'LEAVE_BALANCE_CREATE',
+    LEAVE_BALANCE_VIEW =  'LEAVE_BALANCE_VIEW',
+    TEAM_LEAVE_BALANCE_VIEW =  'TEAM_LEAVE_BALANCE_VIEW',
+    ALL_LEAVE_BALANCE_VIEW =  'ALL_LEAVE_BALANCE_VIEW',
+    TEAM_LEAVE_BALANCE_ADJUST =  'TEAM_LEAVE_BALANCE_ADJUST',
+    ALL_LEAVE_BALANCE_ADJUST =  'ALL_LEAVE_BALANCE_ADJUST',
+
     // =========================================================
     // Attendance
     // =========================================================
@@ -119,25 +142,6 @@ export enum Permission {
     EMPLOYEE_DOCUMENT_DELETE = 'EMPLOYEE_DOCUMENT_DELETE',
     EMPLOYEE_DOCUMENT_UPLOAD = 'EMPLOYEE_DOCUMENT_UPLOAD',
     EMPLOYEE_DOCUMENT_DOWNLOAD = 'EMPLOYEE_DOCUMENT_DOWNLOAD',
-
-    // =========================================================
-    // Leave
-    // =========================================================
-
-    LEAVE_VIEW = 'LEAVE_VIEW',
-    LEAVE_CREATE = 'LEAVE_CREATE',
-    LEAVE_UPDATE = 'LEAVE_UPDATE',
-    LEAVE_DELETE = 'LEAVE_DELETE',
-    LEAVE_APPROVE = 'LEAVE_APPROVE',
-    LEAVE_REJECT = 'LEAVE_REJECT',
-    LEAVE_SUMMARY_VIEW = 'LEAVE_SUMMARY_VIEW',
-
-    // =========================================================
-    // Leave Balances
-    // =========================================================
-
-    LEAVE_BALANCE_VIEW = 'LEAVE_BALANCE_VIEW',
-    LEAVE_BALANCE_CREATE = 'LEAVE_BALANCE_CREATE',
 
     // =========================================================
     // Performance Cycles

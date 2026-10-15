@@ -33,4 +33,9 @@ export class UpdatePermissionDto {
     @IsString()
     @MaxLength(500)
     description?: string | null;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(50)
+    scopes?: string;
 }

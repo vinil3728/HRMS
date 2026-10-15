@@ -16,7 +16,7 @@ import { LeaveBalanceService } from '../services/leave-balance.service';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { EmployeeAccessGuard } from '../../../auth/guards/employee-access.guard';
 
-import { Permissions } from '../../permissions/decorators/permissions.decorator';
+import { Permissions, AnyPermissions } from '../../permissions/decorators/permissions.decorator';
 import { Permission } from '../../permissions/enums/permission.enum';
 import { PermissionGuard } from '../../permissions/guards/permission.guard';
 
@@ -56,8 +56,10 @@ export class LeaveBalanceController {
         PermissionGuard,
         EmployeeAccessGuard,
     )
-    @Permissions(
+    @AnyPermissions(
         Permission.LEAVE_BALANCE_VIEW,
+        Permission.TEAM_LEAVE_BALANCE_VIEW,
+        Permission.ALL_LEAVE_BALANCE_VIEW,
     )
     findAll(
         @Param(
@@ -85,8 +87,10 @@ export class LeaveBalanceController {
         PermissionGuard,
         EmployeeAccessGuard,
     )
-    @Permissions(
+    @AnyPermissions(
         Permission.LEAVE_BALANCE_VIEW,
+        Permission.TEAM_LEAVE_BALANCE_VIEW,
+        Permission.ALL_LEAVE_BALANCE_VIEW,
     )
     findOne(
         @Param(

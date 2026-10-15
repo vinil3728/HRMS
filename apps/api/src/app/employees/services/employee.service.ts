@@ -24,27 +24,7 @@ import { UpdateEmployeeStatusDto } from '../dto/update-employee-status.dto';
 import { DepartmentService } from '../../departments/department.service';
 import { DesignationService } from '../../designations/designation.service';
 import { RolePermission } from '../../permissions/entities/role-permission.entity';
-import { Permission } from '../../permissions/enums/permission.enum';
 import { User } from '../../../auth/entities/user.entity';
-
-const ORG_DIRECTORY_PERMISSIONS: string[] = [
-    Permission.EMPLOYEE_DIRECTORY_VIEW,
-    Permission.ATTENDANCE_ALL_VIEW,
-    Permission.ATTENDANCE_CREATE,
-    Permission.ATTENDANCE_UPDATE,
-    Permission.ATTENDANCE_DELETE,
-    Permission.EMPLOYEE_VIEWS,
-    Permission.EMPLOYEE_UPDATE,
-    Permission.LEAVE_BALANCE_CREATE,
-    Permission.PAYROLL_SUMMARY_VIEW,
-    Permission.PAYROLL_PROCESS,
-    Permission.PAYROLL_CREATE,
-    Permission.PAYROLL_UPDATE,
-    Permission.PAYROLL_APPROVE,
-    Permission.REIMBURSEMENT_PAY,
-    Permission.PERFORMANCE_CYCLE_CREATE,
-    Permission.PERFORMANCE_SUMMARY_FINALIZE,
-];
 
 @Injectable()
 export class EmployeeService {
@@ -321,9 +301,8 @@ export class EmployeeService {
                 .where('user.id = :userId', { userId })
                 .andWhere('role.is_active = true')
                 .andWhere('permission.is_active = true')
-                .andWhere('permission.code IN (:...codes)', {
-                    codes: ORG_DIRECTORY_PERMISSIONS,
-                })
+                .andWhere('permission.is_deleted = false')
+                .andWhere("permission.scopes LIKE '%ORGANIZATION%'")
                 .getCount();
 
         const hasOrgWideAccess = orgPermsCount > 0;

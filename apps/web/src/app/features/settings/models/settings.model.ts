@@ -31,6 +31,7 @@ export interface SystemPermission {
   module?: SystemModule | string;
   isActive: boolean;
   isDeleted?: boolean;
+  scopes?: string;
 }
 
 export interface CreatePermissionDto {
@@ -39,6 +40,7 @@ export interface CreatePermissionDto {
   moduleId?: string;
   module?: string;
   description?: string | null;
+  scopes?: string;
 }
 
 export interface UpdatePermissionDto {
@@ -47,6 +49,7 @@ export interface UpdatePermissionDto {
   moduleId?: string;
   module?: string;
   description?: string | null;
+  scopes?: string;
 }
 
 export interface RolePermission {

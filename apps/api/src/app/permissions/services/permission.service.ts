@@ -121,6 +121,7 @@ export class PermissionService {
             moduleId: moduleEntity.id,
             module: moduleEntity,
             description: dto.description?.trim() ?? null,
+            scopes: dto.scopes?.trim() || 'SELF',
             isActive: true,
         });
 
@@ -218,6 +219,10 @@ export class PermissionService {
 
         if (dto.description !== undefined) {
             permission.description = dto.description?.trim() ?? null;
+        }
+
+        if (dto.scopes !== undefined) {
+            permission.scopes = dto.scopes?.trim() || 'SELF';
         }
 
         await this.permissionRepository.save(permission);

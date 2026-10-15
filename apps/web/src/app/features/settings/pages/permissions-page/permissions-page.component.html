@@ -115,6 +115,7 @@
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
+              <th>SCOPE</th>
               <th>DESCRIPTION</th>
               <th class="cursor-pointer" (click)="setSort('isActive')">
                 <span class="th-content">
@@ -136,7 +137,7 @@
           <tbody>
             @if (loadingPermissions()) {
               <tr>
-                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                <td [attr.colspan]="hasAnyActionPermissions() ? 8 : 7"
                   class="empty-table-cell">
                   <div class="table-loading">
                     <span class="spinner"></span>
@@ -146,7 +147,7 @@
               </tr>
             } @else if (displayedPermissions().length === 0) {
               <tr>
-                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                <td [attr.colspan]="hasAnyActionPermissions() ? 8 : 7"
                   class="empty-table-cell">
                   <div class="table-empty">
                     <div class="empty-icon-wrap">
@@ -187,6 +188,13 @@
                   <!-- MODULE -->
                   <td>
                     <span class="cell-text">{{ getModuleName(perm) }}</span>
+                  </td>
+
+                  <!-- SCOPE -->
+                  <td>
+                    <span class="cell-text" style="font-family: monospace; font-size: 11px;">
+                      {{ perm.scopes || 'SELF' }}
+                    </span>
                   </td>
 
                   <!-- DESCRIPTION -->

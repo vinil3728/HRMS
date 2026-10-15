@@ -63,6 +63,14 @@ export class PermissionEntity {
     })
     isDeleted!: boolean;
 
+    @Column({
+        name: 'scopes',
+        type: 'varchar',
+        length: 50,
+        default: 'SELF',
+    })
+    scopes!: string;
+
     @OneToMany(
         () => RolePermission,
         (rolePermission) => rolePermission.permission,

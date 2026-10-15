@@ -69,71 +69,62 @@ export class LeaveListComponent implements OnInit {
   // ── Current user identity ──────────────────────────────────────────────────
   readonly myEmployeeId = computed(() => this.authService.currentUser()?.employeeId ?? '');
 
-
-  // ── Permission gates (no hardcoded role names) ─────────────────────────────
-  /**
-   * User can manage / inspect other employees' leaves.
-   * LEAVE_APPROVE or LEAVE_REJECT → Manager/HR/Admin
-   * EMPLOYEE_UPDATE → HR/Admin (proxy for org-wide access)
-   */
-  readonly canManageAllLeaves = computed(() =>
+  readonly canManageAllEmployees = computed(() =>
     this.rbacService.hasAnyPermission([
-      Permission.LEAVE_APPROVE,
-      Permission.LEAVE_REJECT,
+      Permission.MANAGE_ALL_LEAVES,
+      Permission.ALL_LEAVE_BALANCE_VIEW,
+      Permission.ALL_LEAVE_BALANCE_ADJUST,
+      Permission.APPROVE_ALL_LEAVES,
+      Permission.REJECT_ALL_LEAVES,
+      Permission.EMPLOYEE_VIEWS,
       Permission.EMPLOYEE_UPDATE,
     ])
   );
 
-  /** Can allocate / create leave balances */
-  readonly canAllocateBalance = computed(() =>
-    this.rbacService.hasPermission(Permission.LEAVE_BALANCE_CREATE)
+  readonly canViewTeamOrOrgLeavesTab = computed(
+    () => this.rbacService.hasAnyPermission([
+      Permission.MANAGE_ALL_LEAVES,
+      Permission.MANAGE_TEAM_LEAVES,
+      Permission.ALL_LEAVE_BALANCE_VIEW,
+      Permission.TEAM_LEAVE_BALANCE_VIEW,
+    ])
   );
 
-  readonly canCreateLeave = computed(() =>
-    this.rbacService.hasPermission(Permission.LEAVE_CREATE)
+  readonly teamOrOrgTabLabel = computed(() =>
+    this.rbacService.hasPermission(Permission.MANAGE_ALL_LEAVES)
+      ? 'Employees Leaves'
+      : 'Team Leaves'
   );
 
-  readonly canEditLeave = computed(() =>
-    this.rbacService.hasPermission(Permission.LEAVE_UPDATE)
-  );
-
-  readonly canCancelLeave = computed(() =>
-    this.rbacService.hasPermission(Permission.LEAVE_DELETE)
-  );
-
-  readonly canApproveLeave = computed(() =>
-    this.rbacService.hasPermission(Permission.LEAVE_APPROVE)
-  );
-
-  readonly canRejectLeave = computed(() =>
-    this.rbacService.hasPermission(Permission.LEAVE_REJECT)
-  );
-
-  readonly hasRowActions = computed<boolean>(() => {
+  readonly hasAnyActionPermissions = computed<boolean>(() => {
     if (this.viewMode() === 'self') {
-      return this.canEditLeave() || this.canCancelLeave();
+      return this.rbacService.hasAnyPermission([
+        Permission.LEAVE_EDIT,
+        Permission.LEAVE_CANCEL
+      ]);
     }
     if (this.viewMode() === 'team') {
-      return (
-        !this.isViewingSelf() &&
-        (this.canApproveLeave() || this.canRejectLeave())
-      );
+      return this.canApproveLeaves() || this.canRejectLeaves();
     }
     return false;
   });
 
-  // ── Tab visibility ─────────────────────────────────────────────────────────
-  /** Tabs are always available: at minimum My Leaves + Holiday Calendar */
-  readonly showViewTabs = computed(() => true);
-
-  readonly canViewTeamTab = computed(
-    () => !!this.myEmployeeId() && this.canManageAllLeaves()
+  readonly canViewLeaveSummary = computed(
+    () => this.rbacService.hasPermission(Permission.LEAVE_SUMMARY_VIEW)
   );
 
-  readonly teamTabLabel = computed(() =>
-    this.rbacService.hasPermission(Permission.EMPLOYEE_UPDATE)
-      ? 'Employees Leaves'
-      : 'Team Leaves'
+  readonly canApproveLeaves = computed(() =>
+    this.rbacService.hasAnyPermission([
+      Permission.APPROVE_TEAM_LEAVES,
+      Permission.APPROVE_ALL_LEAVES
+    ])
+  );
+
+  readonly canRejectLeaves = computed(() =>
+    this.rbacService.hasAnyPermission([
+      Permission.REJECT_TEAM_LEAVES,
+      Permission.REJECT_ALL_LEAVES
+    ])
   );
 
   // ── Employee data ──────────────────────────────────────────────────────────
@@ -141,18 +132,12 @@ export class LeaveListComponent implements OnInit {
   readonly allEmployees = signal<Employee[]>([]);
 
   /**
-   * In team mode: filtered to direct reports only (unless org-wide access).
+   * In team/employees mode: all other employees if canManageAllEmployees, otherwise direct reports.
    */
   readonly manageableEmployees = computed<Employee[]>(() => {
     const all = this.allEmployees();
     const myId = this.myEmployeeId();
-    if (
-      this.rbacService.hasAnyPermission([
-        Permission.EMPLOYEE_VIEWS,
-        Permission.EMPLOYEE_UPDATE,
-        Permission.LEAVE_BALANCE_CREATE,
-      ])
-    ) {
+    if (this.canManageAllEmployees()) {
       return myId ? all.filter((e) => e.id !== myId) : all;
     }
     return all.filter((e) => e.manager?.id === myId && e.id !== myId);
@@ -188,16 +173,10 @@ export class LeaveListComponent implements OnInit {
     return this.balances().slice(0, 3); // show at most 3 for compact strip
   });
 
-  /** True when the team-mode switcher is pointing at ourselves */
-  readonly isViewingSelf = computed(
-    () =>
-      this.viewMode() === 'self' ||
-      this.activeTargetEmployeeId() === this.myEmployeeId()
-  );
-
   // ── Leave data ─────────────────────────────────────────────────────────────
   readonly leaves = signal<Leave[]>([]);
   readonly balances = signal<LeaveBalance[]>([]);
+  readonly myBalances = signal<LeaveBalance[]>([]);
   readonly myLeavesCount = signal<number>(0);
   readonly teamLeavesCount = signal<number>(0);
   readonly summaryPendingCount = signal<number>(0);
@@ -260,7 +239,7 @@ export class LeaveListComponent implements OnInit {
     if (this.viewMode() === 'self') {
       return 'No leave requests found';
     }
-    return this.teamTabLabel() === 'Employees Leaves'
+    return this.teamOrOrgTabLabel() === 'Employees Leaves'
       ? 'No employee leave records found'
       : 'No team leave requests found';
   });
@@ -276,7 +255,7 @@ export class LeaveListComponent implements OnInit {
     if (emp) {
       return `No time-off applications found for ${emp.firstName} ${emp.lastName}.`;
     }
-    return this.teamTabLabel() === 'Employees Leaves'
+    return this.teamOrOrgTabLabel() === 'Employees Leaves'
       ? 'No time-off applications found for this employee.'
       : 'No time-off applications submitted by team members.';
   });
@@ -312,17 +291,6 @@ export class LeaveListComponent implements OnInit {
     return this.activeTargetEmployeeId();
   });
 
-  // ── Computed: whether approve/reject actions should be shown on a row ──────
-  canApproveReject(): boolean {
-    return (
-      !this.isViewingSelf() &&
-      this.rbacService.hasAnyPermission([
-        Permission.LEAVE_APPROVE,
-        Permission.LEAVE_REJECT,
-      ])
-    );
-  }
-
   // ── Lifecycle ──────────────────────────────────────────────────────────────
   ngOnInit(): void {
     this.initializeData();
@@ -353,7 +321,7 @@ export class LeaveListComponent implements OnInit {
       this.loadBalances(myId);
     }
 
-    if (this.canManageAllLeaves()) {
+    if (this.canViewTeamOrOrgLeavesTab()) {
       this.employeeService.getDirectory().subscribe({
         next: (directory) => {
           this.allEmployees.set(directory);
@@ -419,8 +387,18 @@ export class LeaveListComponent implements OnInit {
   loadBalances(employeeId: string): void {
     if (!employeeId) return;
     this.leaveService.getLeaveBalances(employeeId, this.currentYear).subscribe({
-      next: (data) => this.balances.set(data),
-      error: () => this.balances.set([]),
+      next: (data) => {
+        this.balances.set(data);
+        if (employeeId === this.myEmployeeId()) {
+          this.myBalances.set(data);
+        }
+      },
+      error: () => {
+        this.balances.set([]);
+        if (employeeId === this.myEmployeeId()) {
+          this.myBalances.set([]);
+        }
+      },
     });
     this.loadSummary(employeeId);
   }
@@ -464,10 +442,19 @@ export class LeaveListComponent implements OnInit {
         this.loadBalances(myId);
       }
     } else if (mode === 'team') {
-      const teamId = this.activeTargetEmployeeId();
+      let teamId = this.activeTargetEmployeeId();
+      if (!teamId) {
+        const manageable = this.manageableEmployees();
+        teamId = manageable[0]?.id || '';
+        this.activeTargetEmployeeId.set(teamId);
+      }
       if (teamId) {
         this.loadLeaves(teamId);
         this.loadBalances(teamId);
+      } else {
+        this.leaves.set([]);
+        this.balances.set([]);
+        this.loading.set(false);
       }
     }
   }
@@ -566,6 +553,10 @@ export class LeaveListComponent implements OnInit {
 
   onLeaveSaved(): void {
     this.closeApplyModal();
+    const myId = this.myEmployeeId();
+    if (myId) {
+      this.loadBalances(myId);
+    }
     this.refreshCurrentView();
   }
 
@@ -592,7 +583,6 @@ export class LeaveListComponent implements OnInit {
   }
 
   onApprove(leave: Leave): void {
-    if (this.isViewingSelf()) return; // Guard: never approve own leave
     const confirmApprove = window.confirm(
       `Approve ${leave.numberOfDays} day(s) of ${this.formatLeaveType(leave.leaveType)} for this employee?`
     );
@@ -630,34 +620,34 @@ export class LeaveListComponent implements OnInit {
   // ── Formatters ─────────────────────────────────────────────────────────────
   formatLeaveType(type: LeaveType): string {
     switch (type) {
-      case LeaveType.CASUAL:    return 'Casual Leave';
-      case LeaveType.SICK:      return 'Sick Leave';
-      case LeaveType.EARNED:    return 'Earned Leave';
-      case LeaveType.UNPAID:    return 'Unpaid Leave';
+      case LeaveType.CASUAL: return 'Casual Leave';
+      case LeaveType.SICK: return 'Sick Leave';
+      case LeaveType.EARNED: return 'Earned Leave';
+      case LeaveType.UNPAID: return 'Unpaid Leave';
       case LeaveType.MATERNITY: return 'Maternity';
       case LeaveType.PATERNITY: return 'Paternity';
-      case LeaveType.OTHER:     return 'Other';
-      default:                  return type;
+      case LeaveType.OTHER: return 'Other';
+      default: return type;
     }
   }
 
   getStatusVariant(status: LeaveStatus): BadgeVariant {
     switch (status) {
-      case LeaveStatus.APPROVED:   return 'success';
-      case LeaveStatus.PENDING:    return 'warning';
-      case LeaveStatus.REJECTED:   return 'error';
-      case LeaveStatus.CANCELLED:  return 'gray';
-      default:                     return 'gray';
+      case LeaveStatus.APPROVED: return 'success';
+      case LeaveStatus.PENDING: return 'warning';
+      case LeaveStatus.REJECTED: return 'error';
+      case LeaveStatus.CANCELLED: return 'gray';
+      default: return 'gray';
     }
   }
 
   formatStatusLabel(status: LeaveStatus): string {
     switch (status) {
-      case LeaveStatus.PENDING:   return 'Pending Approval';
-      case LeaveStatus.APPROVED:  return 'Approved';
-      case LeaveStatus.REJECTED:  return 'Rejected';
+      case LeaveStatus.PENDING: return 'Pending Approval';
+      case LeaveStatus.APPROVED: return 'Approved';
+      case LeaveStatus.REJECTED: return 'Rejected';
       case LeaveStatus.CANCELLED: return 'Cancelled';
-      default:                    return status;
+      default: return status;
     }
   }
 

@@ -52,6 +52,7 @@ export class PermissionFormModalComponent {
     code: ['', [Validators.required, Validators.minLength(2)]],
     name: ['', [Validators.required, Validators.minLength(2)]],
     moduleId: ['', [Validators.required]],
+    scopes: ['SELF', [Validators.required]],
     description: [''],
   });
 
@@ -72,6 +73,7 @@ export class PermissionFormModalComponent {
             code: p.code,
             name: p.name,
             moduleId: modId,
+            scopes: p.scopes || 'SELF',
             description: p.description || '',
           });
           this.errorMessage.set('');
@@ -80,6 +82,7 @@ export class PermissionFormModalComponent {
             code: '',
             name: '',
             moduleId: '',
+            scopes: 'SELF',
             description: '',
           });
           this.errorMessage.set('');
@@ -144,6 +147,7 @@ export class PermissionFormModalComponent {
         moduleId: val.moduleId,
         module: selectedMod?.name,
         description: val.description?.trim() || null,
+        scopes: val.scopes || 'SELF',
       };
 
       this.settingsService.updatePermission(current.id, dto).subscribe({
@@ -165,6 +169,7 @@ export class PermissionFormModalComponent {
         moduleId: val.moduleId,
         module: selectedMod?.name,
         description: val.description?.trim() || null,
+        scopes: val.scopes || 'SELF',
       };
 
       this.settingsService.createPermission(dto).subscribe({

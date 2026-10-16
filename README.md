@@ -320,7 +320,7 @@ Security is layered throughout both client and server tiers:
 1. **Angular Client Guarding**:
    - `authGuard`: Enforces active JWT session.
    - `rbacGuard`: Inspects route configuration against user permissions.
-   - `*appHasPermission`: Conditionally renders DOM elements and action buttons based on user credentials.
+   - Reactive Permission Signals & Directives: Computes granular permissions (`computed(() => rbacService.hasPermission(...))`) and allowed resource scopes (`computed(() => rbacService.hasScope(...))`) powering modern `@if` control flow blocks, alongside `*appHasPermission` directives.
 2. **NestJS API Guarding**:
    - `JwtAuthGuard`: Validates Bearer token authenticity and expiry.
    - `PermissionGuard`: Verifies that the authenticated user possesses the specific `Permission` assigned via `@Permissions(...)`.

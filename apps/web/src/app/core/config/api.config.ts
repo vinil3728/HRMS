@@ -50,6 +50,7 @@ export const API_CONFIG = {
         `/employees/${employeeId}/attendance/${attendanceId}`,
     },
     leaves: {
+      overview: '/leaves',
       base: (employeeId: string) => `/employees/${employeeId}/leaves`,
       summary: (employeeId: string) => `/employees/${employeeId}/leaves/summary`,
       detail: (employeeId: string, leaveId: string) =>
@@ -59,6 +60,7 @@ export const API_CONFIG = {
       reject: (employeeId: string, leaveId: string) =>
         `/employees/${employeeId}/leaves/${leaveId}/reject`,
       balances: (employeeId: string) => `/employees/${employeeId}/leave-balances`,
+      batchBalances: (employeeId: string) => `/employees/${employeeId}/leave-balances/batch`,
       adjustBalance: (employeeId: string, balanceId: string) =>
         `/employees/${employeeId}/leave-balances/${balanceId}/adjust`,
     },
@@ -152,6 +154,7 @@ export const API_CONFIG = {
         `/payroll/salary-structures/employee/${employeeId}`,
     },
     timesheets: {
+      overview: '/timesheets',
       base: (employeeId: string) => `/employees/${employeeId}/timesheets`,
       summary: (employeeId: string) => `/employees/${employeeId}/timesheets/summary`,
       detail: (employeeId: string, timesheetId: string) =>

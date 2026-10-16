@@ -11,8 +11,11 @@ import { LeaveController } from './controllers/leave.controller';
 import { LeaveService } from './services/leave.service';
 import { PermissionsModule } from '../permissions/permissions.module';
 
+import { LeaveOverviewController } from './controllers/leave-overview.controller';
 import { LeaveBalanceController } from './controllers/leave-balance.controller';
 import { LeaveBalanceService } from './services/leave-balance.service';
+import { RolePermission } from '../permissions/entities/role-permission.entity';
+import { User } from '../../auth/entities/user.entity';
 
 @Module({
   imports: [
@@ -21,6 +24,8 @@ import { LeaveBalanceService } from './services/leave-balance.service';
       LeaveBalance,
       Employee,
       CompanyHoliday,
+      RolePermission,
+      User,
     ]),
 
     EmployeesModule,
@@ -30,6 +35,7 @@ import { LeaveBalanceService } from './services/leave-balance.service';
 
   controllers: [
     LeaveController,
+    LeaveOverviewController,
     LeaveBalanceController,
   ],
 

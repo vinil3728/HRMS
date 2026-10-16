@@ -15,6 +15,7 @@ export interface Timesheet {
   rejectionReason: string | null;
   submittedAt: string | null;
   reviewedAt: string | null;
+  employeeId?: string;
   employee?: {
     id: string;
     employeeCode?: string;
@@ -77,4 +78,21 @@ export interface TimesheetListResponse {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+export interface ScopedTimesheetQueryParams extends TimesheetQueryParams {
+  employeeId?: string;
+  scope?: 'SELF' | 'TEAM' | 'ORG';
+}
+
+export interface ScopedTimesheetListResponse extends TimesheetListResponse {
+  summary?: {
+    totalHours: number;
+    draftHours: number;
+    submittedHours: number;
+    approvedHours: number;
+    rejectedHours: number;
+    totalCount: number;
+    pendingCount: number;
+  };
 }

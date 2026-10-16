@@ -243,3 +243,5 @@ export enum Permission {
     LOAN_CONFIGURE_REPAYMENT = 'LOAN_CONFIGURE_REPAYMENT',
     LOAN_MANAGE_PAYMENT = 'LOAN_MANAGE_PAYMENT',
 }
+
+export * from './permission-scope.enum';

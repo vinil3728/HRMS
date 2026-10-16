@@ -19,7 +19,7 @@ import { IconComponent } from '../../../../shared/ui/icon/icon.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/select/select.component';
 import {
   AdjustLeaveBalanceDto,
-  CreateLeaveBalanceDto,
+  BatchCreateLeaveBalanceDto,
   Leave,
   LeaveBalance,
   LeaveType,
@@ -49,35 +49,41 @@ export class LeaveActionModalComponent {
 
   readonly submitting = signal<boolean>(false);
   readonly errorMessage = signal<string>('');
+  readonly loadingBalances = signal<boolean>(false);
 
-  readonly leaveTypeOptions: SelectOption[] = [
-    { value: 'CASUAL', label: 'Casual Leave (CL)' },
-    { value: 'SICK', label: 'Sick Leave (SL)' },
-    { value: 'EARNED', label: 'Earned Leave (EL)' },
-    { value: 'MATERNITY', label: 'Maternity Leave' },
-    { value: 'PATERNITY', label: 'Paternity Leave' },
-    { value: 'OTHER', label: 'Other Leave' },
-  ];
+  // Dynamic balances loaded for selected employee in adjust mode
+  readonly dynamicAdjustBalances = signal<LeaveBalance[]>([]);
 
-  readonly balanceOptions = computed<SelectOption[]>(() =>
-    this.balances().map((b) => ({
+  readonly adjustBalanceOptions = computed<SelectOption[]>(() => {
+    const activeList =
+      this.dynamicAdjustBalances().length > 0
+        ? this.dynamicAdjustBalances()
+        : this.balances();
+
+    return activeList.map((b) => ({
       value: b.id,
       label: `${b.leaveType} (${b.year}) — Available: ${b.availableDays} / ${b.totalDays} days`,
-    }))
-  );
+    }));
+  });
 
   readonly rejectForm: FormGroup = this.fb.group({
     rejectionReason: ['', [Validators.required, Validators.minLength(5)]],
   });
 
-  readonly balanceForm: FormGroup = this.fb.group({
+  // Batch allocation form: assigns all leave categories for a single user in one go!
+  readonly batchBalanceForm: FormGroup = this.fb.group({
     employeeId: ['', [Validators.required]],
-    leaveType: [LeaveType.CASUAL, [Validators.required]],
     year: [new Date().getFullYear(), [Validators.required]],
-    totalDays: [12, [Validators.required, Validators.min(0.5)]],
+    casualDays: [12, [Validators.required, Validators.min(0)]],
+    sickDays: [10, [Validators.required, Validators.min(0)]],
+    earnedDays: [15, [Validators.required, Validators.min(0)]],
+    maternityDays: [0, [Validators.required, Validators.min(0)]],
+    paternityDays: [0, [Validators.required, Validators.min(0)]],
+    otherDays: [5, [Validators.required, Validators.min(0)]],
   });
 
   readonly adjustForm: FormGroup = this.fb.group({
+    employeeId: ['', [Validators.required]],
     balanceId: ['', [Validators.required]],
     adjustmentDays: [1, [Validators.required]],
     reason: ['', [Validators.required, Validators.minLength(5)]],
@@ -88,24 +94,61 @@ export class LeaveActionModalComponent {
       if (this.isOpen()) {
         this.errorMessage.set('');
         this.rejectForm.reset({ rejectionReason: '' });
+
         const defaultEmp =
           this.employeeId() ||
           (this.employeeOptions()[0]?.value as string) ||
           '';
-        this.balanceForm.reset({
+
+        this.batchBalanceForm.reset({
           employeeId: defaultEmp,
-          leaveType: LeaveType.CASUAL,
           year: new Date().getFullYear(),
-          totalDays: 12,
+          casualDays: 12,
+          sickDays: 10,
+          earnedDays: 15,
+          maternityDays: 0,
+          paternityDays: 0,
+          otherDays: 5,
         });
 
-        const defaultBalance = this.balances()[0]?.id || '';
         this.adjustForm.reset({
-          balanceId: defaultBalance,
+          employeeId: defaultEmp,
+          balanceId: '',
           adjustmentDays: 1,
           reason: '',
         });
+
+        if (defaultEmp) {
+          this.loadEmployeeBalancesForAdjust(defaultEmp);
+        }
       }
+    });
+  }
+
+  onAdjustEmployeeChange(selectedEmpId: string): void {
+    this.adjustForm.patchValue({ employeeId: selectedEmpId, balanceId: '' });
+    if (selectedEmpId) {
+      this.loadEmployeeBalancesForAdjust(selectedEmpId);
+    } else {
+      this.dynamicAdjustBalances.set([]);
+    }
+  }
+
+  loadEmployeeBalancesForAdjust(empId: string): void {
+    this.loadingBalances.set(true);
+    const year = Number(this.adjustForm.value.year) || new Date().getFullYear();
+    this.leaveService.getLeaveBalances(empId, year).subscribe({
+      next: (bals) => {
+        this.dynamicAdjustBalances.set(bals);
+        if (bals.length > 0) {
+          this.adjustForm.patchValue({ balanceId: bals[0].id });
+        }
+        this.loadingBalances.set(false);
+      },
+      error: () => {
+        this.dynamicAdjustBalances.set([]);
+        this.loadingBalances.set(false);
+      },
     });
   }
 
@@ -151,29 +194,35 @@ export class LeaveActionModalComponent {
     });
   }
 
-  onBalanceSubmit(): void {
-    const empId = this.balanceForm.value.employeeId || this.employeeId();
+  onBatchBalanceSubmit(): void {
+    if (this.batchBalanceForm.invalid || this.submitting()) {
+      this.batchBalanceForm.markAllAsTouched();
+      return;
+    }
+
+    const val = this.batchBalanceForm.value;
+    const empId = val.employeeId;
     if (!empId) {
       this.errorMessage.set('Employee is required for quota allocation');
       return;
     }
 
-    if (this.balanceForm.invalid || this.submitting()) {
-      this.balanceForm.markAllAsTouched();
-      return;
-    }
-
-    const val = this.balanceForm.value;
     this.submitting.set(true);
     this.errorMessage.set('');
 
-    const dto: CreateLeaveBalanceDto = {
-      leaveType: val.leaveType,
+    const dto: BatchCreateLeaveBalanceDto = {
       year: Number(val.year),
-      totalDays: Number(val.totalDays),
+      balances: [
+        { leaveType: LeaveType.CASUAL, totalDays: Number(val.casualDays) },
+        { leaveType: LeaveType.SICK, totalDays: Number(val.sickDays) },
+        { leaveType: LeaveType.EARNED, totalDays: Number(val.earnedDays) },
+        { leaveType: LeaveType.MATERNITY, totalDays: Number(val.maternityDays) },
+        { leaveType: LeaveType.PATERNITY, totalDays: Number(val.paternityDays) },
+        { leaveType: LeaveType.OTHER, totalDays: Number(val.otherDays) },
+      ],
     };
 
-    this.leaveService.createLeaveBalance(empId, dto).subscribe({
+    this.leaveService.createBatchLeaveBalances(empId, dto).subscribe({
       next: () => {
         this.submitting.set(false);
         this.actionCompleted.emit();
@@ -181,7 +230,7 @@ export class LeaveActionModalComponent {
       error: (err) => {
         this.submitting.set(false);
         this.errorMessage.set(
-          err.error?.message || 'Failed to allocate leave balance'
+          err.error?.message || 'Failed to allocate leave balances'
         );
       },
     });
@@ -193,10 +242,13 @@ export class LeaveActionModalComponent {
       return;
     }
 
-    const empId = this.employeeId();
-    if (!empId) return;
-
     const val = this.adjustForm.value;
+    const empId = val.employeeId;
+    if (!empId) {
+      this.errorMessage.set('Employee is required to adjust balance');
+      return;
+    }
+
     this.submitting.set(true);
     this.errorMessage.set('');
 

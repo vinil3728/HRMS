@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -13,17 +14,21 @@ import {
 
 import { Leave } from '../entities/leave.entity';
 import { LeaveBalance } from '../entities/leave-balance.entity';
+import { RolePermission } from '../../permissions/entities/role-permission.entity';
+import { User } from '../../../auth/entities/user.entity';
 
 import { CreateLeaveDto } from '../dto/create-leave.dto';
 import { UpdateLeaveDto } from '../dto/update-leave.dto';
 import { LeaveQueryDto } from '../dto/leave-query.dto';
+import { ScopedLeaveQueryDto } from '../dto/scoped-leave-query.dto';
 import { LeaveResponseDto } from '../dto/leave-response.dto';
 import { LeaveSummaryResponseDto } from '../dto/leave-summary-response.dto';
 
 import { LeaveStatus } from '../enums/leave-status.enum';
 import { LeaveType } from '../enums/leave-type.enum';
+import { PermissionScope } from '../../permissions/enums/permission-scope.enum';
+import { Permission } from '../../permissions/enums/permission.enum';
 import { EmployeeService } from '../../employees/services/employee.service';
-
 
 import { CompanyHoliday } from '../../holidays/entities/company-holiday.entity';
 
@@ -38,6 +43,9 @@ export class LeaveService {
 
     @InjectRepository(CompanyHoliday)
     private readonly companyHolidayRepository: Repository<CompanyHoliday>,
+
+    @InjectRepository(RolePermission)
+    private readonly rolePermissionRepository: Repository<RolePermission>,
 
     private readonly dataSource: DataSource,
 
@@ -214,6 +222,153 @@ export class LeaveService {
       totalPages: Math.ceil(
         total / limit,
       ),
+    };
+  }
+
+  async getUserPermissionScopes(userId: string, permissionCode: string): Promise<string[]> {
+    const rolePerms = await this.rolePermissionRepository
+      .createQueryBuilder('rp')
+      .innerJoin('rp.permission', 'permission')
+      .innerJoin('rp.role', 'role')
+      .innerJoin(User, 'user', 'user.role_id = role.id')
+      .where('user.id = :userId', { userId })
+      .andWhere('role.is_active = true')
+      .andWhere('permission.is_active = true')
+      .andWhere('permission.is_deleted = false')
+      .andWhere('permission.code = :code', { code: permissionCode })
+      .getMany();
+
+    const scopes = new Set<string>();
+    for (const rp of rolePerms) {
+      if (rp.scopes && Array.isArray(rp.scopes)) {
+        for (const s of rp.scopes) scopes.add(s);
+      }
+    }
+    return Array.from(scopes);
+  }
+
+  async findAllScoped(
+    currentUser: { userId: string; employeeId?: string; role: string },
+    query: ScopedLeaveQueryDto,
+  ): Promise<{
+    data: Leave[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    summary: {
+      total: number;
+      pending: number;
+      approved: number;
+      rejected: number;
+      cancelled: number;
+    };
+  }> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 15;
+    const skip = (page - 1) * limit;
+
+    const scopes = await this.getUserPermissionScopes(currentUser.userId, Permission.LEAVE_VIEW);
+    const hasOrgAccess =
+      scopes.includes(PermissionScope.ORG) ||
+      scopes.includes('ORGANIZATION') ||
+      scopes.includes('GLOBAL') ||
+      currentUser.role === 'ADMIN' ||
+      currentUser.role === 'HR';
+    const hasTeamAccess = hasOrgAccess || scopes.includes(PermissionScope.TEAM);
+    const hasSelfAccess = hasTeamAccess || scopes.includes(PermissionScope.SELF);
+
+    if (!hasSelfAccess) {
+      throw new ForbiddenException('You do not have permission to view leave records');
+    }
+
+    const qb = this.leaveRepository
+      .createQueryBuilder('leave')
+      .leftJoinAndSelect('leave.employee', 'employee')
+      .leftJoinAndSelect('employee.department', 'department')
+      .leftJoinAndSelect('employee.designation', 'designation')
+      .leftJoinAndSelect('employee.manager', 'manager');
+
+    // Effective scope resolution
+    const requestedScope = query.scope;
+    if (requestedScope === PermissionScope.SELF || (!hasOrgAccess && !hasTeamAccess)) {
+      if (!currentUser.employeeId) {
+        qb.andWhere('1 = 0');
+      } else {
+        qb.andWhere('employee.id = :selfEmpId', { selfEmpId: currentUser.employeeId });
+      }
+    } else if (requestedScope === PermissionScope.TEAM || (!hasOrgAccess && hasTeamAccess)) {
+      if (!currentUser.employeeId) {
+        qb.andWhere('1 = 0');
+      } else if (query.employeeId) {
+        qb.andWhere('employee.id = :targetEmpId AND (manager.id = :myEmpId OR employee.id = :myEmpId)', {
+          targetEmpId: query.employeeId,
+          myEmpId: currentUser.employeeId,
+        });
+      } else {
+        qb.andWhere('(manager.id = :myEmpId OR employee.id = :myEmpId)', {
+          myEmpId: currentUser.employeeId,
+        });
+      }
+    } else {
+      // ORG scope
+      if (query.employeeId) {
+        qb.andWhere('employee.id = :targetEmpId', { targetEmpId: query.employeeId });
+      }
+    }
+
+    if (query.status) {
+      qb.andWhere('leave.status = :status', { status: query.status });
+    }
+
+    if (query.leaveType) {
+      qb.andWhere('leave.leave_type = :leaveType', { leaveType: query.leaveType });
+    }
+
+    if (query.fromDate) {
+      qb.andWhere('leave.end_date >= :fromDate', { fromDate: query.fromDate });
+    }
+
+    if (query.toDate) {
+      qb.andWhere('leave.start_date <= :toDate', { toDate: query.toDate });
+    }
+
+    // Calculate status summary before pagination
+    const summaryQb = qb.clone()
+      .select('leave.status', 'status')
+      .addSelect('COUNT(leave.id)', 'count')
+      .groupBy('leave.status');
+
+    const rawSummary = await summaryQb.getRawMany();
+    const summary = {
+      total: 0,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      cancelled: 0,
+    };
+    for (const row of rawSummary) {
+      const cnt = Number(row.count) || 0;
+      summary.total += cnt;
+      if (row.status === LeaveStatus.PENDING) summary.pending = cnt;
+      if (row.status === LeaveStatus.APPROVED) summary.approved = cnt;
+      if (row.status === LeaveStatus.REJECTED) summary.rejected = cnt;
+      if (row.status === LeaveStatus.CANCELLED) summary.cancelled = cnt;
+    }
+
+    qb.orderBy('leave.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit) || 1,
+      summary,
     };
   }
 

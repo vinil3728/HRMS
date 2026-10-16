@@ -1,14 +1,14 @@
 @if (isOpen()) {
   <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="leave-action-title">
     <button class="modal-backdrop" (click)="onCancel()" aria-label="Close modal backdrop"></button>
-    <div class="modal-card">
+    <div class="modal-card" [class.modal-lg]="actionType() === 'ALLOCATE_BALANCE'">
       <div class="modal-header">
         <div>
           <h3 id="leave-action-title" class="modal-title">
             @if (actionType() === 'REJECT') {
               Reject Leave Request
             } @else if (actionType() === 'ALLOCATE_BALANCE') {
-              Allocate Leave Balance
+              Allocate Leave Balances
             } @else {
               Adjust Leave Balance
             }
@@ -17,9 +17,9 @@
             @if (actionType() === 'REJECT') {
               Provide a justification reason for rejecting this leave application.
             } @else if (actionType() === 'ALLOCATE_BALANCE') {
-              Assign annual leave quota to this employee.
+              Configure and assign annual leave quotas across all categories for this employee in one go.
             } @else {
-              Credit or debit days from this employee's leave quota (e.g. +2 for compensatory off, -1 for deduction).
+              Select an employee and adjust days from their leave quota (e.g. +2 for compensatory off, -1 for deduction).
             }
           </p>
         </div>
@@ -67,49 +67,100 @@
           </div>
         </form>
       } @else if (actionType() === 'ALLOCATE_BALANCE') {
-        <form [formGroup]="balanceForm" (ngSubmit)="onBalanceSubmit()" class="modal-body">
-          @if (employeeOptions().length > 0) {
+        <!-- BATCH ALLOCATE_BALANCE form (Allocates all categories in one go) -->
+        <form [formGroup]="batchBalanceForm" (ngSubmit)="onBatchBalanceSubmit()" class="modal-body">
+          <div class="form-row">
             <div class="form-group">
               <span class="form-label">Employee <span class="required">*</span></span>
               <app-select
                 formControlName="employeeId"
                 [options]="employeeOptions()"
                 [fullWidth]="true"
+                placeholder="Select Employee"
               ></app-select>
             </div>
-          }
 
-          <div class="form-group">
-            <span class="form-label">Leave Category <span class="required">*</span></span>
-            <app-select
-              formControlName="leaveType"
-              [options]="leaveTypeOptions"
-              [fullWidth]="true"
-            ></app-select>
-          </div>
-
-          <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="allocYear">Calendar Year <span class="required">*</span></label>
+              <label class="form-label" for="batchAllocYear">Calendar Year <span class="required">*</span></label>
               <input
-                id="allocYear"
+                id="batchAllocYear"
                 type="number"
                 class="form-control"
                 formControlName="year"
               />
             </div>
+          </div>
 
-            <div class="form-group">
-              <label class="form-label" for="allocDays">Total Quota Days <span class="required">*</span></label>
-              <input
-                id="allocDays"
-                type="number"
-                step="0.5"
-                min="0.5"
-                class="form-control"
-                formControlName="totalDays"
-                placeholder="e.g. 12"
-              />
+          <div class="quota-section">
+            <span class="quota-section-title">Leave Categories & Quota Days</span>
+            <p class="quota-section-hint">Set the annual allowance for each category. Unused or zeroed categories will remain at 0.</p>
+
+            <div class="quota-grid">
+              <div class="quota-card">
+                <div class="quota-info">
+                  <span class="quota-name">Casual Leave (CL)</span>
+                  <span class="quota-desc">Standard casual absence</span>
+                </div>
+                <div class="quota-input-wrap">
+                  <input type="number" step="0.5" min="0" class="form-control quota-input" formControlName="casualDays" />
+                  <span class="quota-unit">days</span>
+                </div>
+              </div>
+
+              <div class="quota-card">
+                <div class="quota-info">
+                  <span class="quota-name">Sick Leave (SL)</span>
+                  <span class="quota-desc">Medical and health absence</span>
+                </div>
+                <div class="quota-input-wrap">
+                  <input type="number" step="0.5" min="0" class="form-control quota-input" formControlName="sickDays" />
+                  <span class="quota-unit">days</span>
+                </div>
+              </div>
+
+              <div class="quota-card">
+                <div class="quota-info">
+                  <span class="quota-name">Earned Leave (EL)</span>
+                  <span class="quota-desc">Annual privileged leave</span>
+                </div>
+                <div class="quota-input-wrap">
+                  <input type="number" step="0.5" min="0" class="form-control quota-input" formControlName="earnedDays" />
+                  <span class="quota-unit">days</span>
+                </div>
+              </div>
+
+              <div class="quota-card">
+                <div class="quota-info">
+                  <span class="quota-name">Other Leave</span>
+                  <span class="quota-desc">Bereavement or special leave</span>
+                </div>
+                <div class="quota-input-wrap">
+                  <input type="number" step="0.5" min="0" class="form-control quota-input" formControlName="otherDays" />
+                  <span class="quota-unit">days</span>
+                </div>
+              </div>
+
+              <div class="quota-card">
+                <div class="quota-info">
+                  <span class="quota-name">Maternity Leave</span>
+                  <span class="quota-desc">Parental maternity support</span>
+                </div>
+                <div class="quota-input-wrap">
+                  <input type="number" step="1" min="0" class="form-control quota-input" formControlName="maternityDays" />
+                  <span class="quota-unit">days</span>
+                </div>
+              </div>
+
+              <div class="quota-card">
+                <div class="quota-info">
+                  <span class="quota-name">Paternity Leave</span>
+                  <span class="quota-desc">Parental paternity support</span>
+                </div>
+                <div class="quota-input-wrap">
+                  <input type="number" step="1" min="0" class="form-control quota-input" formControlName="paternityDays" />
+                  <span class="quota-unit">days</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -117,29 +168,43 @@
             <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="submitting()">
               Cancel
             </button>
-            <button type="submit" class="btn btn-primary" [disabled]="submitting() || balanceForm.invalid">
+            <button type="submit" class="btn btn-primary" [disabled]="submitting() || batchBalanceForm.invalid">
               @if (submitting()) {
                 <span class="spinner" aria-hidden="true"></span>
-                <span>Saving...</span>
+                <span>Saving Quotas...</span>
               } @else {
-                <span>Assign Balance</span>
+                <span>Allocate All Balances</span>
               }
             </button>
           </div>
         </form>
       } @else {
-        <!-- ADJUST_BALANCE form -->
+        <!-- ADJUST_BALANCE form (with Employee selection!) -->
         <form [formGroup]="adjustForm" (ngSubmit)="onAdjustSubmit()" class="modal-body">
           <div class="form-group">
+            <span class="form-label">Employee <span class="required">*</span></span>
+            <app-select
+              [options]="employeeOptions()"
+              [value]="adjustForm.get('employeeId')?.value"
+              [fullWidth]="true"
+              placeholder="Select Employee to Adjust"
+              (valueChange)="onAdjustEmployeeChange($event)"
+            ></app-select>
+          </div>
+
+          <div class="form-group">
             <span class="form-label">Select Leave Balance to Adjust <span class="required">*</span></span>
-            @if (balanceOptions().length > 0) {
+            @if (loadingBalances()) {
+              <div class="loading-inline">Loading leave balances...</div>
+            } @else if (adjustBalanceOptions().length > 0) {
               <app-select
                 formControlName="balanceId"
-                [options]="balanceOptions()"
+                [options]="adjustBalanceOptions()"
                 [fullWidth]="true"
+                placeholder="Select Balance"
               ></app-select>
             } @else {
-              <div class="alert-info">No leave balance records configured for this employee yet. Please allocate a balance first.</div>
+              <div class="alert-info">No leave balance records configured for this employee yet. Please allocate balances first.</div>
             }
           </div>
 
@@ -180,7 +245,7 @@
             <button
               type="submit"
               class="btn btn-primary"
-              [disabled]="submitting() || adjustForm.invalid || balanceOptions().length === 0"
+              [disabled]="submitting() || adjustForm.invalid || adjustBalanceOptions().length === 0"
             >
               @if (submitting()) {
                 <span class="spinner" aria-hidden="true"></span>

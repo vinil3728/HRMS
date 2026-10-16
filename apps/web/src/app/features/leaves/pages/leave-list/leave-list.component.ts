@@ -10,6 +10,7 @@ import {
 import { AuthService } from '../../../../core/services/auth.service';
 import { RbacService } from '../../../../core/services/rbac.service';
 import { Permission } from '../../../../core/models/permission.model';
+import { PermissionScope } from '../../../../core/models/permission-scope.model';
 import { BadgeComponent, BadgeVariant } from '../../../../shared/ui/badge/badge.component';
 import { IconComponent } from '../../../../shared/ui/icon/icon.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/select/select.component';
@@ -58,6 +59,7 @@ export class LeaveListComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   readonly Permission = Permission;
+  readonly PermissionScope = PermissionScope;
   readonly currentYear = new Date().getFullYear();
   readonly todayDateStr = new Date().toISOString().substring(0, 10);
 
@@ -68,20 +70,20 @@ export class LeaveListComponent implements OnInit {
   readonly myEmployeeId = computed(() => this.authService.currentUser()?.employeeId ?? '');
 
   readonly hasOrgLeaveAccess = computed(() =>
-    this.rbacService.hasScope(Permission.LEAVE_VIEW, 'ORG') ||
-    this.rbacService.hasScope(Permission.LEAVE_APPROVE, 'ORG') ||
-    this.rbacService.hasScope(Permission.LEAVE_BALANCE_VIEW, 'ORG') ||
-    this.rbacService.hasScope(Permission.LEAVE_BALANCE_ADJUST, 'ORG') ||
+    this.rbacService.hasScope(Permission.LEAVE_VIEW, PermissionScope.ORG) ||
+    this.rbacService.hasScope(Permission.LEAVE_APPROVE, PermissionScope.ORG) ||
+    this.rbacService.hasScope(Permission.LEAVE_BALANCE_VIEW, PermissionScope.ORG) ||
+    this.rbacService.hasScope(Permission.LEAVE_BALANCE_ADJUST, PermissionScope.ORG) ||
     this.rbacService.hasAnyPermission([
       Permission.EMPLOYEE_VIEWS,
     ])
   );
 
   readonly hasTeamLeaveAccess = computed(() =>
-    this.rbacService.hasScope(Permission.LEAVE_VIEW, 'TEAM') ||
-    this.rbacService.hasScope(Permission.LEAVE_APPROVE, 'TEAM') ||
-    this.rbacService.hasScope(Permission.LEAVE_BALANCE_VIEW, 'TEAM') ||
-    this.rbacService.hasScope(Permission.LEAVE_BALANCE_ADJUST, 'TEAM')
+    this.rbacService.hasScope(Permission.LEAVE_VIEW, PermissionScope.TEAM) ||
+    this.rbacService.hasScope(Permission.LEAVE_APPROVE, PermissionScope.TEAM) ||
+    this.rbacService.hasScope(Permission.LEAVE_BALANCE_VIEW, PermissionScope.TEAM) ||
+    this.rbacService.hasScope(Permission.LEAVE_BALANCE_ADJUST, PermissionScope.TEAM)
   );
 
   readonly canManageAllEmployees = computed(() =>
@@ -155,14 +157,14 @@ export class LeaveListComponent implements OnInit {
   );
 
   readonly canApproveLeaves = computed(() =>
-    this.rbacService.hasScope(Permission.LEAVE_APPROVE, 'TEAM') ||
-    this.rbacService.hasScope(Permission.LEAVE_APPROVE, 'ORG') ||
+    this.rbacService.hasScope(Permission.LEAVE_APPROVE, PermissionScope.TEAM) ||
+    this.rbacService.hasScope(Permission.LEAVE_APPROVE, PermissionScope.ORG) ||
     this.rbacService.hasPermission(Permission.LEAVE_APPROVE)
   );
 
   readonly canRejectLeaves = computed(() =>
-    this.rbacService.hasScope(Permission.LEAVE_REJECT, 'TEAM') ||
-    this.rbacService.hasScope(Permission.LEAVE_REJECT, 'ORG') ||
+    this.rbacService.hasScope(Permission.LEAVE_REJECT, PermissionScope.TEAM) ||
+    this.rbacService.hasScope(Permission.LEAVE_REJECT, PermissionScope.ORG) ||
     this.rbacService.hasPermission(Permission.LEAVE_REJECT)
   );
 
@@ -182,6 +184,14 @@ export class LeaveListComponent implements OnInit {
     return all.filter((e) => e.manager?.id === myId && e.id !== myId);
   });
 
+  readonly employeeFilterOptions = computed<SelectOption[]>(() => [
+    { value: 'ALL', label: 'All Employees' },
+    ...this.manageableEmployees().map((emp) => ({
+      value: emp.id,
+      label: `${emp.firstName} ${emp.lastName} (${emp.employeeCode})`,
+    })),
+  ]);
+
   readonly employeeOptions = computed<SelectOption[]>(() =>
     this.manageableEmployees().map((emp) => ({
       value: emp.id,
@@ -189,8 +199,12 @@ export class LeaveListComponent implements OnInit {
     }))
   );
 
-  /** The currently inspected employee id (team tab switcher) */
+  /** Filter selection in Team / Employees Leaves mode: 'ALL' or specific employeeId */
+  readonly teamEmployeeFilter = signal<string>('ALL');
+
+  /** The currently inspected employee id */
   readonly activeTargetEmployeeId = signal<string>('');
+
 
   /** The employee record being viewed in team mode */
   readonly activeTargetEmployee = computed(() => {
@@ -330,6 +344,14 @@ export class LeaveListComponent implements OnInit {
     return this.activeTargetEmployeeId();
   });
 
+  readonly teamSummary = signal<{
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    cancelled: number;
+  }>({ total: 0, pending: 0, approved: 0, rejected: 0, cancelled: 0 });
+
   // ── Lifecycle ──────────────────────────────────────────────────────────────
   ngOnInit(): void {
     this.initializeData();
@@ -356,7 +378,7 @@ export class LeaveListComponent implements OnInit {
 
     if (myId && this.canViewSelfLeavesTab()) {
       this.viewMode.set('self');
-      this.loadLeaves(myId);
+      this.loadLeaves();
       this.loadBalances(myId);
     }
 
@@ -364,18 +386,9 @@ export class LeaveListComponent implements OnInit {
       this.employeeService.getDirectory().subscribe({
         next: (directory) => {
           this.allEmployees.set(directory);
-          const manageable = this.manageableEmployees();
-          const defaultTeamId = manageable[0]?.id || '';
-          this.activeTargetEmployeeId.set(defaultTeamId);
-
           if (!myId || !this.canViewSelfLeavesTab()) {
             this.viewMode.set('team');
-            if (defaultTeamId) {
-              this.loadLeaves(defaultTeamId);
-              this.loadBalances(defaultTeamId);
-            } else {
-              this.loading.set(false);
-            }
+            this.loadLeaves();
           }
         },
         error: () => {
@@ -390,37 +403,78 @@ export class LeaveListComponent implements OnInit {
   }
 
   // ── Data loading ───────────────────────────────────────────────────────────
-  loadLeaves(employeeId: string): void {
-    if (!employeeId) return;
+  loadLeaves(): void {
     this.loading.set(true);
-    const params = {
-      page: this.currentPage(),
-      limit: 15,
-      status:
-        this.statusFilter() !== 'ALL'
-          ? (this.statusFilter() as LeaveStatus)
-          : undefined,
-      leaveType:
-        this.typeFilter() !== 'ALL'
-          ? (this.typeFilter() as LeaveType)
-          : undefined,
-      fromDate: this.fromDate() || undefined,
-      toDate: this.toDate() || undefined,
-    };
-    this.leaveService.getLeaves(employeeId, params).subscribe({
-      next: (res) => {
-        this.leaves.set(res.data);
-        this.totalRecords.set(res.total);
-        this.totalPages.set(res.totalPages || 1);
-        if (this.viewMode() === 'self' || employeeId === this.myEmployeeId()) {
-          this.myLeavesCount.set(res.total);
-        } else if (this.viewMode() === 'team') {
-          this.teamLeavesCount.set(res.total);
-        }
+    const status =
+      this.statusFilter() !== 'ALL'
+        ? (this.statusFilter() as LeaveStatus)
+        : undefined;
+    const leaveType =
+      this.typeFilter() !== 'ALL'
+        ? (this.typeFilter() as LeaveType)
+        : undefined;
+    const fromDate = this.fromDate() || undefined;
+    const toDate = this.toDate() || undefined;
+
+    if (this.viewMode() === 'self') {
+      const myId = this.myEmployeeId();
+      if (!myId) {
         this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+        return;
+      }
+      this.leaveService
+        .getLeaves(myId, {
+          page: this.currentPage(),
+          limit: 15,
+          status,
+          leaveType,
+          fromDate,
+          toDate,
+        })
+        .subscribe({
+          next: (res) => {
+            this.leaves.set(res.data);
+            this.totalRecords.set(res.total);
+            this.totalPages.set(res.totalPages || 1);
+            this.myLeavesCount.set(res.total);
+            this.loading.set(false);
+          },
+          error: () => this.loading.set(false),
+        });
+    } else if (this.viewMode() === 'team') {
+      const scope = this.hasOrgLeaveAccess()
+        ? PermissionScope.ORG
+        : PermissionScope.TEAM;
+      const employeeId =
+        this.teamEmployeeFilter() !== 'ALL'
+          ? this.teamEmployeeFilter()
+          : undefined;
+
+      this.leaveService
+        .getAllLeaves({
+          scope,
+          employeeId,
+          page: this.currentPage(),
+          limit: 15,
+          status,
+          leaveType,
+          fromDate,
+          toDate,
+        })
+        .subscribe({
+          next: (res) => {
+            this.leaves.set(res.data);
+            this.totalRecords.set(res.total);
+            this.totalPages.set(res.totalPages || 1);
+            this.teamLeavesCount.set(res.total);
+            if (res.summary) {
+              this.teamSummary.set(res.summary);
+            }
+            this.loading.set(false);
+          },
+          error: () => this.loading.set(false),
+        });
+    }
   }
 
   loadBalances(employeeId: string): void {
@@ -460,10 +514,10 @@ export class LeaveListComponent implements OnInit {
   }
 
   private refreshCurrentView(): void {
-    const id = this.activeLoadId();
-    if (id) {
-      this.loadLeaves(id);
-      this.loadBalances(id);
+    this.loadLeaves();
+    const myId = this.myEmployeeId();
+    if (myId) {
+      this.loadBalances(myId);
     }
   }
 
@@ -477,69 +531,54 @@ export class LeaveListComponent implements OnInit {
     if (mode === 'self') {
       const myId = this.myEmployeeId();
       if (myId) {
-        this.loadLeaves(myId);
+        this.loadLeaves();
         this.loadBalances(myId);
       }
     } else if (mode === 'team') {
-      let teamId = this.activeTargetEmployeeId();
-      if (!teamId) {
-        const manageable = this.manageableEmployees();
-        teamId = manageable[0]?.id || '';
-        this.activeTargetEmployeeId.set(teamId);
-      }
-      if (teamId) {
-        this.loadLeaves(teamId);
-        this.loadBalances(teamId);
-      } else {
-        this.leaves.set([]);
-        this.balances.set([]);
-        this.loading.set(false);
-      }
+      this.loadLeaves();
     }
   }
 
-  onEmployeeChange(newId: string): void {
-    this.activeTargetEmployeeId.set(newId);
+  onEmployeeFilterChange(value: string): void {
+    this.teamEmployeeFilter.set(value);
     this.currentPage.set(1);
-    this.loadLeaves(newId);
-    this.loadBalances(newId);
+    this.loadLeaves();
+  }
+
+  onEmployeeChange(newId: string): void {
+    this.onEmployeeFilterChange(newId);
   }
 
   // ── Filters ────────────────────────────────────────────────────────────────
   onStatusFilterChange(value: string): void {
     this.statusFilter.set(value);
     this.currentPage.set(1);
-    const id = this.activeLoadId();
-    if (id) this.loadLeaves(id);
+    this.loadLeaves();
   }
 
   onTypeFilterChange(value: string): void {
     this.typeFilter.set(value);
     this.currentPage.set(1);
-    const id = this.activeLoadId();
-    if (id) this.loadLeaves(id);
+    this.loadLeaves();
   }
 
   onDateRangeChange(range: DateRangeValue): void {
     this.fromDate.set(range.fromDate || '');
     this.toDate.set(range.toDate || '');
     this.currentPage.set(1);
-    const id = this.activeLoadId();
-    if (id) this.loadLeaves(id);
+    this.loadLeaves();
   }
 
   onFromDateChange(event: Event): void {
     this.fromDate.set((event.target as HTMLInputElement).value);
     this.currentPage.set(1);
-    const id = this.activeLoadId();
-    if (id) this.loadLeaves(id);
+    this.loadLeaves();
   }
 
   onToDateChange(event: Event): void {
     this.toDate.set((event.target as HTMLInputElement).value);
     this.currentPage.set(1);
-    const id = this.activeLoadId();
-    if (id) this.loadLeaves(id);
+    this.loadLeaves();
   }
 
   private resetFiltersInternal(): void {
@@ -553,8 +592,7 @@ export class LeaveListComponent implements OnInit {
   resetFilters(): void {
     this.resetFiltersInternal();
     this.currentPage.set(1);
-    const id = this.activeLoadId();
-    if (id) this.loadLeaves(id);
+    this.loadLeaves();
   }
 
   hasActiveFilters(): boolean {
@@ -570,8 +608,7 @@ export class LeaveListComponent implements OnInit {
   goToPage(page: number): void {
     if (page < 1 || page > this.totalPages()) return;
     this.currentPage.set(page);
-    const id = this.activeLoadId();
-    if (id) this.loadLeaves(id);
+    this.loadLeaves();
   }
 
   // ── Modal handlers ─────────────────────────────────────────────────────────
@@ -643,7 +680,7 @@ export class LeaveListComponent implements OnInit {
     this.confirmModalButtonText.set('Approve');
     this.confirmModalVariant.set('primary');
     this.pendingConfirmAction = () => {
-      const empId = leave.employee?.id || this.activeLoadId();
+      const empId = leave.employee?.id || leave.employeeId || this.myEmployeeId();
       this.leaveService.approveLeave(empId, leave.id).subscribe({
         next: () => this.refreshCurrentView(),
       });
@@ -659,7 +696,7 @@ export class LeaveListComponent implements OnInit {
     this.confirmModalButtonText.set('Yes, Cancel Request');
     this.confirmModalVariant.set('danger');
     this.pendingConfirmAction = () => {
-      const empId = leave.employee?.id || this.activeLoadId();
+      const empId = leave.employee?.id || leave.employeeId || this.myEmployeeId();
       this.leaveService.cancelLeave(empId, leave.id).subscribe({
         next: () => this.refreshCurrentView(),
       });
@@ -687,9 +724,9 @@ export class LeaveListComponent implements OnInit {
   }
 
   get contextEmployeeId(): string {
-    return this.viewMode() === 'self'
-      ? this.myEmployeeId()
-      : this.activeTargetEmployeeId();
+    if (this.viewMode() === 'self') return this.myEmployeeId();
+    if (this.teamEmployeeFilter() !== 'ALL') return this.teamEmployeeFilter();
+    return this.manageableEmployees()[0]?.id || '';
   }
 
   // ── Formatters ─────────────────────────────────────────────────────────────

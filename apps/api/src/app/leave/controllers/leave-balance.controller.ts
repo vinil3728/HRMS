@@ -12,6 +12,7 @@ import {
 
 import { AdjustLeaveBalanceDto } from '../dto/adjust-leave-balance.dto';
 import { CreateLeaveBalanceDto } from '../dto/create-leave-balance.dto';
+import { BatchCreateLeaveBalanceDto } from '../dto/batch-create-leave-balance.dto';
 import { LeaveBalanceService } from '../services/leave-balance.service';
 
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
@@ -47,6 +48,26 @@ export class LeaveBalanceController {
         dto: CreateLeaveBalanceDto,
     ) {
         return this.leaveBalanceService.create(
+            employeeId,
+            dto,
+        );
+    }
+
+    @Post('batch')
+    @AnyPermissions(
+        Permission.LEAVE_BALANCE_CREATE,
+        Permission.LEAVE_BALANCE_ADJUST,
+    )
+    createBatch(
+        @Param(
+            'employeeId',
+            new ParseUUIDPipe(),
+        )
+        employeeId: string,
+        @Body()
+        dto: BatchCreateLeaveBalanceDto,
+    ) {
+        return this.leaveBalanceService.createBatch(
             employeeId,
             dto,
         );

@@ -26,11 +26,14 @@ export interface Leave {
   status: LeaveStatus;
   reason: string | null;
   rejectionReason: string | null;
+  employeeId?: string;
   employee?: {
     id: string;
     firstName: string;
     lastName: string;
     employeeCode: string;
+    department?: { id: string; name: string };
+    designation?: { id: string; name: string };
   };
   createdAt: string;
   updatedAt: string;
@@ -98,7 +101,32 @@ export interface CreateLeaveBalanceDto {
   totalDays: number;
 }
 
+export interface LeaveBalanceItemDto {
+  leaveType: LeaveType;
+  totalDays: number;
+}
+
+export interface BatchCreateLeaveBalanceDto {
+  year: number;
+  balances: LeaveBalanceItemDto[];
+}
+
 export interface AdjustLeaveBalanceDto {
   adjustmentDays: number;
   reason: string;
+}
+
+export interface ScopedLeaveQueryParams extends LeaveQueryParams {
+  employeeId?: string;
+  scope?: 'SELF' | 'TEAM' | 'ORG';
+}
+
+export interface ScopedLeaveResponse extends LeaveResponse {
+  summary?: {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    cancelled: number;
+  };
 }

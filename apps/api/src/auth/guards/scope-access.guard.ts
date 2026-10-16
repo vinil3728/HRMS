@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 
 import { Employee } from '../../app/employees/entities/employee.entity';
 import { RolePermission } from '../../app/permissions/entities/role-permission.entity';
+import { PermissionScope } from '../../app/permissions/enums/permission-scope.enum';
 import { User } from '../entities/user.entity';
 
 import { AuthenticatedRequest } from './jwt-auth.guard';
@@ -116,17 +117,20 @@ export class ScopeAccessGuard implements CanActivate {
                 return true;
             }
             qb.andWhere(
-                "('SELF' = ANY(rolePermission.scopes) OR 'GLOBAL' = ANY(rolePermission.scopes) OR permission.scopes LIKE '%SELF%' OR permission.scopes LIKE '%GLOBAL%')"
+                `(:selfScope = ANY(rolePermission.scopes) OR 'GLOBAL' = ANY(rolePermission.scopes) OR permission.scopes LIKE '%SELF%' OR permission.scopes LIKE '%GLOBAL%')`,
+                { selfScope: PermissionScope.SELF }
             );
         } else if (isDirectReport) {
             // For direct report access, user must hold a permission with TEAM or ORG scope
             qb.andWhere(
-                "('TEAM' = ANY(rolePermission.scopes) OR 'ORG' = ANY(rolePermission.scopes) OR 'ORGANIZATION' = ANY(rolePermission.scopes) OR 'GLOBAL' = ANY(rolePermission.scopes) OR permission.scopes LIKE '%TEAM%' OR permission.scopes LIKE '%ORGANIZATION%')"
+                `(:teamScope = ANY(rolePermission.scopes) OR :orgScope = ANY(rolePermission.scopes) OR 'ORGANIZATION' = ANY(rolePermission.scopes) OR 'GLOBAL' = ANY(rolePermission.scopes) OR permission.scopes LIKE '%TEAM%' OR permission.scopes LIKE '%ORGANIZATION%')`,
+                { teamScope: PermissionScope.TEAM, orgScope: PermissionScope.ORG }
             );
         } else {
             // For third-party employee access, user must hold a permission with ORG scope
             qb.andWhere(
-                "('ORG' = ANY(rolePermission.scopes) OR 'ORGANIZATION' = ANY(rolePermission.scopes) OR 'GLOBAL' = ANY(rolePermission.scopes) OR permission.scopes LIKE '%ORGANIZATION%')"
+                `(:orgScope = ANY(rolePermission.scopes) OR 'ORGANIZATION' = ANY(rolePermission.scopes) OR 'GLOBAL' = ANY(rolePermission.scopes) OR permission.scopes LIKE '%ORGANIZATION%')`,
+                { orgScope: PermissionScope.ORG }
             );
         }
 

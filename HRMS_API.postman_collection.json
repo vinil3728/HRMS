@@ -104,6 +104,11 @@
       "key": "reimbursementId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "timesheetId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -3637,6 +3642,340 @@
               }
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "12. Timesheets",
+      "description": "Endpoints for employee timesheet logging, tracking, summary aggregation, submission, approval, and rejection guarded by JwtAuthGuard, PermissionGuard, and ScopeAccessGuard.",
+      "item": [
+        {
+          "name": "Create Timesheet Entry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.id) {",
+                  "        pm.collectionVariables.set('timesheetId', json.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workDate\": \"2026-10-15\",\n  \"hoursWorked\": 8,\n  \"projectName\": \"HRMS Modernization\",\n  \"taskDescription\": \"Implemented unified scope access and decoupled permissions\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/timesheets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "timesheets"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                }
+              ]
+            },
+            "description": "Creates a draft timesheet entry (requires TIMESHEET_CREATE and ScopeAccessGuard)."
+          }
+        },
+        {
+          "name": "List Timesheets (Filtered & Paginated)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/timesheets?status=SUBMITTED&startDate=2026-10-01&endDate=2026-10-31&page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "timesheets"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "SUBMITTED"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2026-10-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2026-10-31"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                }
+              ]
+            },
+            "description": "Lists timesheet entries for an employee with optional date range and status filters (requires TIMESHEET_VIEW and ScopeAccessGuard)."
+          }
+        },
+        {
+          "name": "Get Timesheet Summary",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/timesheets/summary?startDate=2026-10-01&endDate=2026-10-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "timesheets",
+                "summary"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2026-10-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2026-10-31"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                }
+              ]
+            },
+            "description": "Retrieves aggregate summary metrics (total hours, draft, submitted, approved, rejected) for an employee (requires TIMESHEET_SUMMARY_VIEW and ScopeAccessGuard)."
+          }
+        },
+        {
+          "name": "Get Timesheet By ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/timesheets/:timesheetId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "timesheets",
+                ":timesheetId"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "timesheetId",
+                  "value": "{{timesheetId}}"
+                }
+              ]
+            },
+            "description": "Gets a specific timesheet record by ID (requires TIMESHEET_VIEW and ScopeAccessGuard)."
+          }
+        },
+        {
+          "name": "Update Timesheet Entry",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hoursWorked\": 7.5,\n  \"projectName\": \"HRMS Modernization\",\n  \"taskDescription\": \"Updated work hours and detailed progress notes\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/timesheets/:timesheetId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "timesheets",
+                ":timesheetId"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "timesheetId",
+                  "value": "{{timesheetId}}"
+                }
+              ]
+            },
+            "description": "Updates a draft or rejected timesheet entry (requires TIMESHEET_UPDATE and ScopeAccessGuard)."
+          }
+        },
+        {
+          "name": "Delete Timesheet Entry",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/timesheets/:timesheetId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "timesheets",
+                ":timesheetId"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "timesheetId",
+                  "value": "{{timesheetId}}"
+                }
+              ]
+            },
+            "description": "Deletes a draft timesheet entry (requires TIMESHEET_DELETE and ScopeAccessGuard)."
+          }
+        },
+        {
+          "name": "Submit Timesheet For Review",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/timesheets/:timesheetId/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "timesheets",
+                ":timesheetId",
+                "submit"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "timesheetId",
+                  "value": "{{timesheetId}}"
+                }
+              ]
+            },
+            "description": "Submits a draft or rejected timesheet for manager review (requires TIMESHEET_SUBMIT and ScopeAccessGuard)."
+          }
+        },
+        {
+          "name": "Approve Timesheet Entry",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/timesheets/:timesheetId/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "timesheets",
+                ":timesheetId",
+                "approve"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "timesheetId",
+                  "value": "{{timesheetId}}"
+                }
+              ]
+            },
+            "description": "Approves a submitted timesheet entry (requires TIMESHEET_APPROVE with TEAM or ORG scope; self-approval prohibited)."
+          }
+        },
+        {
+          "name": "Reject Timesheet Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rejectionReason\": \"Please provide more detailed breakdown for the project tasks logged\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/employees/:employeeId/timesheets/:timesheetId/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "employees",
+                ":employeeId",
+                "timesheets",
+                ":timesheetId",
+                "reject"
+              ],
+              "variable": [
+                {
+                  "key": "employeeId",
+                  "value": "{{employeeId}}"
+                },
+                {
+                  "key": "timesheetId",
+                  "value": "{{timesheetId}}"
+                }
+              ]
+            },
+            "description": "Rejects / returns a submitted timesheet with feedback (requires TIMESHEET_REJECT with TEAM or ORG scope; self-rejection prohibited)."
+          }
         }
       ]
     }

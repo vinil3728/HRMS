@@ -8,9 +8,9 @@ import {
   signal,
 } from '@angular/core';
 import { Permission } from '../../../../core/models/permission.model';
+import { PermissionScope } from '../../../../core/models/permission-scope.model';
 import { AuthService } from '../../../../core/services/auth.service';
 import { RbacService } from '../../../../core/services/rbac.service';
-import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
 import { BadgeComponent } from '../../../../shared/ui/badge/badge.component';
 import { IconComponent } from '../../../../shared/ui/icon/icon.component';
 import {
@@ -40,7 +40,6 @@ import { TimesheetService } from '../../services/timesheet.service';
     BadgeComponent,
     SelectComponent,
     DatePickerComponent,
-    HasPermissionDirective,
     TimesheetFormModalComponent,
     TimesheetRejectModalComponent,
     TimesheetDetailModalComponent,
@@ -56,42 +55,161 @@ export class TimesheetPageComponent implements OnInit {
   readonly rbacService = inject(RbacService);
 
   readonly Permission = Permission;
+  readonly PermissionScope = PermissionScope;
   readonly TimesheetStatus = TimesheetStatus;
 
   readonly currentUser = this.authService.currentUser;
   readonly viewMode = signal<'self' | 'team'>('self');
 
-  readonly myEmployeeId = computed<string>(
-    () => this.currentUser()?.employeeId || ''
+  // ── Employee Context ──────────────────────────────────────────
+
+  readonly currentEmployeeId = computed(
+    () => this.currentUser()?.employeeId ?? ''
   );
 
-  readonly hasPersonalProfile = computed<boolean>(() =>
-    Boolean(this.myEmployeeId())
+  readonly hasEmployeeProfile = computed(
+    () => Boolean(this.currentEmployeeId())
   );
 
-  /**
-   * Permission-driven check: any role granted org-wide employee management permissions
-   * can inspect timesheets across all employees in the company.
-   */
-  readonly canManageAllTimesheets = computed<boolean>(() =>
-    this.rbacService.hasAnyPermission([
-      Permission.EMPLOYEE_VIEWS,
-      Permission.EMPLOYEE_UPDATE,
-    ])
+  // ── View Permissions ──────────────────────────────────────────
+
+  readonly canViewOwnTimesheets = computed(
+    () => this.rbacService.hasScope(
+      Permission.TIMESHEET_VIEW,
+      PermissionScope.SELF
+    )
   );
 
-  readonly canInspectTeamTimesheets = computed<boolean>(() =>
-    this.rbacService.hasAnyPermission([
+  readonly canViewTeamTimesheets = computed(
+    () => this.rbacService.hasScope(
+      Permission.TIMESHEET_VIEW,
+      PermissionScope.TEAM
+    )
+  );
+
+  readonly canViewOrganizationTimesheets = computed(
+    () => this.rbacService.hasScope(
+      Permission.TIMESHEET_VIEW,
+      PermissionScope.ORG
+    )
+  );
+
+  // ── Tab Availability ──────────────────────────────────────────
+
+  readonly canShowSelfTab = computed(
+    () => this.hasEmployeeProfile() &&
+          this.canViewOwnTimesheets()
+  );
+
+  readonly canShowTeamTab = computed(
+    () => this.hasEmployeeProfile() &&
+          (
+            this.canViewTeamTimesheets() ||
+            this.canViewOrganizationTimesheets()
+          ) &&
+          this.rbacService.hasPermission(Permission.EMPLOYEE_VIEW)
+  );
+
+  readonly teamTabLabel = computed(() =>
+    this.canViewOrganizationTimesheets()
+      ? 'Employees Timesheets'
+      : 'Team Timesheets'
+  );
+
+  // ── Timesheet CRUD Permissions ────────────────────────────────
+
+  readonly canCreateTimesheet = computed(
+    () => this.rbacService.hasScope(
+      Permission.TIMESHEET_CREATE,
+      PermissionScope.SELF
+    )
+  );
+
+  readonly canUpdateTimesheet = computed(
+    () => this.rbacService.hasPermission(
+      Permission.TIMESHEET_UPDATE
+    )
+  );
+
+  readonly canDeleteTimesheet = computed(
+    () => this.rbacService.hasPermission(
+      Permission.TIMESHEET_DELETE
+    )
+  );
+
+  readonly canSubmitTimesheet = computed(
+    () => this.rbacService.hasPermission(
+      Permission.TIMESHEET_SUBMIT
+    )
+  );
+
+  readonly canViewTimesheetSummary = computed(
+    () => this.rbacService.hasPermission(
+      Permission.TIMESHEET_SUMMARY_VIEW
+    )
+  );
+
+  // ── Approval & Rejection Permissions ──────────────────────────────────────
+
+  readonly canApproveTeamTimesheets = computed(
+    () => this.rbacService.hasScope(
       Permission.TIMESHEET_APPROVE,
-      Permission.TIMESHEET_REJECT,
-      Permission.EMPLOYEE_VIEWS,
-      Permission.EMPLOYEE_UPDATE,
-    ])
+      PermissionScope.TEAM
+    )
   );
+
+  readonly canApproveOrganizationTimesheets = computed(
+    () => this.rbacService.hasScope(
+      Permission.TIMESHEET_APPROVE,
+      PermissionScope.ORG
+    )
+  );
+
+  readonly canRejectTeamTimesheets = computed(
+    () => this.rbacService.hasScope(
+      Permission.TIMESHEET_REJECT,
+      PermissionScope.TEAM
+    )
+  );
+
+  readonly canRejectOrganizationTimesheets = computed(
+    () => this.rbacService.hasScope(
+      Permission.TIMESHEET_REJECT,
+      PermissionScope.ORG
+    )
+  );
+
+  readonly canApproveTimesheet = computed(
+    () => this.canApproveTeamTimesheets() || this.canApproveOrganizationTimesheets()
+  );
+
+  readonly canRejectTimesheet = computed(
+    () => this.canRejectTeamTimesheets() || this.canRejectOrganizationTimesheets()
+  );
+
+  // ── Row Actions ───────────────────────────────────────────────
+
+  readonly hasRowActionsForCurrentView = computed(() => {
+    if (this.viewMode() === 'self') {
+      return (
+        this.canUpdateTimesheet() ||
+        this.canDeleteTimesheet() ||
+        this.canSubmitTimesheet()
+      );
+    }
+
+    return (
+      this.canApproveTeamTimesheets() ||
+      this.canApproveOrganizationTimesheets() ||
+      this.canRejectTeamTimesheets() ||
+      this.canRejectOrganizationTimesheets()
+    );
+  });
 
   readonly myProfile = signal<Employee | null>(null);
   readonly allEmployees = signal<Employee[]>([]);
   readonly selectedEmployeeId = signal<string>('');
+  readonly teamEmployeeFilter = signal<string>('ALL');
 
   /**
    * Employees available in the Team / Employee Timesheets tab:
@@ -100,8 +218,8 @@ export class TimesheetPageComponent implements OnInit {
    */
   readonly manageableEmployees = computed<Employee[]>(() => {
     const all = this.allEmployees();
-    const myId = this.myEmployeeId();
-    if (this.canManageAllTimesheets()) {
+    const myId = this.currentEmployeeId();
+    if (this.canViewOrganizationTimesheets()) {
       return myId ? all.filter((emp) => emp.id !== myId) : all;
     }
     if (!myId) {
@@ -110,18 +228,13 @@ export class TimesheetPageComponent implements OnInit {
     return all.filter((emp) => emp.manager?.id === myId && emp.id !== myId);
   });
 
-  readonly canViewTeamOrOrgTab = computed<boolean>(
-    () =>
-      this.canInspectTeamTimesheets() && this.manageableEmployees().length > 0
-  );
-
-  readonly showViewTabs = computed<boolean>(
-    () => this.hasPersonalProfile() && this.canViewTeamOrOrgTab()
-  );
-
-  readonly teamTabLabel = computed<string>(() =>
-    this.canManageAllTimesheets() ? 'Employee Timesheets' : 'Team Timesheets'
-  );
+  readonly employeeFilterOptions = computed<SelectOption[]>(() => [
+    { value: 'ALL', label: 'All Employees' },
+    ...this.manageableEmployees().map((emp) => ({
+      value: emp.id,
+      label: `${emp.firstName} ${emp.lastName} (${emp.employeeCode})`,
+    })),
+  ]);
 
   readonly employeeOptions = computed<SelectOption[]>(() =>
     this.manageableEmployees().map((emp) => ({
@@ -132,8 +245,8 @@ export class TimesheetPageComponent implements OnInit {
 
   readonly activeTargetEmployeeId = computed<string>(() =>
     this.viewMode() === 'self'
-      ? this.myEmployeeId()
-      : this.selectedEmployeeId()
+      ? this.currentEmployeeId()
+      : (this.teamEmployeeFilter() !== 'ALL' ? this.teamEmployeeFilter() : (this.manageableEmployees()[0]?.id || ''))
   );
 
   readonly activeTargetEmployee = computed<Employee | null>(() => {
@@ -150,8 +263,8 @@ export class TimesheetPageComponent implements OnInit {
 
   readonly isViewingSelf = computed<boolean>(
     () =>
-      Boolean(this.myEmployeeId()) &&
-      this.activeTargetEmployeeId() === this.myEmployeeId()
+      Boolean(this.currentEmployeeId()) &&
+      this.activeTargetEmployeeId() === this.currentEmployeeId()
   );
 
   readonly statusOptions: SelectOption[] = [
@@ -165,6 +278,23 @@ export class TimesheetPageComponent implements OnInit {
   // Timesheets & summary data
   readonly timesheets = signal<Timesheet[]>([]);
   readonly summary = signal<TimesheetSummary | null>(null);
+  readonly teamSummary = signal<{
+    totalHours: number;
+    draftHours: number;
+    submittedHours: number;
+    approvedHours: number;
+    rejectedHours: number;
+    totalCount: number;
+    pendingCount: number;
+  }>({
+    totalHours: 0,
+    draftHours: 0,
+    submittedHours: 0,
+    approvedHours: 0,
+    rejectedHours: 0,
+    totalCount: 0,
+    pendingCount: 0,
+  });
   readonly isLoading = signal<boolean>(true);
   readonly actionLoadingId = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
@@ -225,7 +355,7 @@ export class TimesheetPageComponent implements OnInit {
   }
 
   private initializeEmployeeContext(): void {
-    const myEmpId = this.myEmployeeId();
+    const myEmpId = this.currentEmployeeId();
     const sessionEmployee = this.currentUser()?.employee as
       | Employee
       | undefined;
@@ -238,24 +368,18 @@ export class TimesheetPageComponent implements OnInit {
       });
     }
 
-    if (myEmpId) {
+    if (myEmpId && this.canShowSelfTab()) {
       this.viewMode.set('self');
       this.reloadAll();
     }
 
-    if (this.canInspectTeamTimesheets()) {
+    if (this.canShowTeamTab()) {
       this.employeeService.getDirectory().subscribe({
         next: (directory) => {
           this.allEmployees.set(directory);
-          const manageable = this.manageableEmployees();
-          const defaultTeamEmpId = manageable[0]?.id || '';
-          this.selectedEmployeeId.set(defaultTeamEmpId);
-
-          if (!myEmpId && defaultTeamEmpId) {
+          if (!myEmpId || !this.canShowSelfTab()) {
             this.viewMode.set('team');
             this.reloadAll();
-          } else if (!myEmpId) {
-            this.isLoading.set(false);
           }
         },
         error: () => {
@@ -264,7 +388,7 @@ export class TimesheetPageComponent implements OnInit {
           }
         },
       });
-    } else if (!myEmpId) {
+    } else if (!myEmpId || !this.canShowSelfTab()) {
       this.isLoading.set(false);
     }
   }
@@ -277,12 +401,16 @@ export class TimesheetPageComponent implements OnInit {
     this.reloadAll();
   }
 
-  onEmployeeChange(newEmpId: string): void {
-    if (newEmpId === this.selectedEmployeeId()) return;
-    this.selectedEmployeeId.set(newEmpId);
+  onEmployeeFilterChange(newEmpId: string): void {
+    if (newEmpId === this.teamEmployeeFilter()) return;
+    this.teamEmployeeFilter.set(newEmpId);
     this.page.set(1);
     this.clearMessages();
     this.reloadAll();
+  }
+
+  onEmployeeChange(newEmpId: string): void {
+    this.onEmployeeFilterChange(newEmpId);
   }
 
   onSearchInput(event: Event): void {
@@ -349,14 +477,8 @@ export class TimesheetPageComponent implements OnInit {
   }
 
   loadTimesheets(): void {
-    const empId = this.activeTargetEmployeeId();
-    if (!empId) {
-      this.isLoading.set(false);
-      return;
-    }
-
     this.isLoading.set(true);
-    const query: TimesheetQueryParams = {
+    const query: any = {
       page: this.page(),
       limit: this.limit,
     };
@@ -371,34 +493,80 @@ export class TimesheetPageComponent implements OnInit {
       query.status = this.filterStatus() as TimesheetStatus;
     }
 
-    this.timesheetService.getTimesheets(empId, query).subscribe({
-      next: (res) => {
+    if (this.viewMode() === 'self') {
+      const empId = this.currentEmployeeId();
+      if (!empId) {
         this.isLoading.set(false);
-        this.timesheets.set(res.data);
-        this.total.set(res.total);
-        this.totalPages.set(res.totalPages || 1);
-      },
-      error: (err: { error?: { message?: string } }) => {
-        this.isLoading.set(false);
-        this.errorMessage.set(
-          err.error?.message || 'Failed to load timesheet entries.'
-        );
-      },
-    });
+        return;
+      }
+
+      this.timesheetService.getTimesheets(empId, query).subscribe({
+        next: (res) => {
+          this.isLoading.set(false);
+          this.timesheets.set(res.data);
+          this.total.set(res.total);
+          this.totalPages.set(res.totalPages || 1);
+        },
+        error: (err: { error?: { message?: string } }) => {
+          this.isLoading.set(false);
+          this.errorMessage.set(
+            err.error?.message || 'Failed to load timesheet entries.'
+          );
+        },
+      });
+    } else if (this.viewMode() === 'team') {
+      const scope = this.canViewOrganizationTimesheets()
+        ? PermissionScope.ORG
+        : PermissionScope.TEAM;
+      const employeeId =
+        this.teamEmployeeFilter() !== 'ALL'
+          ? this.teamEmployeeFilter()
+          : undefined;
+
+      this.timesheetService
+        .getAllTimesheets({
+          ...query,
+          scope,
+          employeeId,
+        })
+        .subscribe({
+          next: (res) => {
+            this.isLoading.set(false);
+            this.timesheets.set(res.data);
+            this.total.set(res.total);
+            this.totalPages.set(res.totalPages || 1);
+            if (res.summary) {
+              this.teamSummary.set(res.summary);
+            }
+          },
+          error: (err: { error?: { message?: string } }) => {
+            this.isLoading.set(false);
+            this.errorMessage.set(
+              err.error?.message || 'Failed to load team timesheet entries.'
+            );
+          },
+        });
+    }
   }
 
   loadSummary(): void {
-    const empId = this.activeTargetEmployeeId();
-    if (!empId) return;
-
-    this.timesheetService.getSummary(empId).subscribe({
-      next: (summary) => {
-        this.summary.set(summary);
-      },
-      error: () => {
+    if (this.viewMode() === 'self') {
+      if (!this.canViewTimesheetSummary()) {
         this.summary.set(null);
-      },
-    });
+        return;
+      }
+      const empId = this.currentEmployeeId();
+      if (!empId) return;
+
+      this.timesheetService.getSummary(empId).subscribe({
+        next: (summary) => {
+          this.summary.set(summary);
+        },
+        error: () => {
+          this.summary.set(null);
+        },
+      });
+    }
   }
 
   openCreateModal(): void {
@@ -434,7 +602,7 @@ export class TimesheetPageComponent implements OnInit {
   }
 
   onSubmitTimesheet(item: Timesheet): void {
-    const empId = this.activeTargetEmployeeId();
+    const empId = item.employeeId || item.employee?.id || this.currentEmployeeId();
     if (!empId) return;
 
     const confirmed = confirm(
@@ -459,7 +627,7 @@ export class TimesheetPageComponent implements OnInit {
   }
 
   onApproveTimesheet(item: Timesheet): void {
-    const empId = this.activeTargetEmployeeId();
+    const empId = item.employeeId || item.employee?.id || this.currentEmployeeId();
     if (!empId) return;
 
     const confirmed = confirm(
@@ -484,7 +652,7 @@ export class TimesheetPageComponent implements OnInit {
   }
 
   onDeleteTimesheet(item: Timesheet): void {
-    const empId = this.activeTargetEmployeeId();
+    const empId = item.employeeId || item.employee?.id || this.currentEmployeeId();
     if (!empId) return;
 
     const confirmed = confirm(

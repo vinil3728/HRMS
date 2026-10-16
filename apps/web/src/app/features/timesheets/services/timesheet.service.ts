@@ -6,6 +6,8 @@ import { ApiService } from '../../../core/services/api.service';
 import {
   CreateTimesheetDto,
   RejectTimesheetDto,
+  ScopedTimesheetListResponse,
+  ScopedTimesheetQueryParams,
   Timesheet,
   TimesheetListResponse,
   TimesheetQueryParams,
@@ -113,6 +115,38 @@ export class TimesheetService {
     return this.api.post<Timesheet>(
       this.endpoints.reject(employeeId, timesheetId),
       dto
+    );
+  }
+
+  getAllTimesheets(
+    query: ScopedTimesheetQueryParams = {}
+  ): Observable<ScopedTimesheetListResponse> {
+    let params = new HttpParams();
+    if (query.fromDate) {
+      params = params.set('fromDate', query.fromDate);
+    }
+    if (query.toDate) {
+      params = params.set('toDate', query.toDate);
+    }
+    if (query.status) {
+      params = params.set('status', query.status);
+    }
+    if (query.page) {
+      params = params.set('page', query.page.toString());
+    }
+    if (query.limit) {
+      params = params.set('limit', query.limit.toString());
+    }
+    if (query.employeeId) {
+      params = params.set('employeeId', query.employeeId);
+    }
+    if (query.scope) {
+      params = params.set('scope', query.scope);
+    }
+
+    return this.api.get<ScopedTimesheetListResponse>(
+      this.endpoints.overview,
+      { params }
     );
   }
 }

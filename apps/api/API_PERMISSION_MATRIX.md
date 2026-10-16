@@ -376,7 +376,34 @@ A performance summary can only be finalized when:
 
 ---
 
-# 16. Application / Health Endpoint
+# 16. Timesheet APIs
+
+| Method | Endpoint                                                | Description             | ADMIN | HR | MANAGER | EMPLOYEE | Access Rule                                                                                                 |
+| ------ | ------------------------------------------------------- | ----------------------- | :---: | :-: | :-----: | :------: | ----------------------------------------------------------------------------------------------------------- |
+| POST   | `/employees/:employeeId/timesheets`                     | Create timesheet entry  |  ✅  | ✅ |   ⚠️   |    ⚠️    | `ScopeAccessGuard` (`['SELF', 'TEAM', 'ORG']`); requires `TIMESHEET_CREATE`                                |
+| GET    | `/employees/:employeeId/timesheets`                     | List timesheets         |  ✅  | ✅ |   ⚠️   |    ⚠️    | `ScopeAccessGuard` (`['SELF', 'TEAM', 'ORG']`); requires `TIMESHEET_VIEW`                                  |
+| GET    | `/employees/:employeeId/timesheets/summary`             | Get timesheet summary   |  ✅  | ✅ |   ⚠️   |    ⚠️    | `ScopeAccessGuard` (`['SELF', 'TEAM', 'ORG']`); requires `TIMESHEET_SUMMARY_VIEW`                          |
+| GET    | `/employees/:employeeId/timesheets/:timesheetId`        | Get timesheet entry     |  ✅  | ✅ |   ⚠️   |    ⚠️    | `ScopeAccessGuard` (`['SELF', 'TEAM', 'ORG']`); requires `TIMESHEET_VIEW`                                  |
+| PATCH  | `/employees/:employeeId/timesheets/:timesheetId`        | Update timesheet entry  |  ✅  | ✅ |   ⚠️   |    ⚠️    | `ScopeAccessGuard` (`['SELF', 'TEAM', 'ORG']`); requires `TIMESHEET_UPDATE`; status must be DRAFT or REJECTED |
+| DELETE | `/employees/:employeeId/timesheets/:timesheetId`        | Delete timesheet entry  |  ✅  | ✅ |   ⚠️   |    ⚠️    | `ScopeAccessGuard` (`['SELF', 'TEAM', 'ORG']`); requires `TIMESHEET_DELETE`; status must be DRAFT          |
+| POST   | `/employees/:employeeId/timesheets/:timesheetId/submit` | Submit timesheet        |  ✅  | ✅ |   ⚠️   |    ⚠️    | `ScopeAccessGuard` (`['SELF', 'TEAM', 'ORG']`); requires `TIMESHEET_SUBMIT`; status must be DRAFT or REJECTED |
+| POST   | `/employees/:employeeId/timesheets/:timesheetId/approve`| Approve timesheet entry |  ✅  | ✅ |   ⚠️   |    ❌    | `ScopeAccessGuard` (`['TEAM', 'ORG']`); requires `TIMESHEET_APPROVE`; reviewer cannot approve own timesheet |
+| POST   | `/employees/:employeeId/timesheets/:timesheetId/reject` | Reject timesheet entry  |  ✅  | ✅ |   ⚠️   |    ❌    | `ScopeAccessGuard` (`['TEAM', 'ORG']`); requires `TIMESHEET_REJECT`; reviewer cannot reject own timesheet  |
+
+### Timesheet business rules
+
+| Operation | Required status | Scope & Additional Constraints |
+| --------- | --------------- | ------------------------------ |
+| Create    | -               | Scope check on `:employeeId`; duplicate workDate prohibited |
+| Update    | DRAFT, REJECTED | Scope check on `:employeeId`; hours must be > 0 and <= 24 |
+| Delete    | DRAFT           | Scope check on `:employeeId` |
+| Submit    | DRAFT, REJECTED | Scope check on `:employeeId` |
+| Approve   | SUBMITTED       | TEAM/ORG scope; reviewer employeeId cannot equal target employeeId |
+| Reject    | SUBMITTED       | TEAM/ORG scope; reviewer employeeId cannot equal target employeeId; rejectionReason required |
+
+---
+
+# 17. Application / Health Endpoint
 
 | Method | Endpoint | Description              | ADMIN | HR | MANAGER | EMPLOYEE | Access Rule |
 | ------ | -------- | ------------------------ | :---: | :-: | :-----: | :------: | ----------- |
@@ -392,7 +419,7 @@ Response:
 
 ---
 
-# 17. Authorization Summary
+# 18. Authorization Summary
 
 ## ADMIN
 
@@ -406,6 +433,7 @@ Response:
 | Documents                 | Any employee     |
 | Leave                     | Any employee     |
 | Leave balance             | Currently public |
+| Timesheets                | Any employee (approval restricted from self-review) |
 | Performance cycles        | Full             |
 | Performance goals         | Any employee     |
 | Performance evaluations   | Any employee     |
@@ -429,6 +457,7 @@ Response:
 | Documents                 | Any employee     |
 | Leave                     | Any employee     |
 | Leave balance             | Currently public |
+| Timesheets                | Any employee (approval restricted from self-review) |
 | Performance cycles        | Full             |
 | Performance goals         | Any employee     |
 | Performance evaluations   | Any employee     |
@@ -453,6 +482,8 @@ Response:
 | Documents                        | Direct reports |
 | Leave                            | Direct reports |
 | Leave approval/rejection         | Direct reports |
+| Timesheets (log/submit)          | Own records    |
+| Timesheets (approval/rejection)  | Direct reports (self-approval prohibited) |
 | Performance cycles read          | ✅             |
 | Performance goals                | Direct reports |
 | Manager evaluations              | Direct reports |
@@ -476,6 +507,8 @@ Response:
 | Documents                  | ❌ ⚠️                                                             |
 | Leave                      | ❌ ⚠️                                                             |
 | Leave balance              | 🌐 Currently public                                                 |
+| Timesheets                 | ✅ Own records (view, create, update, delete, submit, summary)     |
+| Timesheet approval/rejection | ❌ Denied (`['TEAM', 'ORG']` required)                            |
 | Performance cycles read    | ✅                                                                  |
 | Performance goals          | ❌ ⚠️                                                             |
 | SELF evaluation creation   | ⚠️ Service allows it, but related endpoint access is inconsistent |
@@ -488,7 +521,7 @@ Response:
 
 ---
 
-# 18. Authorization Gaps Found
+# 19. Authorization Gaps Found
 
 These should be reviewed before considering the API authorization model complete.
 
@@ -550,7 +583,7 @@ The intended authorization model should be decided before final Swagger/Postman 
 
 ---
 
-# 19. Authentication Flow
+# 20. Authentication Flow
 
 ```text
 POST /auth/login
@@ -576,7 +609,7 @@ Authorization: Bearer <JWT>
 
 ---
 
-# 20. JWT Payload
+# 21. JWT Payload
 
 The authenticated request currently contains:
 
@@ -596,7 +629,7 @@ ScopeAccessGuard (Unified Resource & Scope Guard)
 
 ---
 
-# 21. Important Distinction
+# 22. Important Distinction
 
 Role permission and business validation are different.
 
@@ -640,7 +673,7 @@ FINAL API ACCESS
 
 ---
 
-# 22. Total API Inventory
+# 23. Total API Inventory
 
 | Module                  |         APIs |
 | ----------------------- | -----------: |
@@ -652,6 +685,7 @@ FINAL API ACCESS
 | Employee Documents      |            6 |
 | Leave Balance           |            3 |
 | Leave                   |            8 |
+| Timesheets              |            9 |
 | Performance Cycles      |            5 |
 | Performance Goals       |            5 |
 | Performance Evaluations |            5 |
@@ -660,6 +694,6 @@ FINAL API ACCESS
 | Policy Acknowledgements |            4 |
 | Reimbursements          |           10 |
 | Application/Health      |            1 |
-| **Total**         | **75** |
+| **Total**         | **84** |
 
-> This matrix contains **75 API endpoints** based on the controllers supplied so far.
+> This matrix contains **84 API endpoints** based on the controllers supplied so far.

@@ -10,7 +10,8 @@
     "build:web": "nx build web",
     "build:api": "nx build api",
     "test": "nx test web",
-    "lint": "nx lint web"
+    "lint": "nx lint web",
+    "seed": "ts-node -P apps/api/tsconfig.app.json apps/api/src/seed.ts"
   },
   "devDependencies": {
     "@angular-devkit/core": "~22.1.0",

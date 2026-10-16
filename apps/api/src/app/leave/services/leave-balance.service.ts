@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 
 import { LeaveBalance } from '../entities/leave-balance.entity';
 import { CreateLeaveBalanceDto } from '../dto/create-leave-balance.dto';
+import { BatchCreateLeaveBalanceDto } from '../dto/batch-create-leave-balance.dto';
 import { AdjustLeaveBalanceDto } from '../dto/adjust-leave-balance.dto';
 import { Employee } from '../../employees/entities/employee.entity';
 
@@ -59,6 +60,50 @@ export class LeaveBalanceService {
         });
 
         return this.leaveBalanceRepository.save(balance);
+    }
+
+    async createBatch(
+        employeeId: string,
+        dto: BatchCreateLeaveBalanceDto,
+    ): Promise<LeaveBalance[]> {
+        const employee = await this.employeeRepository.findOne({
+            where: { id: employeeId },
+        });
+
+        if (!employee) {
+            throw new NotFoundException('Employee not found');
+        }
+
+        const results: LeaveBalance[] = [];
+
+        for (const item of dto.balances) {
+            let balance = await this.leaveBalanceRepository.findOne({
+                where: {
+                    employee: { id: employeeId },
+                    leaveType: item.leaveType,
+                    year: dto.year,
+                },
+            });
+
+            if (balance) {
+                balance.totalDays = item.totalDays;
+                balance.availableDays = Number(balance.totalDays) - Number(balance.usedDays);
+            } else {
+                balance = this.leaveBalanceRepository.create({
+                    employee,
+                    leaveType: item.leaveType,
+                    year: dto.year,
+                    totalDays: item.totalDays,
+                    usedDays: 0,
+                    availableDays: item.totalDays,
+                });
+            }
+
+            const saved = await this.leaveBalanceRepository.save(balance);
+            results.push(saved);
+        }
+
+        return results;
     }
 
     async adjust(

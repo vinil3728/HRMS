@@ -148,7 +148,6 @@ export class TimesheetController {
             employeeId,
             timesheetId,
             request.user.employeeId,
-            request.user.role,
         );
     }
 
@@ -167,7 +166,6 @@ export class TimesheetController {
             timesheetId,
             request.user.employeeId,
             dto,
-            request.user.role,
         );
     }
 }

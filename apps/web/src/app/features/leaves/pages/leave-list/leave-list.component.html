@@ -14,7 +14,7 @@
            type="button"
            class="btn btn-secondary"
            (click)="openAdjustModal()"
-           [disabled]="!contextEmployeeId"
+           [disabled]="employeeOptions().length === 0 && !myEmployeeId()"
            title="Credit, debit or adjust leave quotas for selected employee"
          >
            <app-icon name="edit" [size]="16" [strokeWidth]="2"></app-icon>
@@ -27,7 +27,7 @@
             type="button"
             class="btn btn-secondary"
             (click)="openAllocateModal()"
-            [disabled]="!contextEmployeeId && employeeOptions().length === 0"
+            [disabled]="employeeOptions().length === 0"
           >
             <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
             <span>Quota Allocation</span>
@@ -96,11 +96,11 @@
         <div class="filters-wrap">
           @if (viewMode() === 'team') {
             <app-select
-              [options]="employeeOptions()"
-              [value]="activeTargetEmployeeId()"
-              placeholder="Select Employee"
+              [options]="employeeFilterOptions()"
+              [value]="teamEmployeeFilter()"
+              placeholder="All Employees"
               minWidth="220px"
-              (valueChange)="onEmployeeChange($event)"
+              (valueChange)="onEmployeeFilterChange($event)"
             ></app-select>
           }
 
@@ -200,6 +200,53 @@
           </div>
         </div>
       }
+
+      <!-- ── Team / Org Leave Metrics / Summary Cards (Below Toolbar, Above Table) ── -->
+      @if (viewMode() === 'team') {
+        <div class="card-metrics-section">
+          <div class="leave-metrics-grid">
+            <div class="l-metric-card">
+              <div class="l-metric-icon l-icon-blue">
+                <app-icon name="calendar" [size]="20"></app-icon>
+              </div>
+              <div class="l-metric-info">
+                <span class="l-metric-value">{{ teamSummary().total }}</span>
+                <span class="l-metric-label">Total Applications</span>
+              </div>
+            </div>
+
+            <div class="l-metric-card">
+              <div class="l-metric-icon l-icon-amber">
+                <app-icon name="clock" [size]="20"></app-icon>
+              </div>
+              <div class="l-metric-info">
+                <span class="l-metric-value">{{ teamSummary().pending }}</span>
+                <span class="l-metric-label">Pending Approval</span>
+              </div>
+            </div>
+
+            <div class="l-metric-card">
+              <div class="l-metric-icon l-icon-green">
+                <app-icon name="check" [size]="20"></app-icon>
+              </div>
+              <div class="l-metric-info">
+                <span class="l-metric-value">{{ teamSummary().approved }}</span>
+                <span class="l-metric-label">Approved</span>
+              </div>
+            </div>
+
+            <div class="l-metric-card">
+              <div class="l-metric-icon l-icon-purple">
+                <app-icon name="activity" [size]="20"></app-icon>
+              </div>
+              <div class="l-metric-info">
+                <span class="l-metric-value">{{ teamSummary().rejected }}</span>
+                <span class="l-metric-label">Rejected / Cancelled</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
       <div class="table-block">
         @if (loading()) {
           <div class="loading-state">
@@ -242,10 +289,10 @@
                       <td>
                         <div class="emp-table-cell">
                           <span class="emp-name-main">
-                            {{ item.employee ? (item.employee.firstName + ' ' + item.employee.lastName) : (contextEmployee ? (contextEmployee.firstName + ' ' + contextEmployee.lastName) : '—') }}
+                            {{ item.employee ? (item.employee.firstName + ' ' + item.employee.lastName) : '—' }}
                           </span>
                           <span class="emp-code-sub">
-                            {{ item.employee?.employeeCode || contextEmployee?.employeeCode || '' }}
+                            {{ item.employee?.employeeCode || '' }}{{ item.employee?.department?.name ? (' • ' + item.employee.department.name) : '' }}
                           </span>
                         </div>
                       </td>
@@ -402,7 +449,7 @@
     [isOpen]="isActionModalOpen()"
     [actionType]="actionType()"
     [leave]="selectedLeave()"
-    [employeeId]="contextEmployeeId"
+    [employeeId]="actionType() === 'REJECT' ? (selectedLeave()?.employee?.id || selectedLeave()?.employeeId || '') : contextEmployeeId"
     [employeeOptions]="employeeOptions()"
     [balances]="balances()"
     (closeModal)="closeActionModal()"

@@ -5,6 +5,7 @@ import { ApiService } from '../../../core/services/api.service';
 import { API_CONFIG } from '../../../core/config/api.config';
 import {
   AdjustLeaveBalanceDto,
+  BatchCreateLeaveBalanceDto,
   CreateLeaveBalanceDto,
   CreateLeaveDto,
   Leave,
@@ -12,6 +13,8 @@ import {
   LeaveQueryParams,
   LeaveResponse,
   LeaveSummary,
+  ScopedLeaveQueryParams,
+  ScopedLeaveResponse,
   UpdateLeaveDto,
 } from '../models/leave.model';
 
@@ -111,6 +114,13 @@ export class LeaveService {
     return this.api.post<LeaveBalance>(this.endpoints.balances(employeeId), dto);
   }
 
+  createBatchLeaveBalances(
+    employeeId: string,
+    dto: BatchCreateLeaveBalanceDto
+  ): Observable<LeaveBalance[]> {
+    return this.api.post<LeaveBalance[]>(this.endpoints.batchBalances(employeeId), dto);
+  }
+
   adjustLeaveBalance(
     employeeId: string,
     balanceId: string,
@@ -126,6 +136,40 @@ export class LeaveService {
     const params = new HttpParams().set('year', year.toString());
     return this.api.get<LeaveSummary>(this.endpoints.summary(employeeId), {
       params,
+    });
+  }
+
+  getAllLeaves(
+    params?: ScopedLeaveQueryParams
+  ): Observable<ScopedLeaveResponse> {
+    let httpParams = new HttpParams();
+    if (params?.status) {
+      httpParams = httpParams.set('status', params.status);
+    }
+    if (params?.leaveType) {
+      httpParams = httpParams.set('leaveType', params.leaveType);
+    }
+    if (params?.fromDate) {
+      httpParams = httpParams.set('fromDate', params.fromDate);
+    }
+    if (params?.toDate) {
+      httpParams = httpParams.set('toDate', params.toDate);
+    }
+    if (params?.page) {
+      httpParams = httpParams.set('page', params.page.toString());
+    }
+    if (params?.limit) {
+      httpParams = httpParams.set('limit', params.limit.toString());
+    }
+    if (params?.employeeId) {
+      httpParams = httpParams.set('employeeId', params.employeeId);
+    }
+    if (params?.scope) {
+      httpParams = httpParams.set('scope', params.scope);
+    }
+
+    return this.api.get<ScopedLeaveResponse>(this.endpoints.overview, {
+      params: httpParams,
     });
   }
 }

@@ -10,7 +10,6 @@ import {
 import { AuthService } from '../../../../core/services/auth.service';
 import { RbacService } from '../../../../core/services/rbac.service';
 import { Permission } from '../../../../core/models/permission.model';
-import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
 import { BadgeComponent, BadgeVariant } from '../../../../shared/ui/badge/badge.component';
 import { IconComponent } from '../../../../shared/ui/icon/icon.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/select/select.component';
@@ -43,7 +42,6 @@ type ViewMode = 'self' | 'team' | 'holidays';
     SelectComponent,
     DatePickerComponent,
     FormsModule,
-    HasPermissionDirective,
     LeaveApplyModalComponent,
     LeaveActionModalComponent,
     HolidayCalendarComponent,
@@ -96,6 +94,26 @@ export class LeaveListComponent implements OnInit {
 
   readonly canViewTeamOrOrgLeavesTab = computed(
     () => this.hasOrgLeaveAccess() || this.hasTeamLeaveAccess()
+  );
+
+  readonly canViewSelfLeavesTab = computed(() =>
+    this.rbacService.hasPermission(Permission.LEAVE_VIEW)
+  );
+
+  readonly canViewHolidaysTab = computed(() =>
+    this.rbacService.hasPermission(Permission.HOLIDAY_VIEW)
+  );
+
+  readonly canApplyLeave = computed(() =>
+    this.rbacService.hasPermission(Permission.LEAVE_CREATE)
+  );
+
+  readonly canAllocateBalance = computed(() =>
+    this.rbacService.hasPermission(Permission.LEAVE_BALANCE_CREATE)
+  );
+
+  readonly canAdjustBalance = computed(() =>
+    this.rbacService.hasPermission(Permission.LEAVE_BALANCE_ADJUST)
   );
 
   readonly teamOrOrgTabLabel = computed(() =>
@@ -336,7 +354,7 @@ export class LeaveListComponent implements OnInit {
       });
     }
 
-    if (myId) {
+    if (myId && this.canViewSelfLeavesTab()) {
       this.viewMode.set('self');
       this.loadLeaves(myId);
       this.loadBalances(myId);
@@ -350,7 +368,7 @@ export class LeaveListComponent implements OnInit {
           const defaultTeamId = manageable[0]?.id || '';
           this.activeTargetEmployeeId.set(defaultTeamId);
 
-          if (!myId) {
+          if (!myId || !this.canViewSelfLeavesTab()) {
             this.viewMode.set('team');
             if (defaultTeamId) {
               this.loadLeaves(defaultTeamId);
@@ -598,10 +616,6 @@ export class LeaveListComponent implements OnInit {
     this.actionType.set('ADJUST_BALANCE');
     this.isActionModalOpen.set(true);
   }
-
-  readonly canAdjustBalance = computed(() =>
-    this.rbacService.hasPermission(Permission.LEAVE_BALANCE_ADJUST)
-  );
 
   closeActionModal(): void {
     this.isActionModalOpen.set(false);

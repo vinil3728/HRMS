@@ -22,27 +22,29 @@
          </button>
        }
 
-       <button
-          *appHasPermission="Permission.LEAVE_BALANCE_CREATE"
-          type="button"
-          class="btn btn-secondary"
-          (click)="openAllocateModal()"
-          [disabled]="!contextEmployeeId && employeeOptions().length === 0"
-        >
-          <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
-          <span>Quota Allocation</span>
-        </button>
+       @if (canAllocateBalance()) {
+         <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="openAllocateModal()"
+            [disabled]="!contextEmployeeId && employeeOptions().length === 0"
+          >
+            <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+            <span>Quota Allocation</span>
+          </button>
+       }
 
-        <button
-          *appHasPermission="Permission.LEAVE_CREATE"
-          type="button"
-          class="btn btn-primary"
-          (click)="openApplyModal()"
-          [disabled]="!myEmployeeId()"
-        >
-          <app-icon name="plus" [size]="16"></app-icon>
-          <span>Apply for Leave</span>
-        </button>
+       @if (canApplyLeave()) {
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="openApplyModal()"
+            [disabled]="!myEmployeeId()"
+          >
+            <app-icon name="plus" [size]="16"></app-icon>
+            <span>Apply for Leave</span>
+          </button>
+       }
     </div>
   </div>
 
@@ -52,16 +54,17 @@
     <div class="toolbar-section">
       <!-- Tabs Navigation (Left) -->
       <div class="tabs-nav">
-        <button
-          *appHasPermission="Permission.LEAVE_VIEW"
-          type="button"
-          class="tab-btn"
-          [class.active]="viewMode() === 'self'"
-          (click)="switchTab('self')"
-        >
-          <app-icon name="id-card" [size]="16"></app-icon>
-          <span>Self Leaves</span>
-        </button>
+        @if (canViewSelfLeavesTab()) {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="viewMode() === 'self'"
+            (click)="switchTab('self')"
+          >
+            <app-icon name="id-card" [size]="16"></app-icon>
+            <span>Self Leaves</span>
+          </button>
+        }
 
         @if(canViewTeamOrOrgLeavesTab()){
           <button
@@ -75,16 +78,17 @@
           </button>
         }
 
-        <button
-          *appHasPermission="Permission.HOLIDAY_VIEW"
-          type="button"
-          class="tab-btn"
-          [class.active]="viewMode() === 'holidays'"
-          (click)="switchTab('holidays')"
-        >
-          <app-icon name="calendar" [size]="16"></app-icon>
-          <span>Holiday Calendar</span>
-        </button>
+        @if (canViewHolidaysTab()) {
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="viewMode() === 'holidays'"
+            (click)="switchTab('holidays')"
+          >
+            <app-icon name="calendar" [size]="16"></app-icon>
+            <span>Holiday Calendar</span>
+          </button>
+        }
       </div>
 
       <!-- Filters Wrap (Right - shown when not on Holiday Calendar) -->

@@ -44,6 +44,13 @@ export class HolidayService {
   }
 
   /**
+   * Bulk create company holidays for a year (Requires HOLIDAY_CREATE).
+   */
+  bulkCreateHolidays(dtos: CreateHolidayDto[]): Observable<CompanyHoliday[]> {
+    return this.api.post<CompanyHoliday[]>('holidays/bulk', dtos);
+  }
+
+  /**
    * Update an existing company holiday (Requires HOLIDAY_UPDATE).
    */
   updateHoliday(id: string, dto: UpdateHolidayDto): Observable<CompanyHoliday> {

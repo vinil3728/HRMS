@@ -78,84 +78,65 @@
           </button>
         }
 
-        @if (canViewHolidaysTab()) {
+      </div>
+
+      <!-- Filters Wrap (Right) -->
+      <div class="filters-wrap">
+        @if (viewMode() === 'team') {
+          <app-select
+            [options]="employeeFilterOptions()"
+            [value]="teamEmployeeFilter()"
+            placeholder="All Employees"
+            minWidth="220px"
+            (valueChange)="onEmployeeFilterChange($event)"
+          ></app-select>
+        }
+
+        <!-- Status Filter -->
+        <app-select
+          [options]="statusOptions"
+          [value]="statusFilter()"
+          placeholder="All Statuses"
+          minWidth="160px"
+          (valueChange)="onStatusFilterChange($event)"
+        ></app-select>
+
+        <!-- Category Filter -->
+        <app-select
+          [options]="typeOptions"
+          [value]="typeFilter()"
+          placeholder="All Leave Types"
+          minWidth="175px"
+          (valueChange)="onTypeFilterChange($event)"
+        ></app-select>
+
+        <!-- Custom Shared Date Picker (Range Selection) -->
+        <app-date-picker
+          mode="range"
+          [fromDate]="fromDate()"
+          [toDate]="toDate()"
+          placeholder="Select date range"
+          minWidth="250px"
+          (rangeChange)="onDateRangeChange($event)"
+          (clear)="onDateRangeChange({ fromDate: '', toDate: '' })"
+        ></app-date-picker>
+
+        <!-- Reset Filter Icon Button -->
+        @if (hasActiveFilters()) {
           <button
             type="button"
-            class="tab-btn"
-            [class.active]="viewMode() === 'holidays'"
-            (click)="switchTab('holidays')"
+            class="btn-icon"
+            (click)="resetFilters()"
+            title="Reset Filters"
           >
-            <app-icon name="calendar" [size]="16"></app-icon>
-            <span>Holiday Calendar</span>
+            <app-icon name="activity" [size]="16"></app-icon>
           </button>
         }
       </div>
-
-      <!-- Filters Wrap (Right - shown when not on Holiday Calendar) -->
-      @if (viewMode() !== 'holidays') {
-        <div class="filters-wrap">
-          @if (viewMode() === 'team') {
-            <app-select
-              [options]="employeeFilterOptions()"
-              [value]="teamEmployeeFilter()"
-              placeholder="All Employees"
-              minWidth="220px"
-              (valueChange)="onEmployeeFilterChange($event)"
-            ></app-select>
-          }
-
-          <!-- Status Filter -->
-          <app-select
-            [options]="statusOptions"
-            [value]="statusFilter()"
-            placeholder="All Statuses"
-            minWidth="160px"
-            (valueChange)="onStatusFilterChange($event)"
-          ></app-select>
-
-          <!-- Category Filter -->
-          <app-select
-            [options]="typeOptions"
-            [value]="typeFilter()"
-            placeholder="All Leave Types"
-            minWidth="175px"
-            (valueChange)="onTypeFilterChange($event)"
-          ></app-select>
-
-          <!-- Custom Shared Date Picker (Range Selection) -->
-          <app-date-picker
-            mode="range"
-            [fromDate]="fromDate()"
-            [toDate]="toDate()"
-            placeholder="Select date range"
-            minWidth="250px"
-            (rangeChange)="onDateRangeChange($event)"
-            (clear)="onDateRangeChange({ fromDate: '', toDate: '' })"
-          ></app-date-picker>
-
-          <!-- Reset Filter Icon Button -->
-          @if (hasActiveFilters()) {
-            <button
-              type="button"
-              class="btn-icon"
-              (click)="resetFilters()"
-              title="Reset Filters"
-            >
-              <app-icon name="activity" [size]="16"></app-icon>
-            </button>
-          }
-        </div>
-      }
     </div>
 
-    <!-- ── Card Body: Holiday Calendar or Leaves ────────────────────────── -->
-    @if (viewMode() === 'holidays') {
-      <div class="holidays-container">
-        <app-holiday-calendar [embedded]="true"></app-holiday-calendar>
-      </div>
-    } @else {
-      <!-- ── Self Leave Metrics / Summary Cards (Below Toolbar, Above Table) ── -->
-      @if (viewMode() === 'self' && canViewLeaveSummary()) {
+    <!-- ── Self Leave Metrics / Summary Cards (Below Toolbar, Above Table) ── -->
+    @if (viewMode() === 'self' && canViewLeaveSummary()) {
         <div class="card-metrics-section">
           <div class="leave-metrics-grid">
             <div class="l-metric-card">
@@ -428,7 +409,6 @@
           }
         }
       </div>
-    }
   </div>
 </div>
 

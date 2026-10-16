@@ -160,10 +160,20 @@
   flex-shrink: 0;
 }
 
-.h-icon-blue { background: #eff6ff; color: #2563eb; }
-.h-icon-green { background: #ecfdf5; color: #059669; }
-.h-icon-amber { background: #fffbeb; color: #d97706; }
-.h-icon-purple { background: #f5f3ff; color: #7c3aed; }
+.h-icon-blue {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+}
+
+.h-icon-gray,
+.h-icon-green,
+.h-icon-amber,
+.h-icon-purple {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
 
 .h-metric-info {
   display: flex;
@@ -282,6 +292,11 @@
   color: #475569;
 }
 
+.holiday-status-upcoming {
+  font-weight: 500;
+  color: #2563eb;
+}
+
 .holiday-desc-cell {
   max-width: 320px;
 }
@@ -357,26 +372,6 @@
   color: #6b7280;
 }
 
-/* ── Embedded Mode Styles ────────────────────────────────────────────────── */
-.holiday-embedded-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.embedded-toolbar {
-  border-top: none;
-}
-
-.toolbar-left-info {
-  display: flex;
-  align-items: center;
-}
-
-.embedded-heading {
-  font-size: 14px;
-  font-weight: 600;
-  color: #374151;
-}
 
 /* ── Empty & Loading States ──────────────────────────────────────────────── */
 .empty-state {
@@ -463,6 +458,18 @@
 .btn-primary:hover {
   background-color: #1d4ed8;
   border-color: #1d4ed8;
+}
+
+.btn-secondary {
+  background-color: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+  background-color: #f9fafb;
+  color: #111827;
+  border-color: #9ca3af;
 }
 
 .btn-sm {

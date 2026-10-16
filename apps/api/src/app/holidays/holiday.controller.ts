@@ -39,6 +39,13 @@ export class HolidayController {
         return this.holidayService.findOne(id);
     }
 
+    @Post('bulk')
+    @Permissions(Permission.HOLIDAY_CREATE)
+    bulkCreate(@Body() body: any) {
+        const list = Array.isArray(body) ? body : (body?.holidays || []);
+        return this.holidayService.bulkCreate(list);
+    }
+
     @Post()
     @Permissions(Permission.HOLIDAY_CREATE)
     create(@Body() dto: CreateHolidayDto) {

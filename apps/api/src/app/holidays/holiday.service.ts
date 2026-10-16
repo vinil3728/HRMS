@@ -74,6 +74,25 @@ export class HolidayService {
         return this.holidayRepository.save(holiday);
     }
 
+    async bulkCreate(dtos: CreateHolidayDto[]): Promise<CompanyHoliday[]> {
+        if (!dtos || dtos.length === 0) {
+            return [];
+        }
+        const holidays = dtos.map((dto) => {
+            const dayOfWeek = dto.dayOfWeek || this.computeDayOfWeek(dto.date);
+            return this.holidayRepository.create({
+                name: dto.name,
+                date: dto.date,
+                dayOfWeek,
+                type: dto.type,
+                description: dto.description || null,
+                isActive: dto.isActive !== undefined ? dto.isActive : true,
+            });
+        });
+
+        return this.holidayRepository.save(holidays);
+    }
+
     async update(id: string, dto: UpdateHolidayDto): Promise<CompanyHoliday> {
         const holiday = await this.findOne(id);
 

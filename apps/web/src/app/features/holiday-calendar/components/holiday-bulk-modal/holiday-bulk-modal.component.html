@@ -1,0 +1,184 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="bulk-holiday-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close backdrop"></button>
+    <div class="modal-card">
+      <!-- ── Modal Header ────────────────────────────────────────────────── -->
+      <div class="modal-header">
+        <div>
+          <h3 id="bulk-holiday-modal-title" class="modal-title">
+            Bulk Add Holidays for a Year
+          </h3>
+          <p class="modal-subtitle">
+            Quickly configure the complete holiday schedule for an entire calendar year.
+          </p>
+        </div>
+        <button class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <!-- ── Error Alert ─────────────────────────────────────────────────── -->
+      @if (errorMessage()) {
+        <div class="alert-error" role="alert">
+          <app-icon name="shield" [size]="16"></app-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <!-- ── Modal Body ──────────────────────────────────────────────────── -->
+      <div class="modal-body">
+        <!-- Top Controls: Year Selection & Auto-fill Action -->
+        <div class="config-bar">
+          <div class="year-control">
+            <label class="control-label" for="bulkYearSelect">Target Year:</label>
+            <select
+              id="bulkYearSelect"
+              class="form-control-select"
+              [ngModel]="selectedYear()"
+              (ngModelChange)="onYearChange($event)"
+            >
+              @for (yr of yearOptions(); track yr) {
+                <option [value]="yr">{{ yr }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="config-actions">
+            <button
+              type="button"
+              class="btn-helper"
+              (click)="prefillStandardHolidays()"
+              title="Auto-fill 10 standard Indian national & festival holidays for this year"
+            >
+              <app-icon name="calendar" [size]="14"></app-icon>
+              <span>Auto-Fill Standard Holidays</span>
+            </button>
+
+            @if (rows().length > 0) {
+              <button
+                type="button"
+                class="btn-text-danger"
+                (click)="clearAllRows()"
+                title="Remove all rows"
+              >
+                <span>Clear All</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Holidays Table Grid -->
+        <div class="table-wrap">
+          <table class="bulk-table">
+            <thead>
+              <tr>
+                <th style="width: 40px;">#</th>
+                <th style="width: 220px;">DATE</th>
+                <th style="width: 240px;">HOLIDAY NAME</th>
+                <th style="width: 160px;">CATEGORY</th>
+                <th>DESCRIPTION</th>
+                <th style="width: 50px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows(); track row.id; let i = $index) {
+                <tr class="bulk-row">
+                  <td class="row-num">{{ i + 1 }}</td>
+                  <td>
+                    <div class="date-cell-wrap">
+                      <input
+                        type="date"
+                        class="form-input date-input"
+                        [ngModel]="row.date"
+                        (ngModelChange)="onDateChange(row, $event)"
+                      />
+                      @if (row.dayOfWeek) {
+                        <span class="day-chip">{{ row.dayOfWeek }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      class="form-input"
+                      placeholder="e.g. Independence Day"
+                      [(ngModel)]="row.name"
+                    />
+                  </td>
+                  <td>
+                    <select class="form-input select-input" [(ngModel)]="row.type">
+                      <option value="GAZETTED">Gazetted</option>
+                      <option value="COMPANY">Company</option>
+                      <option value="RESTRICTED">Restricted</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      class="form-input"
+                      placeholder="Optional notes or description"
+                      [(ngModel)]="row.description"
+                    />
+                  </td>
+                  <td class="action-cell">
+                    <button
+                      type="button"
+                      class="btn-del-row"
+                      (click)="removeRow(i)"
+                      title="Delete row"
+                    >
+                      <app-icon name="trash" [size]="15"></app-icon>
+                    </button>
+                  </td>
+                </tr>
+              }
+              @if (rows().length === 0) {
+                <tr>
+                  <td colspan="6" class="empty-rows-cell">
+                    <p>No holiday rows yet. Click "Add Row" or "Auto-Fill Standard Holidays" to begin.</p>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Add Row Button & Summary -->
+        <div class="table-footer-bar">
+          <button type="button" class="btn-add-row" (click)="addRow()">
+            <app-icon name="plus" [size]="15"></app-icon>
+            <span>Add Row</span>
+          </button>
+          <span class="summary-text">
+            {{ validRowsCount() }} holiday(s) configured for {{ selectedYear() }}
+          </span>
+        </div>
+      </div>
+
+      <!-- ── Modal Footer ────────────────────────────────────────────────── -->
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="onCancel()"
+          [disabled]="submitting()"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="onSubmit()"
+          [disabled]="submitting() || validRowsCount() === 0"
+        >
+          @if (submitting()) {
+            <span class="spinner" aria-hidden="true"></span>
+            <span>Saving {{ validRowsCount() }} Holidays...</span>
+          } @else {
+            <span>Save {{ validRowsCount() }} Holidays for {{ selectedYear() }}</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -12,7 +12,6 @@ import { Permission } from '../../core/models/permission.model';
 import { HolidayService } from '../../core/services/holiday.service';
 import { RbacService } from '../../core/services/rbac.service';
 import { AuthService } from '../../core/services/auth.service';
-import { BadgeComponent } from '../../shared/ui/badge/badge.component';
 import { IconComponent } from '../../shared/ui/icon/icon.component';
 import {
   SelectComponent,
@@ -20,7 +19,7 @@ import {
 } from '../../shared/ui/select/select.component';
 import { CompanyHoliday } from '../../core/models/holiday.model';
 import { HolidayFormModalComponent } from './components/holiday-form-modal/holiday-form-modal.component';
-import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
+import { HolidayBulkModalComponent } from './components/holiday-bulk-modal/holiday-bulk-modal.component';
 
 @Component({
   selector: 'app-holiday-calendar',
@@ -29,10 +28,9 @@ import { HasPermissionDirective } from '../../shared/directives/has-permission.d
     CommonModule,
     DatePipe,
     IconComponent,
-    BadgeComponent,
     SelectComponent,
     HolidayFormModalComponent,
-    HasPermissionDirective,
+    HolidayBulkModalComponent,
   ],
   templateUrl: './holiday-calendar.component.html',
   styleUrl: './holiday-calendar.component.css',
@@ -43,9 +41,6 @@ export class HolidayCalendarComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly rbacService = inject(RbacService);
 
-  readonly embedded = input<boolean>(false);
-
-  readonly Permission = Permission;
   readonly currentYear = new Date().getFullYear();
   readonly todayDateStr = new Date().toISOString().substring(0, 10);
 
@@ -55,16 +50,27 @@ export class HolidayCalendarComponent implements OnInit {
   readonly holidayYear = signal<number>(new Date().getFullYear());
   readonly loading = signal<boolean>(false);
   readonly isModalOpen = signal<boolean>(false);
+  readonly isBulkModalOpen = signal<boolean>(false);
   readonly selectedHoliday = signal<CompanyHoliday | null>(null);
 
   readonly currentUser = this.authService.currentUser;
  
-  readonly hasAnyActionPermissions = computed(() => {
-    return (
-      this.rbacService.hasPermission(Permission.HOLIDAY_EDIT) ||
-      this.rbacService.hasPermission(Permission.HOLIDAY_DELETE)
-    );
-  });
+  // ── Permission Signals (Replacing directive) ─────────────────────────────
+  readonly canCreateHoliday = computed(() =>
+    this.rbacService.hasPermission(Permission.HOLIDAY_CREATE)
+  );
+
+  readonly canEditHoliday = computed(() =>
+    this.rbacService.hasPermission(Permission.HOLIDAY_EDIT)
+  );
+
+  readonly canDeleteHoliday = computed(() =>
+    this.rbacService.hasPermission(Permission.HOLIDAY_DELETE)
+  );
+
+  readonly hasRowActionPermissions = computed(() =>
+    this.canEditHoliday() || this.canDeleteHoliday()
+  );
 
   readonly holidayTypeOptions: SelectOption[] = [
     { label: 'All Holiday Types', value: 'ALL' },
@@ -95,6 +101,19 @@ export class HolidayCalendarComponent implements OnInit {
   readonly upcomingHolidaysCount = computed(
     () => this.holidays().filter((h) => h.date >= this.todayDateStr).length
   );
+
+  getCategoryLabel(type: string): string {
+    switch (type) {
+      case 'GAZETTED':
+        return 'Gazetted';
+      case 'RESTRICTED':
+        return 'Restricted';
+      case 'COMPANY':
+        return 'Company';
+      default:
+        return type;
+    }
+  }
 
   ngOnInit(): void {
     this.loadHolidays();
@@ -149,6 +168,20 @@ export class HolidayCalendarComponent implements OnInit {
   closeModal(): void {
     this.isModalOpen.set(false);
     this.selectedHoliday.set(null);
+  }
+
+  openBulkAddModal(): void {
+    this.isBulkModalOpen.set(true);
+  }
+
+  closeBulkModal(): void {
+    this.isBulkModalOpen.set(false);
+  }
+
+  onBulkSaved(result: { year: number; count: number }): void {
+    this.closeBulkModal();
+    this.holidayYear.set(result.year);
+    this.loadHolidays();
   }
 
   onSaved(_saved: CompanyHoliday): void {

@@ -20,7 +20,6 @@ import { EmployeeService } from '../../../employees/services/employee.service';
 import { FormsModule } from '@angular/forms';
 import { LeaveApplyModalComponent } from '../../components/leave-apply-modal/leave-apply-modal.component';
 import { LeaveActionModalComponent } from '../../components/leave-action-modal/leave-action-modal.component';
-import { HolidayCalendarComponent } from '../../../holiday-calendar/holiday-calendar.component';
 import {
   Leave,
   LeaveBalance,
@@ -29,9 +28,7 @@ import {
 } from '../../models/leave.model';
 import { LeaveService } from '../../services/leave.service';
 
-import { ActivatedRoute } from '@angular/router';
-
-type ViewMode = 'self' | 'team' | 'holidays';
+type ViewMode = 'self' | 'team';
 
 @Component({
   selector: 'app-leave-list',
@@ -45,7 +42,6 @@ type ViewMode = 'self' | 'team' | 'holidays';
     FormsModule,
     LeaveApplyModalComponent,
     LeaveActionModalComponent,
-    HolidayCalendarComponent,
   ],
   templateUrl: './leave-list.component.html',
   styleUrl: './leave-list.component.css',
@@ -56,7 +52,6 @@ export class LeaveListComponent implements OnInit {
   private readonly employeeService = inject(EmployeeService);
   private readonly authService = inject(AuthService);
   private readonly rbacService = inject(RbacService);
-  private readonly route = inject(ActivatedRoute);
 
   readonly Permission = Permission;
   readonly PermissionScope = PermissionScope;
@@ -100,10 +95,6 @@ export class LeaveListComponent implements OnInit {
 
   readonly canViewSelfLeavesTab = computed(() =>
     this.rbacService.hasPermission(Permission.LEAVE_VIEW)
-  );
-
-  readonly canViewHolidaysTab = computed(() =>
-    this.rbacService.hasPermission(Permission.HOLIDAY_VIEW)
   );
 
   readonly canApplyLeave = computed(() =>
@@ -355,11 +346,6 @@ export class LeaveListComponent implements OnInit {
   // ── Lifecycle ──────────────────────────────────────────────────────────────
   ngOnInit(): void {
     this.initializeData();
-    this.route.queryParamMap.subscribe((params) => {
-      if (params.get('tab') === 'holidays') {
-        this.viewMode.set('holidays');
-      }
-    });
   }
 
   private initializeData(): void {

@@ -146,6 +146,18 @@ export class PermissionService {
         return this.findById(saved.id);
     }
 
+    async bulkCreate(dtos: CreatePermissionDto[]): Promise<PermissionEntity[]> {
+        if (!Array.isArray(dtos) || dtos.length === 0) {
+            throw new BadRequestException('Permissions list must be a non-empty array');
+        }
+
+        const results: PermissionEntity[] = [];
+        for (const dto of dtos) {
+            results.push(await this.create(dto));
+        }
+        return results;
+    }
+
     async update(
         id: string,
         dto: UpdatePermissionDto,

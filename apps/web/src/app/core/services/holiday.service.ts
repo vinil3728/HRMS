@@ -37,28 +37,28 @@ export class HolidayService {
   }
 
   /**
-   * Create a new company holiday (Requires HOLIDAY_CREATE).
+   * Create a new company holiday (Requires HLD_CREATE).
    */
   createHoliday(dto: CreateHolidayDto): Observable<CompanyHoliday> {
     return this.api.post<CompanyHoliday>('holidays', dto);
   }
 
   /**
-   * Bulk create company holidays for a year (Requires HOLIDAY_CREATE).
+   * Bulk create company holidays for a year (Requires HLD_CREATE).
    */
   bulkCreateHolidays(dtos: CreateHolidayDto[]): Observable<CompanyHoliday[]> {
     return this.api.post<CompanyHoliday[]>('holidays/bulk', dtos);
   }
 
   /**
-   * Update an existing company holiday (Requires HOLIDAY_UPDATE).
+   * Update an existing company holiday (Requires HLD_UPDATE).
    */
   updateHoliday(id: string, dto: UpdateHolidayDto): Observable<CompanyHoliday> {
     return this.api.patch<CompanyHoliday>(`holidays/${id}`, dto);
   }
 
   /**
-   * Delete a company holiday (Requires HOLIDAY_DELETE).
+   * Delete a company holiday (Requires HLD_DELETE).
    */
   deleteHoliday(id: string): Observable<{ success: boolean; message: string }> {
     return this.api.delete<{ success: boolean; message: string }>(`holidays/${id}`);

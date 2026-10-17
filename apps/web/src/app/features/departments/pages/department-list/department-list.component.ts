@@ -7,15 +7,14 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
 import { Permission } from '../../../../core/models/permission.model';
-import { BadgeComponent } from '../../../../shared/ui/badge/badge.component';
 import { IconComponent } from '../../../../shared/ui/icon/icon.component';
 import {
   SelectComponent,
   SelectOption,
 } from '../../../../shared/ui/select/select.component';
 import { DepartmentFormModalComponent } from '../../components/department-form-modal/department-form-modal.component';
+import { DepartmentDetailModalComponent } from '../../components/department-detail-modal/department-detail-modal.component';
 import { Department } from '../../models/department.model';
 import { DepartmentService } from '../../services/department.service';
 import { BranchService } from '../../../branches/services/branch.service';
@@ -28,10 +27,9 @@ import { RbacService } from '../../../../core/services/rbac.service';
     CommonModule,
     DatePipe,
     IconComponent,
-    BadgeComponent,
     SelectComponent,
-    HasPermissionDirective,
     DepartmentFormModalComponent,
+    DepartmentDetailModalComponent,
   ],
   templateUrl: './department-list.component.html',
   styleUrl: './department-list.component.css',
@@ -59,6 +57,9 @@ export class DepartmentListComponent implements OnInit {
   readonly isModalOpen = signal<boolean>(false);
   readonly selectedDepartment = signal<Department | null>(null);
 
+  readonly isDetailModalOpen = signal<boolean>(false);
+  readonly selectedDepartmentForDetail = signal<Department | null>(null);
+
   readonly statusOptions: SelectOption[] = [
     { label: 'All Statuses', value: 'ALL' },
     { label: 'Active', value: 'ACTIVE' },
@@ -73,21 +74,58 @@ export class DepartmentListComponent implements OnInit {
     })),
   ]);
 
+  // ── Permission Signals (Replacing directive) ─────────────────────────────
+  readonly canCreateDepartment = computed(() =>
+    this.rbacService.hasPermission(Permission.DPT_CREATE)
+  );
+
+  readonly canViewDepartment = computed(() =>
+    this.rbacService.hasPermission(Permission.DPT_VIEW)
+  );
+
+  readonly canEditDepartment = computed(() =>
+    this.rbacService.hasPermission(Permission.DPT_UPDATE)
+  );
+
+  readonly canDeleteDepartment = computed(() =>
+    this.rbacService.hasPermission(Permission.DPT_DELETE)
+  );
+
+  readonly canActivateDepartment = computed(() =>
+    this.rbacService.hasPermission(Permission.DPT_ACTIVATE)
+  );
+
+  readonly canDeactivateDepartment = computed(() =>
+    this.rbacService.hasPermission(Permission.DPT_DEACTIVATE)
+  );
+
+  readonly hasRowActionPermissions = computed(() => {
+    return (
+      this.canViewDepartment() ||
+      this.canEditDepartment() ||
+      this.canActivateDepartment() ||
+      this.canDeactivateDepartment()
+    );
+  });
+
+  // ── Metrics Computed Signals ─────────────────────────────────────────────
+  readonly totalDepartmentsCount = computed(() => this.departments().length);
+  readonly activeDepartmentsCount = computed(
+    () => this.departments().filter((d) => d.isActive).length
+  );
+  readonly inactiveDepartmentsCount = computed(
+    () => this.departments().filter((d) => !d.isActive).length
+  );
+  readonly totalDesignationsCount = computed(() =>
+    this.departments().reduce((acc, d) => acc + (d.designations?.length || 0), 0)
+  );
+
   readonly hasActiveFilters = computed(
     () =>
       this.searchQuery().trim().length > 0 ||
       this.statusFilter() !== 'ALL' ||
       this.branchFilter() !== 'ALL'
   );
-
-  readonly hasAnyActionPermissions = computed(() => {
-    return (
-      this.rbacService.hasPermission(Permission.DEPARTMENT_EDIT) ||
-      this.rbacService.hasPermission(Permission.DEPARTMENT_DELETE) ||
-      this.rbacService.hasPermission(Permission.DEPARTMENT_ACTIVATE) ||
-      this.rbacService.hasPermission(Permission.DEPARTMENT_DEACTIVATE)
-    );
-  });
 
   readonly filteredDepartments = computed(() => {
     let list = [...this.departments()];
@@ -119,6 +157,12 @@ export class DepartmentListComponent implements OnInit {
     }
 
     list.sort((a, b) => {
+      if (field === 'designations') {
+        const countA = a.designations?.length || 0;
+        const countB = b.designations?.length || 0;
+        return (countA < countB ? -1 : countA > countB ? 1 : 0) * (dir === 'asc' ? 1 : -1);
+      }
+
       const valA = a[field];
       const valB = b[field];
 
@@ -229,6 +273,16 @@ export class DepartmentListComponent implements OnInit {
   closeModal(): void {
     this.isModalOpen.set(false);
     this.selectedDepartment.set(null);
+  }
+
+  openDetailModal(dept: Department): void {
+    this.selectedDepartmentForDetail.set(dept);
+    this.isDetailModalOpen.set(true);
+  }
+
+  closeDetailModal(): void {
+    this.isDetailModalOpen.set(false);
+    this.selectedDepartmentForDetail.set(null);
   }
 
   onDepartmentSaved(savedDept: Department): void {

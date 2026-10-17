@@ -24,7 +24,7 @@ export class HolidayController {
     constructor(private readonly holidayService: HolidayService) {}
 
     @Get()
-    @Permissions(Permission.HOLIDAY_VIEW)
+    @Permissions(Permission.HLD_VIEW)
     findAll(
         @Query('year') year?: string,
         @Query('type') type?: string,
@@ -34,26 +34,26 @@ export class HolidayController {
     }
 
     @Get(':id')
-    @Permissions(Permission.HOLIDAY_VIEW)
+    @Permissions(Permission.HLD_VIEW)
     findOne(@Param('id', new ParseUUIDPipe()) id: string) {
         return this.holidayService.findOne(id);
     }
 
     @Post('bulk')
-    @Permissions(Permission.HOLIDAY_CREATE)
+    @Permissions(Permission.HLD_CREATE)
     bulkCreate(@Body() body: any) {
         const list = Array.isArray(body) ? body : (body?.holidays || []);
         return this.holidayService.bulkCreate(list);
     }
 
     @Post()
-    @Permissions(Permission.HOLIDAY_CREATE)
+    @Permissions(Permission.HLD_CREATE)
     create(@Body() dto: CreateHolidayDto) {
         return this.holidayService.create(dto);
     }
 
     @Patch(':id')
-    @Permissions(Permission.HOLIDAY_EDIT)
+    @Permissions(Permission.HLD_UPDATE)
     update(
         @Param('id', new ParseUUIDPipe()) id: string,
         @Body() dto: UpdateHolidayDto,
@@ -62,7 +62,7 @@ export class HolidayController {
     }
 
     @Delete(':id')
-    @Permissions(Permission.HOLIDAY_DELETE)
+    @Permissions(Permission.HLD_DELETE)
     remove(@Param('id', new ParseUUIDPipe()) id: string) {
         return this.holidayService.remove(id);
     }

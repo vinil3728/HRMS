@@ -1,0 +1,117 @@
+@if (isOpen() && designation()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="designation-detail-title">
+    <button class="modal-backdrop" (click)="onClose()" aria-label="Close modal backdrop"></button>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="header-left">
+          <div class="desig-avatar">
+            <app-icon name="id-card" [size]="22"></app-icon>
+          </div>
+          <div>
+            <div class="title-status-row">
+              <h3 id="designation-detail-title" class="modal-title">
+                {{ designation()!.name }}
+              </h3>
+              <app-badge [variant]="designation()!.isActive ? 'active' : 'inactive'">
+                {{ designation()!.isActive ? 'Active' : 'Inactive' }}
+              </app-badge>
+            </div>
+            <p class="modal-subtitle">
+              Designation Code: <span class="badge-code">{{ designation()!.code }}</span>
+            </p>
+          </div>
+        </div>
+        <button class="close-btn" (click)="onClose()" aria-label="Close modal">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Designation Quick Stats / Overview -->
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Department</span>
+            <span class="info-val">
+              {{ designation()!.department ? designation()!.department!.name : 'All Departments' }}
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Status</span>
+            <span class="info-val">
+              {{ designation()!.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Total Employees</span>
+            <span class="info-val">
+              {{ designation()!.employees?.length || 0 }} {{ (designation()!.employees?.length === 1) ? 'Employee' : 'Employees' }}
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Created Date</span>
+            <span class="info-val">
+              {{ designation()!.createdAt | date: 'dd MMM yyyy' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Subordinate Employees Section -->
+        <div class="employees-section">
+          <div class="section-header">
+            <h4 class="section-title">
+              Employees with this Designation ({{ designation()!.employees?.length || 0 }})
+            </h4>
+            <span class="section-desc">Active and registered personnel assigned to this position</span>
+          </div>
+
+          @if (designation()!.employees && designation()!.employees!.length > 0) {
+            <div class="employee-cards-list">
+              @for (emp of designation()!.employees!; track emp.id) {
+                <div class="employee-card">
+                  <div class="emp-card-header">
+                    <div class="emp-title-group">
+                      <span class="emp-name">{{ emp.firstName }} {{ emp.lastName }}</span>
+                      <span class="emp-code-tag">{{ emp.employeeCode }}</span>
+                    </div>
+                    @if (emp.status) {
+                      <app-badge [variant]="emp.status === 'ACTIVE' ? 'active' : 'inactive'">
+                        {{ emp.status === 'ACTIVE' ? 'Active' : 'Inactive' }}
+                      </app-badge>
+                    }
+                  </div>
+                  <div class="emp-card-body">
+                    <span class="emp-contact-item">
+                      <app-icon name="mail" [size]="12"></app-icon>
+                      <span class="emp-email">{{ emp.email }}</span>
+                    </span>
+                    @if (emp.phone) {
+                      <span class="emp-contact-item">
+                        <app-icon name="phone" [size]="12"></app-icon>
+                        <span>{{ emp.phone }}</span>
+                      </span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-employees">
+              <app-icon name="users" [size]="24"></app-icon>
+              <p>No employees currently assigned to this designation.</p>
+              <span class="empty-subtext">You can assign employees to this designation in Employee Management.</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="onClose()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+}

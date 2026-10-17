@@ -26,13 +26,13 @@ export class BranchesController {
   constructor(private readonly branchesService: BranchesService) {}
 
   @Post()
-  @Permissions(Permission.BRANCH_CREATE)
+  @Permissions(Permission.BRN_CREATE)
   create(@Body() dto: CreateBranchDto) {
     return this.branchesService.create(dto);
   }
 
   @Get()
-  @Permissions(Permission.BRANCH_VIEW)
+  @Permissions(Permission.BRN_VIEW)
   findAll(
     @Query('search') search?: string,
     @Query('isActive') isActive?: string,
@@ -43,13 +43,13 @@ export class BranchesController {
   }
 
   @Get(':id')
-  @Permissions(Permission.BRANCH_VIEW)
+  @Permissions(Permission.BRN_VIEW)
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.branchesService.findOne(id);
   }
 
   @Patch(':id')
-  @Permissions(Permission.BRANCH_EDIT)
+  @Permissions(Permission.BRN_UPDATE)
   update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateBranchDto,
@@ -58,7 +58,7 @@ export class BranchesController {
   }
 
   @Patch(':id/status')
-  @AnyPermissions(Permission.BRANCH_ACTIVATE, Permission.BRANCH_DEACTIVATE)
+  @AnyPermissions(Permission.BRN_ACTIVATE, Permission.BRN_DEACTIVATE)
   toggleStatus(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body('isActive') isActive: boolean,
@@ -67,7 +67,7 @@ export class BranchesController {
   }
 
   @Delete(':id')
-  @Permissions(Permission.BRANCH_DELETE)
+  @Permissions(Permission.BRN_DELETE)
   remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.branchesService.remove(id);
   }

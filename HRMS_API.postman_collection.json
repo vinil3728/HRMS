@@ -374,7 +374,7 @@
                 "departments"
               ]
             },
-            "description": "Creates a new department record (requires DEPARTMENT_CREATE permission)."
+            "description": "Creates a new department record (requires DPT_CREATE permission)."
           }
         },
         {
@@ -391,7 +391,7 @@
                 "departments"
               ]
             },
-            "description": "Retrieves list of all departments (requires DEPARTMENT_VIEW permission)."
+            "description": "Retrieves list of all departments (requires DPT_VIEW permission)."
           }
         },
         {
@@ -415,7 +415,7 @@
                 }
               ]
             },
-            "description": "Retrieves department details by UUID (requires DEPARTMENT_VIEW permission)."
+            "description": "Retrieves department details by UUID (requires DPT_VIEW permission)."
           }
         },
         {
@@ -448,7 +448,7 @@
                 }
               ]
             },
-            "description": "Updates an existing department (requires DEPARTMENT_UPDATE permission)."
+            "description": "Updates an existing department (requires DPT_UPDATE permission)."
           }
         }
       ]
@@ -495,7 +495,7 @@
                 "designations"
               ]
             },
-            "description": "Creates a new job title / designation (requires DESIGNATION_CREATE permission)."
+            "description": "Creates a new job title / designation (requires DSG_CREATE permission)."
           }
         },
         {
@@ -512,7 +512,7 @@
                 "designations"
               ]
             },
-            "description": "Retrieves list of all designations (requires DESIGNATION_VIEW permission)."
+            "description": "Retrieves list of all designations (requires DSG_VIEW permission)."
           }
         },
         {
@@ -536,7 +536,7 @@
                 }
               ]
             },
-            "description": "Retrieves single designation details by UUID (requires DESIGNATION_VIEW permission)."
+            "description": "Retrieves single designation details by UUID (requires DSG_VIEW permission)."
           }
         },
         {
@@ -569,7 +569,7 @@
                 }
               ]
             },
-            "description": "Updates designation name, code, or active status (requires DESIGNATION_UPDATE permission)."
+            "description": "Updates designation name, code, or active status (requires DSG_UPDATE permission)."
           }
         }
       ]
@@ -3384,7 +3384,7 @@
                     "permissions"
                   ]
                 },
-                "description": "Lists all available granular system permissions (requires PERMISSION_VIEW)."
+                "description": "Lists all available granular system permissions (requires PRM_VIEW)."
               }
             },
             {
@@ -3408,7 +3408,7 @@
                     }
                   ]
                 },
-                "description": "Gets single permission details by UUID (requires PERMISSION_VIEW)."
+                "description": "Gets single permission details by UUID (requires PRM_VIEW)."
               }
             }
           ]
@@ -3430,7 +3430,7 @@
                     "roles"
                   ]
                 },
-                "description": "Retrieves list of all configured user roles (requires ROLE_VIEW)."
+                "description": "Retrieves list of all configured user roles (requires ROL_VIEW)."
               }
             },
             {
@@ -3454,7 +3454,7 @@
                     }
                   ]
                 },
-                "description": "Fetches details of a specific role (requires ROLE_VIEW)."
+                "description": "Fetches details of a specific role (requires ROL_VIEW)."
               }
             },
             {
@@ -3496,7 +3496,7 @@
                     "roles"
                   ]
                 },
-                "description": "Creates a new custom role with optional initial permissions (requires ROLE_CREATE)."
+                "description": "Creates a new custom role with optional initial permissions (requires ROL_CREATE)."
               }
             },
             {
@@ -3529,7 +3529,7 @@
                     }
                   ]
                 },
-                "description": "Updates role name, code, or description (requires ROLE_UPDATE)."
+                "description": "Updates role name, code, or description (requires ROL_UPDATE)."
               }
             },
             {
@@ -3554,7 +3554,7 @@
                     }
                   ]
                 },
-                "description": "Enables an inactive role (requires ROLE_ACTIVATE)."
+                "description": "Enables an inactive role (requires ROL_ACTIVATE)."
               }
             },
             {
@@ -3579,7 +3579,7 @@
                     }
                   ]
                 },
-                "description": "Deactivates a role, temporarily removing access for assigned users (requires ROLE_DEACTIVATE)."
+                "description": "Deactivates a role, temporarily removing access for assigned users (requires ROL_DEACTIVATE)."
               }
             },
             {
@@ -3613,7 +3613,7 @@
                     }
                   ]
                 },
-                "description": "Overwrites role permissions with the provided list of permission UUIDs (requires ROLE_PERMISSION_ASSIGN)."
+                "description": "Overwrites role permissions with the provided list of permission UUIDs (requires ROL_PRM_ASSIGN)."
               }
             },
             {
@@ -3638,7 +3638,7 @@
                     }
                   ]
                 },
-                "description": "Retrieves list of permissions assigned to this role (requires ROLE_VIEW)."
+                "description": "Retrieves list of permissions assigned to this role (requires ROL_VIEW)."
               }
             }
           ]

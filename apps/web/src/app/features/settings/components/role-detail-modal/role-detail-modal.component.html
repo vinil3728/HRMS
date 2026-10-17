@@ -1,0 +1,144 @@
+@if (isOpen() && role()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="role-detail-title">
+    <button class="modal-backdrop" (click)="onClose()" aria-label="Close modal backdrop"></button>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="header-left">
+          <div class="role-avatar">
+            <app-icon name="shield" [size]="22"></app-icon>
+          </div>
+          <div>
+            <div class="title-status-row">
+              <h3 id="role-detail-title" class="modal-title">
+                {{ role()!.name }}
+              </h3>
+              <app-badge [variant]="role()!.isActive ? 'active' : 'inactive'">
+                {{ role()!.isActive ? 'Active' : 'Inactive' }}
+              </app-badge>
+            </div>
+            <p class="modal-subtitle">
+              Role Code: <span class="badge-code">{{ role()!.code }}</span>
+            </p>
+          </div>
+        </div>
+        <button class="close-btn" (click)="onClose()" aria-label="Close modal">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Role Quick Stats / Overview -->
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Category</span>
+            <span class="info-val">
+              {{ role()!.isSystemRole ? 'System Built-in' : 'Custom' }}
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Status</span>
+            <span class="info-val">
+              {{ role()!.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Total Privileges</span>
+            <span class="info-val">
+              {{ role()!.rolePermissions?.length || 0 }} {{ (role()!.rolePermissions?.length === 1) ? 'Privilege' : 'Privileges' }}
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Created Date</span>
+            <span class="info-val">
+              {{ role()!.createdAt | date: 'dd MMM yyyy' }}
+            </span>
+          </div>
+        </div>
+
+        @if (role()!.description) {
+          <div class="desc-box">
+            <span class="info-label">Description</span>
+            <p class="desc-content">{{ role()!.description }}</p>
+          </div>
+        }
+
+        <!-- Subordinate Privileges Section -->
+        <div class="privileges-section">
+          <div class="section-header">
+            <div class="section-header-info">
+              <h4 class="section-title">
+                Privileges assigned to this Role ({{ role()!.rolePermissions?.length || 0 }})
+              </h4>
+              <span class="section-desc">Access rights, actions, and authorization scopes granted</span>
+            </div>
+
+            @if (role()!.rolePermissions && role()!.rolePermissions!.length > 5) {
+              <div class="filter-search-box">
+                <app-icon name="search" [size]="14" customClass="search-icon"></app-icon>
+                <input
+                  type="text"
+                  class="search-input"
+                  placeholder="Filter privileges..."
+                  [value]="searchQuery()"
+                  (input)="onSearchInput($event)"
+                />
+              </div>
+            }
+          </div>
+
+          @if (filteredPermissions().length > 0) {
+            <div class="privilege-cards-list">
+              @for (rp of filteredPermissions(); track rp.id || rp.permission.id) {
+                <div class="privilege-card">
+                  <div class="privilege-card-header">
+                    <div class="privilege-title-group">
+                      <span class="privilege-name">{{ rp.permission.name || rp.permission.code }}</span>
+                      <span class="privilege-code-tag">{{ rp.permission.code }}</span>
+                    </div>
+                    @if (getModuleName(rp.permission); as modName) {
+                      <span class="module-chip">
+                        <app-icon name="grid" [size]="11"></app-icon>
+                        <span>{{ modName }}</span>
+                      </span>
+                    }
+                  </div>
+
+                  @if (rp.scopes && rp.scopes.length > 0) {
+                    <div class="scopes-wrap">
+                      <span class="scopes-label">Scopes:</span>
+                      <div class="scopes-list">
+                        @for (scope of rp.scopes; track scope) {
+                          <span class="scope-pill">{{ scope }}</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          } @else if (searchQuery()) {
+            <div class="empty-privileges">
+              <app-icon name="search" [size]="24"></app-icon>
+              <p>No privileges match "{{ searchQuery() }}"</p>
+            </div>
+          } @else {
+            <div class="empty-privileges">
+              <app-icon name="shield" [size]="24"></app-icon>
+              <p>No privileges currently assigned to this role.</p>
+              <span class="empty-subtext">You can assign permissions and scopes using the Permission Matrix.</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="onClose()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+}

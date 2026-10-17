@@ -91,7 +91,7 @@ export const appRoutes: Routes = [
         canActivate: [rbacGuard],
         data: {
           title: 'Branch Offices & Locations',
-          permission: Permission.BRANCH_VIEW,
+          permission: Permission.BRN_VIEW,
         },
         loadComponent: () =>
           import(
@@ -103,7 +103,7 @@ export const appRoutes: Routes = [
         canActivate: [rbacGuard],
         data: {
           title: 'Department Management',
-          permission: Permission.DEPARTMENT_VIEW,
+          permission: Permission.DPT_VIEW,
         },
         loadComponent: () =>
           import(
@@ -115,7 +115,7 @@ export const appRoutes: Routes = [
         canActivate: [rbacGuard],
         data: {
           title: 'Designation Management',
-          permission: Permission.DESIGNATION_VIEW,
+          permission: Permission.DSG_VIEW,
         },
         loadComponent: () =>
           import(
@@ -163,7 +163,7 @@ export const appRoutes: Routes = [
         canActivate: [rbacGuard],
         data: {
           title: 'Holiday Calendar',
-          permission: Permission.HOLIDAY_VIEW,
+          permission: Permission.HLD_VIEW,
         },
         loadComponent: () =>
           import(
@@ -247,7 +247,7 @@ export const appRoutes: Routes = [
         canActivate: [rbacGuard],
         data: {
           title: 'Roles & Access Control',
-          permission: Permission.ROLE_VIEW,
+          permission: Permission.ROL_VIEW,
         },
         loadComponent: () =>
           import(
@@ -259,7 +259,7 @@ export const appRoutes: Routes = [
         canActivate: [rbacGuard],
         data: {
           title: 'Module Management',
-          permission: Permission.MODULE_VIEW,
+          permission: Permission.MOD_VIEW,
         },
         loadComponent: () =>
           import(
@@ -271,7 +271,7 @@ export const appRoutes: Routes = [
         canActivate: [rbacGuard],
         data: {
           title: 'Permissions Catalog',
-          permission: Permission.ROLE_VIEW,
+          permission: Permission.ROL_VIEW,
         },
         loadComponent: () =>
           import(
@@ -283,7 +283,7 @@ export const appRoutes: Routes = [
         canActivate: [rbacGuard],
         data: {
           title: 'User Accounts',
-          permission: Permission.ROLE_VIEW,
+          permission: Permission.ROL_VIEW,
         },
         loadComponent: () =>
           import(

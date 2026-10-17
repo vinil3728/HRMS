@@ -28,7 +28,7 @@ export class DesignationController {
     ) {}
 
     @Post()
-    @Permissions(Permission.DESIGNATION_CREATE)
+    @Permissions(Permission.DSG_CREATE)
     create(
         @Body() dto: CreateDesignationDto,
     ) {
@@ -36,7 +36,7 @@ export class DesignationController {
     }
 
     @Get()
-    @Permissions(Permission.DESIGNATION_VIEW)
+    @Permissions(Permission.DSG_VIEW)
     findAll(
         @Query('departmentId') departmentId?: string,
     ) {
@@ -44,7 +44,7 @@ export class DesignationController {
     }
 
     @Get(':id')
-    @Permissions(Permission.DESIGNATION_VIEW)
+    @Permissions(Permission.DSG_VIEW)
     findOne(
         @Param(
             'id',
@@ -56,7 +56,7 @@ export class DesignationController {
     }
 
     @Patch(':id')
-    @Permissions(Permission.DESIGNATION_EDIT)
+    @Permissions(Permission.DSG_UPDATE)
     update(
         @Param(
             'id',

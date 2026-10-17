@@ -28,7 +28,7 @@ export class DepartmentController {
     ) {}
 
     @Post()
-    @Permissions(Permission.DEPARTMENT_CREATE)
+    @Permissions(Permission.DPT_CREATE)
     create(
         @Body() dto: CreateDepartmentDto,
     ) {
@@ -36,7 +36,7 @@ export class DepartmentController {
     }
 
     @Get()
-    @Permissions(Permission.DEPARTMENT_VIEW)
+    @Permissions(Permission.DPT_VIEW)
     findAll(
         @Query('branchId') branchId?: string,
     ) {
@@ -44,7 +44,7 @@ export class DepartmentController {
     }
 
     @Get(':id')
-    @Permissions(Permission.DEPARTMENT_VIEW)
+    @Permissions(Permission.DPT_VIEW)
     findOne(
         @Param(
             'id',
@@ -56,7 +56,7 @@ export class DepartmentController {
     }
 
     @Patch(':id')
-    @Permissions(Permission.DEPARTMENT_EDIT)
+    @Permissions(Permission.DPT_UPDATE)
     update(
         @Param(
             'id',

@@ -7,9 +7,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
 import { Permission } from '../../../../core/models/permission.model';
-import { BadgeComponent } from '../../../../shared/ui/badge/badge.component';
 import { IconComponent } from '../../../../shared/ui/icon/icon.component';
 import {
   SelectComponent,
@@ -26,9 +24,7 @@ import { RbacService } from '../../../../core/services/rbac.service';
   imports: [
     CommonModule,
     IconComponent,
-    BadgeComponent,
     SelectComponent,
-    HasPermissionDirective,
     BranchFormModalComponent,
     BranchDetailModalComponent,
   ],
@@ -62,18 +58,55 @@ export class BranchListComponent implements OnInit {
     { label: 'Inactive', value: 'INACTIVE' },
   ];
 
+  // ── Permission Signals (Replacing directive) ─────────────────────────────
+  readonly canCreateBranch = computed(() =>
+    this.rbacService.hasPermission(Permission.BRN_CREATE)
+  );
+
+  readonly canViewBranch = computed(() =>
+    this.rbacService.hasPermission(Permission.BRN_VIEW)
+  );
+
+  readonly canEditBranch = computed(() =>
+    this.rbacService.hasPermission(Permission.BRN_UPDATE)
+  );
+
+  readonly canDeleteBranch = computed(() =>
+    this.rbacService.hasPermission(Permission.BRN_DELETE)
+  );
+
+  readonly canActivateBranch = computed(() =>
+    this.rbacService.hasPermission(Permission.BRN_ACTIVATE)
+  );
+
+  readonly canDeactivateBranch = computed(() =>
+    this.rbacService.hasPermission(Permission.BRN_DEACTIVATE)
+  );
+
+  readonly hasRowActionPermissions = computed(() => {
+    return (
+      this.canViewBranch() ||
+      this.canEditBranch() ||
+      this.canActivateBranch() ||
+      this.canDeactivateBranch()
+    );
+  });
+
+  // ── Metrics Computed Signals ─────────────────────────────────────────────
+  readonly totalBranchesCount = computed(() => this.branches().length);
+  readonly activeBranchesCount = computed(
+    () => this.branches().filter((b) => b.isActive).length
+  );
+  readonly inactiveBranchesCount = computed(
+    () => this.branches().filter((b) => !b.isActive).length
+  );
+  readonly totalDepartmentsCount = computed(() =>
+    this.branches().reduce((acc, b) => acc + (b.departments?.length || 0), 0)
+  );
+
   readonly hasActiveFilters = computed(
     () => this.searchQuery().trim().length > 0 || this.statusFilter() !== 'ALL'
   );
-
-  readonly hasAnyActionPermissions = computed(() => {
-    return (
-      this.rbacService.hasPermission(Permission.BRANCH_EDIT) ||
-      this.rbacService.hasPermission(Permission.BRANCH_DELETE) ||
-      this.rbacService.hasPermission(Permission.BRANCH_ACTIVATE) ||
-      this.rbacService.hasPermission(Permission.BRANCH_DEACTIVATE)
-    );
-  });
 
   readonly filteredBranches = computed(() => {
     let list = [...this.branches()];
@@ -98,6 +131,12 @@ export class BranchListComponent implements OnInit {
     }
 
     list.sort((a, b) => {
+      if (field === 'departments') {
+        const countA = a.departments?.length || 0;
+        const countB = b.departments?.length || 0;
+        return (countA < countB ? -1 : countA > countB ? 1 : 0) * (dir === 'asc' ? 1 : -1);
+      }
+
       const valA = a[field];
       const valB = b[field];
 

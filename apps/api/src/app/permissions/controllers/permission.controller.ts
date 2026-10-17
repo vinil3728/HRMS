@@ -27,21 +27,29 @@ export class PermissionController {
     ) {}
 
     @Get()
-    @Permissions(Permission.PERMISSION_VIEW)
+    @Permissions(Permission.PRM_VIEW)
     findAll(@Query('all') all?: string) {
         return this.permissionService.findAll(all === 'true');
     }
 
     @Get(':id')
-    @Permissions(Permission.PERMISSION_VIEW)
+    @Permissions(Permission.PRM_VIEW)
     findById(
         @Param('id') id: string,
     ) {
         return this.permissionService.findById(id);
     }
 
+    @Post('bulk')
+    @Permissions(Permission.PRM_CREATE)
+    bulkCreate(
+        @Body() dtos: CreatePermissionDto[],
+    ) {
+        return this.permissionService.bulkCreate(dtos);
+    }
+
     @Post()
-    @Permissions(Permission.PERMISSION_CREATE)
+    @Permissions(Permission.PRM_CREATE)
     create(
         @Body() dto: CreatePermissionDto,
     ) {
@@ -49,7 +57,7 @@ export class PermissionController {
     }
 
     @Patch(':id')
-    @Permissions(Permission.PERMISSION_EDIT)
+    @Permissions(Permission.PRM_UPDATE)
     update(
         @Param('id') id: string,
         @Body() dto: UpdatePermissionDto,
@@ -58,7 +66,7 @@ export class PermissionController {
     }
 
     @Patch(':id/activate')
-    @Permissions(Permission.PERMISSION_ACTIVATE)
+    @Permissions(Permission.PRM_ACTIVATE)
     activate(
         @Param('id') id: string,
     ) {
@@ -66,7 +74,7 @@ export class PermissionController {
     }
 
     @Patch(':id/deactivate')
-    @Permissions(Permission.PERMISSION_DEACTIVATE)
+    @Permissions(Permission.PRM_DEACTIVATE)
     deactivate(
         @Param('id') id: string,
     ) {
@@ -74,7 +82,7 @@ export class PermissionController {
     }
 
     @Delete(':id')
-    @Permissions(Permission.PERMISSION_DELETE)
+    @Permissions(Permission.PRM_DELETE)
     remove(
         @Param('id') id: string,
     ) {

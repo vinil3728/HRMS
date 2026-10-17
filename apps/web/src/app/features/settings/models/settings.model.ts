@@ -6,6 +6,7 @@ export interface SystemModule {
   isActive: boolean;
   isDeleted?: boolean;
   permissionCount?: number;
+  permissions?: SystemPermission[];
   createdAt?: string;
   updatedAt?: string;
 }

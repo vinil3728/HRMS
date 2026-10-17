@@ -19,7 +19,7 @@ import { AssignPermissionsDto } from '../dto/assign-permissions.dto';
 
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 
-import { AnyPermissions, Permissions } from '../decorators/permissions.decorator';
+import { Permissions } from '../decorators/permissions.decorator';
 import { PermissionGuard } from '../guards/permission.guard';
 import { Permission } from '../../permissions/enums/permission.enum';
 
@@ -31,13 +31,13 @@ export class RoleController {
     ) {}
 
     @Get()
-    @Permissions(Permission.ROLE_VIEW)
+    @Permissions(Permission.ROL_VIEW)
     findAll(@Query('all') all?: string) {
         return this.roleService.findAll(all !== 'false');
     }
 
     @Get(':id')
-    @Permissions(Permission.ROLE_VIEW)
+    @Permissions(Permission.ROL_VIEW)
     findById(
         @Param('id') id: string,
     ) {
@@ -45,7 +45,7 @@ export class RoleController {
     }
 
     @Post()
-    @Permissions(Permission.ROLE_CREATE)
+    @Permissions(Permission.ROL_CREATE)
     create(
         @Body() dto: CreateRoleDto,
     ) {
@@ -53,7 +53,7 @@ export class RoleController {
     }
 
     @Patch(':id')
-    @Permissions(Permission.ROLE_EDIT)
+    @Permissions(Permission.ROL_UPDATE)
     update(
         @Param('id') id: string,
         @Body() dto: UpdateRoleDto,
@@ -65,7 +65,7 @@ export class RoleController {
     }
 
     @Patch(':id/activate')
-    @Permissions(Permission.ROLE_ACTIVATE)
+    @Permissions(Permission.ROL_ACTIVATE)
     activate(
         @Param('id') id: string,
     ) {
@@ -73,7 +73,7 @@ export class RoleController {
     }
 
     @Patch(':id/deactivate')
-    @Permissions(Permission.ROLE_DEACTIVATE)
+    @Permissions(Permission.ROL_DEACTIVATE)
     deactivate(
         @Param('id') id: string,
     ) {
@@ -81,7 +81,7 @@ export class RoleController {
     }
 
     @Delete(':id')
-    @Permissions(Permission.ROLE_DELETE)
+    @Permissions(Permission.ROL_DELETE)
     remove(
         @Param('id') id: string,
     ) {
@@ -89,7 +89,7 @@ export class RoleController {
     }
 
     @Put(':id/permissions')
-    @Permissions(Permission.ROLE_PERMISSION_ASSIGN)
+    @Permissions(Permission.ROL_PRM_ASSIGN)
     assignPermissions(
         @Param('id') id: string,
         @Body() dto: AssignPermissionsDto,
@@ -101,7 +101,7 @@ export class RoleController {
     }
 
     @Get(':id/permissions')
-    @Permissions(Permission.PERMISSION_VIEW)
+    @Permissions(Permission.PRM_VIEW)
     getPermissions(
         @Param('id') id: string,
     ) {

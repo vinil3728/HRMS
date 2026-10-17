@@ -51,7 +51,10 @@ export class DesignationService {
   async findAll(departmentId?: string): Promise<Designation[]> {
     return this.designationRepository.find({
       where: departmentId ? { departmentId } : {},
-      relations: { department: true },
+      relations: {
+        department: true,
+        employees: true,
+      },
       order: {
         name: 'ASC',
       },
@@ -61,7 +64,10 @@ export class DesignationService {
   async findOne(id: string): Promise<Designation> {
     const designation = await this.designationRepository.findOne({
       where: { id },
-      relations: { department: true },
+      relations: {
+        department: true,
+        employees: true,
+      },
     });
 
     if (!designation) {

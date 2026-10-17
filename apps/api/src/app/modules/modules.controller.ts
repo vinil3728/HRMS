@@ -26,7 +26,7 @@ export class ModulesController {
     constructor(private readonly modulesService: ModulesService) {}
 
     @Get()
-    @Permissions(Permission.MODULE_VIEW)
+    @Permissions(Permission.MOD_VIEW)
     findAll(
         @Query('search') search?: string,
         @Query('all') all?: string,
@@ -35,19 +35,19 @@ export class ModulesController {
     }
 
     @Get(':id')
-    @Permissions(Permission.MODULE_VIEW)
+    @Permissions(Permission.MOD_VIEW)
     findOne(@Param('id', new ParseUUIDPipe()) id: string) {
         return this.modulesService.findOne(id);
     }
 
     @Post()
-    @Permissions(Permission.MODULE_CREATE)
+    @Permissions(Permission.MOD_CREATE)
     create(@Body() dto: CreateModuleDto) {
         return this.modulesService.create(dto);
     }
 
     @Patch(':id')
-    @Permissions(Permission.MODULE_EDIT)
+    @Permissions(Permission.MOD_UPDATE)
     update(
         @Param('id', new ParseUUIDPipe()) id: string,
         @Body() dto: UpdateModuleDto,
@@ -56,19 +56,19 @@ export class ModulesController {
     }
 
     @Patch(':id/activate')
-    @Permissions(Permission.MODULE_ACTIVATE)
+    @Permissions(Permission.MOD_ACTIVATE)
     activate(@Param('id', new ParseUUIDPipe()) id: string) {
         return this.modulesService.activate(id);
     }
 
     @Patch(':id/deactivate')
-    @Permissions(Permission.MODULE_DEACTIVATE)
+    @Permissions(Permission.MOD_DEACTIVATE)
     deactivate(@Param('id', new ParseUUIDPipe()) id: string) {
         return this.modulesService.deactivate(id);
     }
 
     @Delete(':id')
-    @Permissions(Permission.MODULE_DELETE)
+    @Permissions(Permission.MOD_DELETE)
     remove(@Param('id', new ParseUUIDPipe()) id: string) {
         return this.modulesService.remove(id);
     }

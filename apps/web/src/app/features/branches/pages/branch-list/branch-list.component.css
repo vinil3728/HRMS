@@ -43,6 +43,59 @@
   flex-wrap: wrap;
 }
 
+/* ── Branch Metrics / Summary Cards (Outside content-card) ─────────────── */
+.branch-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.b-metric-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.b-metric-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.b-icon-blue {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+}
+
+.b-metric-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.b-metric-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.b-metric-label {
+  font-size: 12.5px;
+  color: #6b7280;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
 /* ── Main Unified Content Card ───────────────────────────────────────────── */
 .content-card {
   background-color: #ffffff;
@@ -245,9 +298,10 @@
 }
 
 .code-cell {
-  color: #475569;
+  color: #0f172a;
   font-size: 13px;
-  font-family: monospace;
+  font-weight: 700;
+  font-family: inherit;
 }
 
 .branch-name-wrap {
@@ -341,6 +395,11 @@
 .action-icon-btn:hover {
   background-color: #f1f5f9;
   color: #334155;
+}
+
+.action-icon-btn.view-action-btn:hover {
+  background-color: #eff6ff;
+  color: #2563eb;
 }
 
 .action-btn {
@@ -522,4 +581,16 @@
 .btn-sm {
   padding: 6px 12px;
   font-size: 13px;
+}
+
+@media (max-width: 1024px) {
+  .branch-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .branch-metrics-grid {
+    grid-template-columns: 1fr;
+  }
 }

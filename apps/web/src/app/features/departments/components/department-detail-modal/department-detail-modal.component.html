@@ -1,0 +1,105 @@
+@if (isOpen() && department()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="department-detail-title">
+    <button class="modal-backdrop" (click)="onClose()" aria-label="Close modal backdrop"></button>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="header-left">
+          <div class="dept-avatar">
+            <app-icon name="building" [size]="22"></app-icon>
+          </div>
+          <div>
+            <div class="title-status-row">
+              <h3 id="department-detail-title" class="modal-title">
+                {{ department()!.name }}
+              </h3>
+              <app-badge [variant]="department()!.isActive ? 'active' : 'inactive'">
+                {{ department()!.isActive ? 'Active' : 'Inactive' }}
+              </app-badge>
+            </div>
+            <p class="modal-subtitle">
+              Department Code: <span class="badge-code">{{ department()!.code }}</span>
+            </p>
+          </div>
+        </div>
+        <button class="close-btn" (click)="onClose()" aria-label="Close modal">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Department Quick Stats / Overview -->
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Branch</span>
+            <span class="info-val">
+              {{ department()!.branch ? department()!.branch!.name : 'All Branches' }}
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Status</span>
+            <span class="info-val">
+              {{ department()!.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Designations</span>
+            <span class="info-val">
+              {{ department()!.designations?.length || 0 }} {{ (department()!.designations?.length === 1) ? 'Designation' : 'Designations' }}
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Created Date</span>
+            <span class="info-val">
+              {{ department()!.createdAt | date: 'dd MMM yyyy' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Subordinate Designations Section -->
+        <div class="designations-section">
+          <div class="section-header">
+            <h4 class="section-title">
+              Designations under this Department ({{ department()!.designations?.length || 0 }})
+            </h4>
+            <span class="section-desc">Job roles and positions categorized within this department</span>
+          </div>
+
+          @if (department()!.designations && department()!.designations!.length > 0) {
+            <div class="designation-cards-list">
+              @for (desig of department()!.designations!; track desig.id) {
+                <div class="designation-card">
+                  <div class="designation-card-header">
+                    <div class="designation-title-group">
+                      <span class="designation-name">{{ desig.name }}</span>
+                      <span class="designation-code-tag">{{ desig.code }}</span>
+                    </div>
+                    @if (desig.isActive !== undefined) {
+                      <app-badge [variant]="desig.isActive ? 'active' : 'inactive'">
+                        {{ desig.isActive ? 'Active' : 'Inactive' }}
+                      </app-badge>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-designations">
+              <app-icon name="id-card" [size]="24"></app-icon>
+              <p>No designations currently assigned under this department.</p>
+              <span class="empty-subtext">You can create and link designations to this department in the Designations page.</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="onClose()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+}

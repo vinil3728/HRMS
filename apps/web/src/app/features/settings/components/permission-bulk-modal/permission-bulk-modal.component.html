@@ -1,0 +1,188 @@
+@if (isOpen()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="bulk-permission-modal-title">
+    <button class="modal-backdrop" (click)="onCancel()" aria-label="Close backdrop"></button>
+    <div class="modal-card">
+      <!-- ── Modal Header ────────────────────────────────────────────────── -->
+      <div class="modal-header">
+        <div>
+          <h3 id="bulk-permission-modal-title" class="modal-title">
+            Bulk Create Permissions
+          </h3>
+          <p class="modal-subtitle">
+            Quickly define multiple permissions across functional modules at once.
+          </p>
+        </div>
+        <button class="close-btn" (click)="onCancel()" aria-label="Close modal">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <!-- ── Error Alert ─────────────────────────────────────────────────── -->
+      @if (errorMessage()) {
+        <div class="alert-error" role="alert">
+          <app-icon name="alert-circle" [size]="16"></app-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <!-- ── Modal Body ──────────────────────────────────────────────────── -->
+      <div class="modal-body">
+        <!-- Top Controls: Default Module & Generator -->
+        <div class="config-bar">
+          <div class="module-control">
+            <label class="control-label" for="defaultModuleSelect">Default Module:</label>
+            <select
+              id="defaultModuleSelect"
+              class="form-control-select"
+              [ngModel]="defaultModuleId()"
+              (ngModelChange)="onDefaultModuleChange($event)"
+            >
+              @for (mod of modules(); track mod.id) {
+                <option [value]="mod.id">{{ mod.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="config-actions">
+            <button
+              type="button"
+              class="btn-helper"
+              (click)="generateCrudTemplate()"
+              title="Generate standard CRUD permissions (VIEW, CREATE, EDIT, DELETE, EXPORT) for selected module"
+            >
+              <app-icon name="shield" [size]="14"></app-icon>
+              <span>Generate CRUD Set</span>
+            </button>
+
+            @if (rows().length > 0) {
+              <button
+                type="button"
+                class="btn-text-danger"
+                (click)="clearAllRows()"
+                title="Remove all rows"
+              >
+                <span>Clear All</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Permissions Table Grid -->
+        <div class="table-wrap">
+          <table class="bulk-table">
+            <thead>
+              <tr>
+                <th style="width: 40px;">#</th>
+                <th style="width: 220px;">PERMISSION CODE</th>
+                <th style="width: 220px;">PERMISSION NAME</th>
+                <th style="width: 170px;">MODULE</th>
+                <th style="width: 120px;">SCOPE</th>
+                <th>DESCRIPTION</th>
+                <th style="width: 50px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows(); track row.id; let i = $index) {
+                <tr class="bulk-row">
+                  <td class="row-num">{{ i + 1 }}</td>
+                  <td>
+                    <input
+                      type="text"
+                      class="form-input code-input"
+                      placeholder="e.g. REPORT_VIEW"
+                      [ngModel]="row.code"
+                      (ngModelChange)="onCodeChange(row, $event)"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      class="form-input"
+                      placeholder="e.g. View Reports"
+                      [(ngModel)]="row.name"
+                    />
+                  </td>
+                  <td>
+                    <select class="form-input select-input" [(ngModel)]="row.moduleId">
+                      @for (mod of modules(); track mod.id) {
+                        <option [value]="mod.id">{{ mod.name }}</option>
+                      }
+                    </select>
+                  </td>
+                  <td>
+                    <select class="form-input select-input" [(ngModel)]="row.scopes">
+                      @for (s of scopeOptions; track s.value) {
+                        <option [value]="s.value">{{ s.label }}</option>
+                      }
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      class="form-input"
+                      placeholder="Optional description"
+                      [(ngModel)]="row.description"
+                    />
+                  </td>
+                  <td class="action-cell">
+                    <button
+                      type="button"
+                      class="btn-del-row"
+                      (click)="removeRow(i)"
+                      title="Delete row"
+                    >
+                      <app-icon name="trash" [size]="15"></app-icon>
+                    </button>
+                  </td>
+                </tr>
+              }
+              @if (rows().length === 0) {
+                <tr>
+                  <td colspan="7" class="empty-rows-cell">
+                    <p>No permission rows yet. Click "Add Row" or "Generate CRUD Set" to begin.</p>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Add Row Button & Summary -->
+        <div class="table-footer-bar">
+          <button type="button" class="btn-add-row" (click)="addRow()">
+            <app-icon name="plus" [size]="15"></app-icon>
+            <span>Add Row</span>
+          </button>
+          <span class="summary-text">
+            {{ validRowsCount() }} permission(s) ready to create
+          </span>
+        </div>
+      </div>
+
+      <!-- ── Modal Footer ────────────────────────────────────────────────── -->
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="onCancel()"
+          [disabled]="submitting()"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="onSubmit()"
+          [disabled]="submitting() || validRowsCount() === 0"
+        >
+          @if (submitting()) {
+            <span class="spinner" aria-hidden="true"></span>
+            <span>Saving {{ validRowsCount() }} Permissions...</span>
+          } @else {
+            <span>Save {{ validRowsCount() }} Permissions</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

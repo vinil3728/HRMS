@@ -4,10 +4,12 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Department } from '../../departments/entities/department.entity';
+import { Employee } from '../../employees/entities/employee.entity';
 
 @Entity('designations')
 export class Designation {
@@ -29,6 +31,9 @@ export class Designation {
   })
   @JoinColumn({ name: 'department_id' })
   department?: Department | null;
+
+  @OneToMany(() => Employee, (employee) => employee.designation)
+  employees?: Employee[];
 
   @Column({ default: true })
   isActive!: boolean;

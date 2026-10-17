@@ -66,7 +66,7 @@ export class SettingsPageComponent implements OnInit {
       Permission.POLICY_CREATE,
       Permission.POLICY_PUBLISH,
       Permission.PAYROLL_PROCESS,
-      Permission.HOLIDAY_CREATE,
+      Permission.HLD_CREATE,
     ]);
   });
 
@@ -75,11 +75,11 @@ export class SettingsPageComponent implements OnInit {
       Permission.SETTINGS_ORG_VIEW,
       Permission.SETTINGS_VIEW,
       Permission.SETTINGS_UPDATE,
-      Permission.ROLE_VIEW,
-      Permission.ROLE_CREATE,
-      Permission.ROLE_PERMISSION_ASSIGN,
-      Permission.USER_VIEW,
-      Permission.USER_CREATE,
+      Permission.ROL_VIEW,
+      Permission.ROL_CREATE,
+      Permission.ROL_PRM_ASSIGN,
+      Permission.USR_VIEW,
+      Permission.USR_CREATE,
     ]);
   });
 

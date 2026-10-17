@@ -160,19 +160,19 @@ export class AddRolesAndPermissions1790142000300
 
                 -- Departments
                 (
-                    'DEPARTMENT_VIEW',
+                    'DPT_VIEW',
                     'View Departments',
                     'View departments',
                     'Departments'
                 ),
                 (
-                    'DEPARTMENT_CREATE',
+                    'DPT_CREATE',
                     'Create Department',
                     'Create departments',
                     'Departments'
                 ),
                 (
-                    'DEPARTMENT_UPDATE',
+                    'DPT_UPDATE',
                     'Update Department',
                     'Update departments',
                     'Departments'
@@ -180,19 +180,19 @@ export class AddRolesAndPermissions1790142000300
 
                 -- Designations
                 (
-                    'DESIGNATION_VIEW',
+                    'DSG_VIEW',
                     'View Designations',
                     'View designations',
                     'Designations'
                 ),
                 (
-                    'DESIGNATION_CREATE',
+                    'DSG_CREATE',
                     'Create Designation',
                     'Create designations',
                     'Designations'
                 ),
                 (
-                    'DESIGNATION_UPDATE',
+                    'DSG_UPDATE',
                     'Update Designation',
                     'Update designations',
                     'Designations'
@@ -648,8 +648,8 @@ export class AddRolesAndPermissions1790142000300
             AND p."code" IN (
                 'EMPLOYEE_VIEW',
 
-                'DEPARTMENT_VIEW',
-                'DESIGNATION_VIEW',
+                'DPT_VIEW',
+                'DSG_VIEW',
 
                 'ATTENDANCE_VIEW',
                 'ATTENDANCE_CREATE',
@@ -716,8 +716,8 @@ export class AddRolesAndPermissions1790142000300
             AND p."code" IN (
                 'EMPLOYEE_VIEW',
 
-                'DEPARTMENT_VIEW',
-                'DESIGNATION_VIEW',
+                'DPT_VIEW',
+                'DSG_VIEW',
 
                 'ATTENDANCE_VIEW',
                 'ATTENDANCE_CREATE',

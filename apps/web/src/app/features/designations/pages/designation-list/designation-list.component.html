@@ -9,15 +9,59 @@
     </div>
 
     <div class="header-actions">
-      <button
-        *appHasPermission="Permission.DESIGNATION_CREATE"
-        type="button"
-        class="btn btn-primary"
-        (click)="openAddModal()"
-      >
-        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
-        <span>Add Designation</span>
-      </button>
+      @if (canCreateDesignation()) {
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="openAddModal()"
+        >
+          <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+          <span>Add Designation</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Designation Metrics / Summary Cards (Outside content-card) ── -->
+  <div class="designation-metrics-grid">
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="id-card" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ totalDesignationsCount() }}</span>
+        <span class="d-metric-label">Total Designations</span>
+      </div>
+    </div>
+
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="check" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ activeDesignationsCount() }}</span>
+        <span class="d-metric-label">Active Designations</span>
+      </div>
+    </div>
+
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="x" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ inactiveDesignationsCount() }}</span>
+        <span class="d-metric-label">Inactive Designations</span>
+      </div>
+    </div>
+
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="users" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ totalEmployeesCount() }}</span>
+        <span class="d-metric-label">Total Employees</span>
+      </div>
     </div>
   </div>
 
@@ -103,13 +147,19 @@
               </th>
               <th class="cursor-pointer" (click)="setSort('name')">
                 <span class="th-content">
-                  <span>DESIGNATION TITLE</span>
+                  <span>DESIGNATION NAME</span>
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
               <th>
                 <span class="th-content">
                   <span>DEPARTMENT</span>
+                </span>
+              </th>
+              <th class="cursor-pointer" (click)="setSort('employees')">
+                <span class="th-content">
+                  <span>EMPLOYEES</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
               <th class="cursor-pointer" (click)="setSort('createdAt')">
@@ -124,9 +174,9 @@
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              @if (hasAnyActionPermissions()) {
-                <th class="text-right">
-                  ACTIONS
+              @if (hasRowActionPermissions()) {
+                <th style="width: 180px;" class="text-right">
+                  ROW ACTIONS
                 </th>
               }
             </tr>
@@ -134,7 +184,7 @@
           <tbody>
             @if (loading()) {
               <tr>
-                <td [attr.colspan]="hasAnyActionPermissions() ? 6 : 5"
+                <td [attr.colspan]="hasRowActionPermissions() ? 7 : 6"
                     class="empty-table-cell">
                   <div class="table-loading">
                     <span class="spinner"></span>
@@ -144,7 +194,7 @@
               </tr>
             } @else if (displayedDesignations().length === 0) {
               <tr>
-                <td [attr.colspan]="hasAnyActionPermissions() ? 6 : 5"
+                <td [attr.colspan]="hasRowActionPermissions() ? 7 : 6"
                     class="empty-table-cell">
                   <div class="table-empty">
                     <div class="empty-icon-wrap">
@@ -179,7 +229,7 @@
 
                   <!-- DESIGNATION TITLE -->
                   <td>
-                    <span class="primary-name">{{ desig.name }}</span>
+                    <span class="primary-name cursor-pointer" (click)="openDetailModal(desig)">{{ desig.name }}</span>
                   </td>
 
                   <!-- DEPARTMENT -->
@@ -187,8 +237,15 @@
                     @if (desig.department) {
                       <span class="cell-text">{{ desig.department.name }}</span>
                     } @else {
-                      <span class="cell-text">All Departments</span>
+                      <span class="cell-text text-muted">All Departments</span>
                     }
+                  </td>
+
+                  <!-- EMPLOYEES: Normal text -->
+                  <td>
+                    <span class="cell-text">
+                      {{ desig.employees?.length || 0 }} {{ (desig.employees?.length === 1) ? 'employee' : 'employees' }}
+                    </span>
                   </td>
 
                   <!-- CREATED DATE -->
@@ -198,40 +255,43 @@
                     </span>
                   </td>
 
-                  <!-- STATUS -->
+                  <!-- STATUS: Normal text (equal to designation name, no badge) -->
                   <td>
-                    <app-badge [variant]="desig.isActive ? 'active' : 'inactive'">
+                    <span class="cell-text">
                       {{ desig.isActive ? 'Active' : 'Inactive' }}
-                    </app-badge>
+                    </span>
                   </td>
 
                   <!-- ACTIONS -->
-                  @if (hasAnyActionPermissions()) {
+                  @if (hasRowActionPermissions()) {
                     <td class="text-right">
                       <div class="action-buttons">
-                        <button
-                          *appHasPermission="Permission.DESIGNATION_EDIT"
-                          type="button"
-                          class="action-icon-btn"
-                          (click)="openEditModal(desig)"
-                          title="Edit Designation"
-                          aria-label="Edit Designation"
-                        >
-                          <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
-                        </button>
-                         <button
-                          *appHasPermission="Permission.DESIGNATION_DELETE"
-                          type="button"
-                          class="action-icon-btn"
-                          (click)="openDeleteModal(desig)"
-                          title="Delete Designation"
-                          aria-label="Delete Designation"
-                        >
-                          <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
-                        </button>
-                        @if (desig.isActive) {
+                        @if (canViewDesignation()) {
                           <button
-                            *appHasPermission="Permission.DESIGNATION_DEACTIVATE"
+                            type="button"
+                            class="action-icon-btn view-action-btn"
+                            (click)="openDetailModal(desig)"
+                            title="View Designation Details"
+                            aria-label="View Designation Details"
+                          >
+                            <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+                        }
+
+                        @if (canEditDesignation()) {
+                          <button
+                            type="button"
+                            class="action-icon-btn"
+                            (click)="openEditModal(desig)"
+                            title="Edit Designation"
+                            aria-label="Edit Designation"
+                          >
+                            <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+                        }
+
+                        @if (desig.isActive && canDeactivateDesignation()) {
+                          <button
                             type="button"
                             class="action-btn danger"
                             (click)="toggleStatus(desig)"
@@ -240,9 +300,10 @@
                             <app-icon name="x" [size]="15"></app-icon>
                             <span>Deactivate</span>
                           </button>
-                        } @else {
+                        } 
+
+                        @if (!desig.isActive && canActivateDesignation()) {
                           <button
-                            *appHasPermission="Permission.DESIGNATION_ACTIVATE"
                             type="button"
                             class="action-btn success"
                             (click)="toggleStatus(desig)"
@@ -306,4 +367,13 @@
     (closeModal)="closeModal()"
     (saved)="onDesignationSaved($event)"
   ></app-designation-form-modal>
+}
+
+<!-- Detail Modal -->
+@if (isDetailModalOpen()) {
+  <app-designation-detail-modal
+    [isOpen]="isDetailModalOpen()"
+    [designation]="selectedDesignationForDetail()"
+    (closeModal)="closeDetailModal()"
+  ></app-designation-detail-modal>
 }

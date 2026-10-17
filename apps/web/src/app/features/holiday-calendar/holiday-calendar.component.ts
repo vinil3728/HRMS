@@ -57,15 +57,15 @@ export class HolidayCalendarComponent implements OnInit {
  
   // ── Permission Signals (Replacing directive) ─────────────────────────────
   readonly canCreateHoliday = computed(() =>
-    this.rbacService.hasPermission(Permission.HOLIDAY_CREATE)
+    this.rbacService.hasPermission(Permission.HLD_CREATE)
   );
 
   readonly canEditHoliday = computed(() =>
-    this.rbacService.hasPermission(Permission.HOLIDAY_EDIT)
+    this.rbacService.hasPermission(Permission.HLD_UPDATE)
   );
 
   readonly canDeleteHoliday = computed(() =>
-    this.rbacService.hasPermission(Permission.HOLIDAY_DELETE)
+    this.rbacService.hasPermission(Permission.HLD_DELETE)
   );
 
   readonly hasRowActionPermissions = computed(() =>

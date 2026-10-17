@@ -34,7 +34,7 @@ export class LoginComponent {
   fillDemoAdmin(): void {
     this.loginForm.patchValue({
       username: 'admin',
-      password: 'Admin@12345',
+      password: 'Password@123',
     });
   }
 

@@ -127,6 +127,10 @@ export class SettingsService {
     return this.api.post<SystemPermission>(this.endpoints.permissions, dto);
   }
 
+  bulkCreatePermissions(dtos: CreatePermissionDto[]): Observable<SystemPermission[]> {
+    return this.api.post<SystemPermission[]>(this.endpoints.bulkPermissions, dtos);
+  }
+
   updatePermission(
     id: string,
     dto: UpdatePermissionDto

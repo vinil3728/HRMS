@@ -30,25 +30,25 @@ export class CreateCompanyHolidays1790142000900 implements MigrationInterface {
                 ("code", "name", "description", "module")
             VALUES
                 (
-                    'HOLIDAY_VIEW',
+                    'HLD_VIEW',
                     'View Holidays',
                     'View company holiday calendar and upcoming holidays',
                     'Holidays'
                 ),
                 (
-                    'HOLIDAY_CREATE',
+                    'HLD_CREATE',
                     'Create Holiday',
                     'Add new holidays to the company calendar',
                     'Holidays'
                 ),
                 (
-                    'HOLIDAY_UPDATE',
+                    'HLD_UPDATE',
                     'Update Holiday',
                     'Modify existing company holidays',
                     'Holidays'
                 ),
                 (
-                    'HOLIDAY_DELETE',
+                    'HLD_DELETE',
                     'Delete Holiday',
                     'Remove holidays from company calendar',
                     'Holidays'
@@ -63,18 +63,18 @@ export class CreateCompanyHolidays1790142000900 implements MigrationInterface {
             FROM "roles" r
             CROSS JOIN "permissions" p
             WHERE r."code" IN ('ADMIN', 'HR')
-            AND p."code" IN ('HOLIDAY_VIEW', 'HOLIDAY_CREATE', 'HOLIDAY_UPDATE', 'HOLIDAY_DELETE')
+            AND p."code" IN ('HLD_VIEW', 'HLD_CREATE', 'HLD_UPDATE', 'HLD_DELETE')
             ON CONFLICT DO NOTHING
         `);
 
-        // 4. Grant HOLIDAY_VIEW to MANAGER and EMPLOYEE
+        // 4. Grant HLD_VIEW to MANAGER and EMPLOYEE
         await queryRunner.query(`
             INSERT INTO "role_permissions" ("role_id", "permission_id")
             SELECT r."id", p."id"
             FROM "roles" r
             CROSS JOIN "permissions" p
             WHERE r."code" IN ('MANAGER', 'EMPLOYEE')
-            AND p."code" = 'HOLIDAY_VIEW'
+            AND p."code" = 'HLD_VIEW'
             ON CONFLICT DO NOTHING
         `);
 
@@ -107,7 +107,7 @@ export class CreateCompanyHolidays1790142000900 implements MigrationInterface {
         await queryRunner.query(`DROP TABLE IF EXISTS "company_holidays"`);
         await queryRunner.query(`
             DELETE FROM "permissions"
-            WHERE "code" IN ('HOLIDAY_VIEW', 'HOLIDAY_CREATE', 'HOLIDAY_UPDATE', 'HOLIDAY_DELETE')
+            WHERE "code" IN ('HLD_VIEW', 'HLD_CREATE', 'HLD_UPDATE', 'HLD_DELETE')
         `);
     }
 }

@@ -8,8 +8,6 @@ import {
   signal,
 } from '@angular/core';
 import { Permission } from '../../../../core/models/permission.model';
-import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
-import { BadgeComponent } from '../../../../shared/ui/badge/badge.component';
 import { IconComponent } from '../../../../shared/ui/icon/icon.component';
 import {
   SelectComponent,
@@ -17,6 +15,7 @@ import {
 } from '../../../../shared/ui/select/select.component';
 import { PermissionMatrixModalComponent } from '../../components/permission-matrix-modal/permission-matrix-modal.component';
 import { RoleFormModalComponent } from '../../components/role-form-modal/role-form-modal.component';
+import { RoleDetailModalComponent } from '../../components/role-detail-modal/role-detail-modal.component';
 import { Role } from '../../models/settings.model';
 import { SettingsService } from '../../services/settings.service';
 import { RbacService } from '../../../../core/services/rbac.service';
@@ -26,11 +25,10 @@ import { RbacService } from '../../../../core/services/rbac.service';
   imports: [
     CommonModule,
     IconComponent,
-    BadgeComponent,
     SelectComponent,
-    HasPermissionDirective,
     RoleFormModalComponent,
     PermissionMatrixModalComponent,
+    RoleDetailModalComponent,
   ],
   templateUrl: './roles-page.component.html',
   styleUrl: './roles-page.component.css',
@@ -45,8 +43,8 @@ export class RolesPageComponent implements OnInit {
   readonly roles = signal<Role[]>([]);
   readonly loadingRoles = signal<boolean>(true);
   readonly searchQuery = signal<string>('');
-  readonly statusFilter = signal<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED'>('ALL');
-  readonly sortField = signal<'code' | 'name' | 'isActive' | 'isDeleted'>('name');
+  readonly statusFilter = signal<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  readonly sortField = signal<'code' | 'name' | 'isActive' | 'privileges'>('name');
   readonly sortDirection = signal<'asc' | 'desc'>('asc');
 
   readonly currentPage = signal<number>(1);
@@ -58,20 +56,62 @@ export class RolesPageComponent implements OnInit {
   readonly isMatrixOpen = signal<boolean>(false);
   readonly selectedRoleForMatrix = signal<Role | null>(null);
 
-  readonly hasAnyActionPermissions = computed(() => {
+  readonly isDetailModalOpen = signal<boolean>(false);
+  readonly selectedRoleForDetail = signal<Role | null>(null);
+
+  // ── Permission Signals (Replacing directive) ─────────────────────────────
+  readonly canCreateRole = computed(() =>
+    this.rbacService.hasPermission(Permission.ROL_CREATE)
+  );
+
+  readonly canViewRole = computed(() =>
+    this.rbacService.hasPermission(Permission.ROL_VIEW)
+  );
+
+  readonly canEditRole = computed(() =>
+    this.rbacService.hasPermission(Permission.ROL_UPDATE)
+  );
+
+  readonly canDeleteRole = computed(() =>
+    this.rbacService.hasPermission(Permission.ROL_DELETE)
+  );
+
+  readonly canActivateRole = computed(() =>
+    this.rbacService.hasPermission(Permission.ROL_ACTIVATE)
+  );
+
+  readonly canDeactivateRole = computed(() =>
+    this.rbacService.hasPermission(Permission.ROL_DEACTIVATE)
+  );
+
+  readonly hasRowActionPermissions = computed(() => {
     return (
-      this.rbacService.hasPermission(Permission.ROLE_EDIT) ||
-      this.rbacService.hasPermission(Permission.ROLE_DELETE) ||
-      this.rbacService.hasPermission(Permission.ROLE_ACTIVATE) ||
-      this.rbacService.hasPermission(Permission.ROLE_DEACTIVATE)
+      this.canViewRole() ||
+      this.canEditRole() ||
+      this.canActivateRole() ||
+      this.canDeactivateRole()
     );
   });
+
+  // ── Metrics Computed Signals ─────────────────────────────────────────────
+  readonly activeRolesList = computed(() =>
+    this.roles().filter((r) => !r.isDeleted)
+  );
+  readonly totalRolesCount = computed(() => this.activeRolesList().length);
+  readonly activeRolesCount = computed(
+    () => this.activeRolesList().filter((r) => r.isActive).length
+  );
+  readonly inactiveRolesCount = computed(
+    () => this.activeRolesList().filter((r) => !r.isActive).length
+  );
+  readonly totalPrivilegesCount = computed(() =>
+    this.activeRolesList().reduce((acc, r) => acc + (r.rolePermissions?.length || 0), 0)
+  );
 
   readonly statusOptions: SelectOption[] = [
     { label: 'All Statuses', value: 'ALL' },
     { label: 'Active', value: 'ACTIVE' },
     { label: 'Inactive', value: 'INACTIVE' },
-    { label: 'Deleted', value: 'DELETED' },
   ];
 
   readonly hasActiveFilters = computed(
@@ -79,7 +119,7 @@ export class RolesPageComponent implements OnInit {
   );
 
   readonly filteredRoles = computed(() => {
-    let list = [...this.roles()];
+    let list = this.roles().filter((r) => !r.isDeleted);
     const q = this.searchQuery().toLowerCase().trim();
     const status = this.statusFilter();
     const field = this.sortField();
@@ -95,16 +135,17 @@ export class RolesPageComponent implements OnInit {
     }
 
     if (status !== 'ALL') {
-      if (status === 'ACTIVE') {
-        list = list.filter((r) => r.isActive && !r.isDeleted);
-      } else if (status === 'INACTIVE') {
-        list = list.filter((r) => !r.isActive && !r.isDeleted);
-      } else if (status === 'DELETED') {
-        list = list.filter((r) => !!r.isDeleted);
-      }
+      const activeWanted = status === 'ACTIVE';
+      list = list.filter((r) => r.isActive === activeWanted);
     }
 
     list.sort((a, b) => {
+      if (field === 'privileges') {
+        const countA = a.rolePermissions?.length || 0;
+        const countB = b.rolePermissions?.length || 0;
+        return (countA < countB ? -1 : countA > countB ? 1 : 0) * (dir === 'asc' ? 1 : -1);
+      }
+
       const valA = a[field];
       const valB = b[field];
 
@@ -161,7 +202,7 @@ export class RolesPageComponent implements OnInit {
   }
 
   onStatusFilterChange(value: string): void {
-    this.statusFilter.set((value || 'ALL') as 'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED');
+    this.statusFilter.set((value || 'ALL') as 'ALL' | 'ACTIVE' | 'INACTIVE');
     this.currentPage.set(1);
   }
 
@@ -176,7 +217,7 @@ export class RolesPageComponent implements OnInit {
     this.currentPage.set(page);
   }
 
-  setSort(field: 'code' | 'name' | 'isActive' | 'isDeleted'): void {
+  setSort(field: 'code' | 'name' | 'isActive' | 'privileges'): void {
     if (this.sortField() === field) {
       this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
     } else {
@@ -200,6 +241,16 @@ export class RolesPageComponent implements OnInit {
     this.selectedRoleToEdit.set(null);
   }
 
+  openDetailModal(role: Role): void {
+    this.selectedRoleForDetail.set(role);
+    this.isDetailModalOpen.set(true);
+  }
+
+  closeDetailModal(): void {
+    this.isDetailModalOpen.set(false);
+    this.selectedRoleForDetail.set(null);
+  }
+
   onRoleSaved(): void {
     this.closeRoleFormModal();
     this.loadRoles();
@@ -221,14 +272,6 @@ export class RolesPageComponent implements OnInit {
   }
 
   toggleRoleActive(role: Role): void {
-    if (role.isDeleted) {
-      this.settingsService.activateRole(role.id).subscribe({
-        next: () => this.loadRoles(),
-        error: (err) => alert(err?.error?.message || 'Failed to activate role'),
-      });
-      return;
-    }
-
     if (role.isActive) {
       const confirmDeactivate = window.confirm(
         `Are you sure you want to deactivate role "${role.name}"? Users with this role may lose access to assigned modules.`
@@ -247,20 +290,6 @@ export class RolesPageComponent implements OnInit {
     }
   }
 
-  deleteRole(role: Role): void {
-    if (role.isSystemRole) return;
-
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete role "${role.name}"? This action will soft-delete the role and mark it as deleted.`
-    );
-    if (!confirmDelete) return;
-
-    this.settingsService.deleteRole(role.id).subscribe({
-      next: () => this.loadRoles(),
-      error: (err) => alert(err?.error?.message || 'Failed to delete role'),
-    });
-  }
-
   exportRolesCsv(): void {
     const list = this.filteredRoles();
     if (list.length === 0) return;
@@ -270,7 +299,6 @@ export class RolesPageComponent implements OnInit {
       'Role Name',
       'Type',
       'Status',
-      'Deleted',
       'Granted Permissions Count',
       'Description',
     ];
@@ -280,7 +308,6 @@ export class RolesPageComponent implements OnInit {
       `"${r.name.replace(/"/g, '""')}"`,
       r.isSystemRole ? 'System' : 'Custom',
       r.isActive ? 'Active' : 'Inactive',
-      r.isDeleted ? 'True' : 'False',
       r.rolePermissions?.length || 0,
       `"${(r.description || '').replace(/"/g, '""')}"`,
     ]);

@@ -1,0 +1,144 @@
+@if (isOpen() && module()) {
+  <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="module-permissions-title">
+    <button class="modal-backdrop" (click)="onClose()" aria-label="Close backdrop"></button>
+    <div class="modal-card">
+      <!-- ── Modal Header ────────────────────────────────────────────────── -->
+      <div class="modal-header">
+        <div>
+          <h3 id="module-permissions-title" class="modal-title">
+            {{ module()!.name }} Permissions
+          </h3>
+          <p class="modal-subtitle">
+            System privileges and functional access points mapped to module <strong>{{ module()!.code }}</strong>.
+          </p>
+        </div>
+        <button class="close-btn" (click)="onClose()" aria-label="Close modal">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <!-- ── Modal Body ──────────────────────────────────────────────────── -->
+      <div class="modal-body">
+        <!-- Module Summary & Search Bar -->
+        <div class="toolbar-bar">
+          <div class="module-meta-chips">
+            <span class="meta-chip">
+              <span class="meta-label">CODE:</span>
+              <span class="meta-val code-val">{{ module()!.code }}</span>
+            </span>
+            <span class="meta-chip">
+              <span class="meta-label">STATUS:</span>
+              <span class="meta-val">{{ module()!.isActive && !module()!.isDeleted ? 'Active' : 'Inactive' }}</span>
+            </span>
+            <span class="meta-chip">
+              <span class="meta-label">TOTAL:</span>
+              <span class="meta-val">{{ permissions().length }} permissions</span>
+            </span>
+          </div>
+
+          <div class="search-wrap">
+            <app-icon name="search" [size]="15" customClass="search-icon"></app-icon>
+            <input
+              type="text"
+              class="search-input"
+              placeholder="Search permissions..."
+              [value]="searchQuery()"
+              (input)="onSearchInput($event)"
+            />
+          </div>
+        </div>
+
+        <!-- Permissions Table Container -->
+        <div class="table-wrap">
+          <table class="permissions-table">
+            <thead>
+              <tr>
+                <th style="width: 220px;">PERMISSION CODE</th>
+                <th style="width: 200px;">PERMISSION NAME</th>
+                <th style="width: 100px;">SCOPE</th>
+                <th style="width: 100px;">STATUS</th>
+                <th>DESCRIPTION</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (loading()) {
+                <tr>
+                  <td colspan="5" class="empty-cell">
+                    <div class="loading-wrap">
+                      <span class="spinner"></span>
+                      <span>Loading module permissions...</span>
+                    </div>
+                  </td>
+                </tr>
+              } @else if (filteredPermissions().length === 0) {
+                <tr>
+                  <td colspan="5" class="empty-cell">
+                    <div class="empty-wrap">
+                      <div class="empty-icon-wrap">
+                        <app-icon name="shield" [size]="28"></app-icon>
+                      </div>
+                      <h4 class="empty-title">
+                        {{ searchQuery() ? 'No matching permissions found' : 'No permissions mapped to this module yet' }}
+                      </h4>
+                      @if (searchQuery()) {
+                        <p class="empty-subtitle">Try adjusting your search query.</p>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              } @else {
+                @for (p of filteredPermissions(); track p.id) {
+                  <tr class="permission-row">
+                    <!-- CODE: Bold with normal font only -->
+                    <td class="code-cell">
+                      {{ p.code }}
+                    </td>
+
+                    <!-- NAME: Normal text -->
+                    <td>
+                      <span class="cell-text">{{ p.name }}</span>
+                    </td>
+
+                    <!-- SCOPE: Normal text -->
+                    <td>
+                      <span class="cell-text">{{ p.scopes || 'SELF' }}</span>
+                    </td>
+
+                    <!-- STATUS: Normal text (equal to name, no badge) -->
+                    <td>
+                      <span class="cell-text">
+                        {{ p.isActive && !p.isDeleted ? 'Active' : 'Inactive' }}
+                      </span>
+                    </td>
+
+                    <!-- DESCRIPTION: Normal text -->
+                    <td>
+                      <span class="desc-text">
+                        {{ p.description || '—' }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Modal Footer ────────────────────────────────────────────────── -->
+      <div class="modal-footer">
+        <span class="footer-count">
+          Showing <strong>{{ filteredPermissions().length }}</strong> of {{ permissions().length }} permissions
+        </span>
+
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="onClose()"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+}

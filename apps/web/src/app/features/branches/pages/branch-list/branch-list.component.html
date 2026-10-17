@@ -9,15 +9,59 @@
     </div>
 
     <div class="header-actions">
-      <button
-        *appHasPermission="Permission.BRANCH_CREATE"
-        type="button"
-        class="btn btn-primary"
-        (click)="openAddModal()"
-      >
-        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
-        <span>Add Branch</span>
-      </button>
+      @if (canCreateBranch()) {
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="openAddModal()"
+        >
+          <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+          <span>Add Branch</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Branch Metrics / Summary Cards (Outside content-card) ── -->
+  <div class="branch-metrics-grid">
+    <div class="b-metric-card">
+      <div class="b-metric-icon b-icon-blue">
+        <app-icon name="map-pin" [size]="20"></app-icon>
+      </div>
+      <div class="b-metric-info">
+        <span class="b-metric-value">{{ totalBranchesCount() }}</span>
+        <span class="b-metric-label">Total Branches</span>
+      </div>
+    </div>
+
+    <div class="b-metric-card">
+      <div class="b-metric-icon b-icon-blue">
+        <app-icon name="check" [size]="20"></app-icon>
+      </div>
+      <div class="b-metric-info">
+        <span class="b-metric-value">{{ activeBranchesCount() }}</span>
+        <span class="b-metric-label">Active Branches</span>
+      </div>
+    </div>
+
+    <div class="b-metric-card">
+      <div class="b-metric-icon b-icon-blue">
+        <app-icon name="x" [size]="20"></app-icon>
+      </div>
+      <div class="b-metric-info">
+        <span class="b-metric-value">{{ inactiveBranchesCount() }}</span>
+        <span class="b-metric-label">Inactive Branches</span>
+      </div>
+    </div>
+
+    <div class="b-metric-card">
+      <div class="b-metric-icon b-icon-blue">
+        <app-icon name="building" [size]="20"></app-icon>
+      </div>
+      <div class="b-metric-info">
+        <span class="b-metric-value">{{ totalDepartmentsCount() }}</span>
+        <span class="b-metric-label">Departments Mapped</span>
+      </div>
     </div>
   </div>
 
@@ -106,9 +150,10 @@
                   <span>CONTACT</span>
                 </span>
               </th>
-              <th>
+              <th class="cursor-pointer" (click)="setSort('departments')">
                 <span class="th-content">
                   <span>DEPARTMENTS</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
               <th class="cursor-pointer" (click)="setSort('isActive')">
@@ -117,9 +162,9 @@
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              @if (hasAnyActionPermissions()) {
-                <th class="text-right">
-                  ACTIONS
+              @if (hasRowActionPermissions()) {
+                <th style="width: 180px;" class="text-right">
+                  ROW ACTIONS
                 </th>
               }
             </tr>
@@ -127,7 +172,7 @@
           <tbody>
             @if (loading()) {
               <tr>
-                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                <td [attr.colspan]="hasRowActionPermissions() ? 7 : 6"
                     class="empty-table-cell">
                   <div class="table-loading">
                     <span class="spinner"></span>
@@ -137,7 +182,7 @@
               </tr>
             } @else if (displayedBranches().length === 0) {
               <tr>
-                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                <td [attr.colspan]="hasRowActionPermissions() ? 7 : 6"
                     class="empty-table-cell">
                   <div class="table-empty">
                     <div class="empty-icon-wrap">
@@ -210,53 +255,50 @@
                     </div>
                   </td>
 
-                  <!-- DEPARTMENTS -->
+                  <!-- DEPARTMENTS: Normal text -->
                   <td>
-                    <button
-                      type="button"
-                      class="dept-count-badge"
-                      (click)="openDetailModal(branch)"
-                      [title]="'View all ' + (branch.departments?.length || 0) + ' departments under ' + branch.name"
-                    >
-                      <app-icon name="building" [size]="13"></app-icon>
-                      <span>{{ branch.departments?.length || 0 }} {{ (branch.departments?.length === 1) ? 'Department' : 'Departments' }}</span>
-                    </button>
+                    <span class="cell-text">
+                      {{ branch.departments?.length || 0 }} {{ (branch.departments?.length === 1) ? 'department' : 'departments' }}
+                    </span>
                   </td>
 
-                  <!-- STATUS -->
+                  <!-- STATUS: Normal text (equal to branch name, no badge) -->
                   <td>
-                    <app-badge [variant]="branch.isActive ? 'active' : 'inactive'">
+                    <span class="cell-text">
                       {{ branch.isActive ? 'Active' : 'Inactive' }}
-                    </app-badge>
+                    </span>
                   </td>
 
                   <!-- ACTIONS -->
-                  @if (hasAnyActionPermissions()) {
-                    <td class="text-right" >
+                  @if (hasRowActionPermissions()) {
+                    <td class="text-right">
                       <div class="action-buttons">
-                        <button
-                          *appHasPermission="Permission.BRANCH_EDIT"
-                          type="button"
-                          class="action-icon-btn"
-                          (click)="openEditModal(branch)"
-                          title="Edit Branch"
-                          aria-label="Edit Branch"
-                        >
-                          <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
-                        </button>
-                        <button
-                          *appHasPermission="Permission.BRANCH_DELETE"
-                          type="button"
-                          class="action-icon-btn"
-                          (click)="openDeleteModal(branch)"
-                          title="Delete Branch"
-                          aria-label="Delete Branch"
-                        >
-                          <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
-                        </button>
-                        @if (branch.isActive) {
+                        @if (canViewBranch()) {
                           <button
-                            *appHasPermission="Permission.BRANCH_DEACTIVATE"
+                            type="button"
+                            class="action-icon-btn view-action-btn"
+                            (click)="openDetailModal(branch)"
+                            title="View Branch Details"
+                            aria-label="View Branch Details"
+                          >
+                            <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+                        }
+
+                        @if (canEditBranch()) {
+                          <button
+                            type="button"
+                            class="action-icon-btn"
+                            (click)="openEditModal(branch)"
+                            title="Edit Branch"
+                            aria-label="Edit Branch"
+                          >
+                            <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+                        }
+
+                        @if (branch.isActive && canDeactivateBranch()) {
+                          <button
                             type="button"
                             class="action-btn danger"
                             (click)="toggleStatus(branch)"
@@ -265,9 +307,10 @@
                             <app-icon name="x" [size]="15"></app-icon>
                             <span>Deactivate</span>
                           </button>
-                        } @else {
+                        } 
+
+                        @if (!branch.isActive && canActivateBranch()) {
                           <button
-                            *appHasPermission="Permission.BRANCH_ACTIVATE"
                             type="button"
                             class="action-btn success"
                             (click)="toggleStatus(branch)"

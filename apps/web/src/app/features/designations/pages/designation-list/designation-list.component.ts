@@ -7,15 +7,14 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
 import { Permission } from '../../../../core/models/permission.model';
-import { BadgeComponent } from '../../../../shared/ui/badge/badge.component';
 import { IconComponent } from '../../../../shared/ui/icon/icon.component';
 import {
   SelectComponent,
   SelectOption,
 } from '../../../../shared/ui/select/select.component';
 import { DesignationFormModalComponent } from '../../components/designation-form-modal/designation-form-modal.component';
+import { DesignationDetailModalComponent } from '../../components/designation-detail-modal/designation-detail-modal.component';
 import { Designation } from '../../models/designation.model';
 import { DesignationService } from '../../services/designation.service';
 import { DepartmentService } from '../../../departments/services/department.service';
@@ -28,10 +27,9 @@ import { RbacService } from '../../../../core/services/rbac.service';
     CommonModule,
     DatePipe,
     IconComponent,
-    BadgeComponent,
     SelectComponent,
-    HasPermissionDirective,
     DesignationFormModalComponent,
+    DesignationDetailModalComponent,
   ],
   templateUrl: './designation-list.component.html',
   styleUrl: './designation-list.component.css',
@@ -50,7 +48,7 @@ export class DesignationListComponent implements OnInit {
   readonly searchQuery = signal<string>('');
   readonly statusFilter = signal<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   readonly departmentFilter = signal<string>('ALL');
-  readonly sortField = signal<keyof Designation>('name');
+  readonly sortField = signal<keyof Designation | 'employees'>('name');
   readonly sortDirection = signal<'asc' | 'desc'>('asc');
 
   readonly currentPage = signal<number>(1);
@@ -59,14 +57,54 @@ export class DesignationListComponent implements OnInit {
   readonly isModalOpen = signal<boolean>(false);
   readonly selectedDesignation = signal<Designation | null>(null);
 
-  readonly hasAnyActionPermissions = computed(() => {
+  readonly isDetailModalOpen = signal<boolean>(false);
+  readonly selectedDesignationForDetail = signal<Designation | null>(null);
+
+  // ── Permission Signals (Replacing directive) ─────────────────────────────
+  readonly canCreateDesignation = computed(() =>
+    this.rbacService.hasPermission(Permission.DSG_CREATE)
+  );
+
+  readonly canViewDesignation = computed(() =>
+    this.rbacService.hasPermission(Permission.DSG_VIEW)
+  );
+
+  readonly canEditDesignation = computed(() =>
+    this.rbacService.hasPermission(Permission.DSG_UPDATE)
+  );
+
+  readonly canDeleteDesignation = computed(() =>
+    this.rbacService.hasPermission(Permission.DSG_DELETE)
+  );
+
+  readonly canActivateDesignation = computed(() =>
+    this.rbacService.hasPermission(Permission.DSG_ACTIVATE)
+  );
+
+  readonly canDeactivateDesignation = computed(() =>
+    this.rbacService.hasPermission(Permission.DSG_DEACTIVATE)
+  );
+
+  readonly hasRowActionPermissions = computed(() => {
     return (
-      this.rbacService.hasPermission(Permission.DESIGNATION_EDIT) ||
-      this.rbacService.hasPermission(Permission.DESIGNATION_DELETE) ||
-      this.rbacService.hasPermission(Permission.DESIGNATION_ACTIVATE) ||
-      this.rbacService.hasPermission(Permission.DESIGNATION_DEACTIVATE)
+      this.canViewDesignation() ||
+      this.canEditDesignation() ||
+      this.canActivateDesignation() ||
+      this.canDeactivateDesignation()
     );
   });
+
+  // ── Metrics Computed Signals ─────────────────────────────────────────────
+  readonly totalDesignationsCount = computed(() => this.designations().length);
+  readonly activeDesignationsCount = computed(
+    () => this.designations().filter((d) => d.isActive).length
+  );
+  readonly inactiveDesignationsCount = computed(
+    () => this.designations().filter((d) => !d.isActive).length
+  );
+  readonly totalEmployeesCount = computed(() =>
+    this.designations().reduce((acc, d) => acc + (d.employees?.length || 0), 0)
+  );
 
   readonly statusOptions: SelectOption[] = [
     { label: 'All Statuses', value: 'ALL' },
@@ -118,8 +156,14 @@ export class DesignationListComponent implements OnInit {
     }
 
     list.sort((a, b) => {
-      const valA = a[field];
-      const valB = b[field];
+      if (field === 'employees') {
+        const countA = a.employees?.length || 0;
+        const countB = b.employees?.length || 0;
+        return (countA < countB ? -1 : countA > countB ? 1 : 0) * (dir === 'asc' ? 1 : -1);
+      }
+
+      const valA = a[field as keyof Designation];
+      const valB = b[field as keyof Designation];
 
       if (typeof valA === 'string' && typeof valB === 'string') {
         const cmp = valA.localeCompare(valB, undefined, { sensitivity: 'base' });
@@ -201,7 +245,7 @@ export class DesignationListComponent implements OnInit {
     this.currentPage.set(page);
   }
 
-  setSort(field: keyof Designation): void {
+  setSort(field: keyof Designation | 'employees'): void {
     if (this.sortField() === field) {
       this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
     } else {
@@ -230,13 +274,27 @@ export class DesignationListComponent implements OnInit {
     this.selectedDesignation.set(null);
   }
 
+  openDetailModal(desig: Designation): void {
+    this.selectedDesignationForDetail.set(desig);
+    this.isDetailModalOpen.set(true);
+  }
+
+  closeDetailModal(): void {
+    this.isDetailModalOpen.set(false);
+    this.selectedDesignationForDetail.set(null);
+  }
+
   onDesignationSaved(savedDesig: Designation): void {
     const current = this.designations();
     const index = current.findIndex((d) => d.id === savedDesig.id);
 
     if (index >= 0) {
       const updated = [...current];
-      updated[index] = savedDesig;
+      updated[index] = {
+        ...current[index],
+        ...savedDesig,
+        employees: savedDesig.employees || current[index].employees,
+      };
       this.designations.set(updated);
     } else {
       this.designations.set([savedDesig, ...current]);
@@ -254,7 +312,10 @@ export class DesignationListComponent implements OnInit {
           const index = current.findIndex((d) => d.id === updatedDesig.id);
           if (index >= 0) {
             const updated = [...current];
-            updated[index] = updatedDesig;
+            updated[index] = {
+              ...current[index],
+              isActive: updatedDesig.isActive,
+            };
             this.designations.set(updated);
           }
         },
@@ -265,12 +326,13 @@ export class DesignationListComponent implements OnInit {
     const data = this.filteredDesignations();
     if (data.length === 0) return;
 
-    const headers = ['ID', 'Designation Title', 'Code', 'Department', 'Status', 'Created Date'];
+    const headers = ['ID', 'Designation Title', 'Code', 'Department', 'Employees', 'Status', 'Created Date'];
     const rows = data.map((d) => [
       d.id,
       `"${d.name.replace(/"/g, '""')}"`,
       d.code,
       d.department ? `"${d.department.name.replace(/"/g, '""')}"` : 'All Departments',
+      d.employees?.length || 0,
       d.isActive ? 'Active' : 'Inactive',
       d.createdAt,
     ]);

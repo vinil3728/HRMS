@@ -8,11 +8,10 @@ import {
   signal,
 } from '@angular/core';
 import { Permission } from '../../../../core/models/permission.model';
-import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
-import { BadgeComponent } from '../../../../shared/ui/badge/badge.component';
 import { IconComponent } from '../../../../shared/ui/icon/icon.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/select/select.component';
 import { ModuleFormModalComponent } from '../../components/module-form-modal/module-form-modal.component';
+import { ModulePermissionsModalComponent } from '../../components/module-permissions-modal/module-permissions-modal.component';
 import { SystemModule } from '../../models/settings.model';
 import { SettingsService } from '../../services/settings.service';
 import { RbacService } from '../../../../core/services/rbac.service';
@@ -22,10 +21,9 @@ import { RbacService } from '../../../../core/services/rbac.service';
   imports: [
     CommonModule,
     IconComponent,
-    BadgeComponent,
     SelectComponent,
-    HasPermissionDirective,
     ModuleFormModalComponent,
+    ModulePermissionsModalComponent,
   ],
   templateUrl: './modules-page.component.html',
   styleUrl: './modules-page.component.css',
@@ -50,6 +48,9 @@ export class ModulesPageComponent implements OnInit {
   readonly isModuleModalOpen = signal<boolean>(false);
   readonly selectedModuleToEdit = signal<SystemModule | null>(null);
 
+  readonly isViewPermissionsModalOpen = signal<boolean>(false);
+  readonly selectedModuleForPermissions = signal<SystemModule | null>(null);
+
   readonly statusOptions: SelectOption[] = [
     { value: 'ALL', label: 'All Statuses' },
     { value: 'ACTIVE', label: 'Active' },
@@ -57,14 +58,52 @@ export class ModulesPageComponent implements OnInit {
     { value: 'DELETED', label: 'Deleted' },
   ];
 
-  readonly hasAnyActionPermissions = computed(() => {
+  // ── Permission Signals (Replacing directive) ─────────────────────────────
+  readonly canViewModule = computed(() =>
+    this.rbacService.hasPermission(Permission.MOD_VIEW)
+  );
+
+  readonly canCreateModule = computed(() =>
+    this.rbacService.hasPermission(Permission.MOD_CREATE)
+  );
+
+  readonly canEditModule = computed(() =>
+    this.rbacService.hasPermission(Permission.MOD_UPDATE)
+  );
+
+  readonly canDeleteModule = computed(() =>
+    this.rbacService.hasPermission(Permission.MOD_DELETE)
+  );
+
+  readonly canActivateModule = computed(() =>
+    this.rbacService.hasPermission(Permission.MOD_ACTIVATE)
+  );
+
+  readonly canDeactivateModule = computed(() =>
+    this.rbacService.hasPermission(Permission.MOD_DEACTIVATE)
+  );
+
+  readonly hasRowActionPermissions = computed(() => {
     return (
-      this.rbacService.hasPermission(Permission.MODULE_EDIT) ||
-      this.rbacService.hasPermission(Permission.MODULE_DELETE) ||
-      this.rbacService.hasPermission(Permission.MODULE_ACTIVATE) ||
-      this.rbacService.hasPermission(Permission.MODULE_DEACTIVATE)
+      this.canViewModule() ||
+      this.canEditModule() ||
+      this.canDeleteModule() ||
+      this.canActivateModule() ||
+      this.canDeactivateModule()
     );
   });
+
+  // ── Metrics Computed Signals ─────────────────────────────────────────────
+  readonly totalModulesCount = computed(() => this.modules().length);
+  readonly activeModulesCount = computed(
+    () => this.modules().filter((m) => m.isActive && !m.isDeleted).length
+  );
+  readonly inactiveModulesCount = computed(
+    () => this.modules().filter((m) => !m.isActive && !m.isDeleted).length
+  );
+  readonly totalPermissionsMappedCount = computed(() =>
+    this.modules().reduce((acc, m) => acc + (m.permissionCount ?? 0), 0)
+  );
 
   readonly hasActiveFilters = computed(
     () =>
@@ -199,6 +238,16 @@ export class ModulesPageComponent implements OnInit {
   onModuleSaved(): void {
     this.closeModuleModal();
     this.loadModules();
+  }
+
+  openViewPermissionsModal(module: SystemModule): void {
+    this.selectedModuleForPermissions.set(module);
+    this.isViewPermissionsModalOpen.set(true);
+  }
+
+  closeViewPermissionsModal(): void {
+    this.isViewPermissionsModalOpen.set(false);
+    this.selectedModuleForPermissions.set(null);
   }
 
   toggleModuleActive(mod: SystemModule): void {

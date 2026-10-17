@@ -11,15 +11,59 @@
     </div>
 
     <div class="header-actions">
-      <button
-        type="button"
-        class="btn btn-primary"
-        *appHasPermission="Permission.USER_CREATE"
-        (click)="openCreateUserModal()"
-      >
-        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
-        <span>Create User</span>
-      </button>
+      @if (canCreateUser()) {
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="openCreateUserModal()"
+        >
+          <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+          <span>Create User</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── User Accounts Metrics / Summary Cards (Outside content-card) ── -->
+  <div class="user-metrics-grid">
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="users" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ totalUsersCount() }}</span>
+        <span class="d-metric-label">Total Accounts</span>
+      </div>
+    </div>
+
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="check" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ activeUsersCount() }}</span>
+        <span class="d-metric-label">Active Accounts</span>
+      </div>
+    </div>
+
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="x" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ inactiveUsersCount() }}</span>
+        <span class="d-metric-label">Inactive Accounts</span>
+      </div>
+    </div>
+
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="id-card" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ linkedEmployeesCount() }}</span>
+        <span class="d-metric-label">Linked Employees</span>
+      </div>
     </div>
   </div>
 
@@ -103,9 +147,24 @@
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              <th>EMPLOYEE NAME</th>
-              <th>EMPLOYEE CODE</th>
-              <th>ROLE</th>
+              <th class="cursor-pointer" (click)="setSort('employeeName')">
+                <span class="th-content">
+                  <span>EMPLOYEE NAME</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="cursor-pointer" (click)="setSort('employeeCode')">
+                <span class="th-content">
+                  <span>EMPLOYEE CODE</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th class="cursor-pointer" (click)="setSort('role')">
+                <span class="th-content">
+                  <span>ROLE</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
               <th class="cursor-pointer" (click)="setSort('createdAt')">
                 <span class="th-content">
                   <span>CREATED DATE</span>
@@ -118,15 +177,15 @@
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              @if (hasAnyActionPermissions()) {
-                <th class="text-right">ACTIONS</th>
+              @if (hasRowActionPermissions()) {
+                <th style="width: 180px;" class="text-right">ROW ACTIONS</th>
               }
             </tr>
           </thead>
           <tbody>
             @if (loadingUsers()) {
               <tr>
-                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                <td [attr.colspan]="hasRowActionPermissions() ? 7 : 6"
                     class="empty-table-cell">
                   <div class="table-loading">
                     <span class="spinner"></span>
@@ -136,7 +195,7 @@
               </tr>
             } @else if (displayedUsers().length === 0) {
               <tr>
-                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                <td [attr.colspan]="hasRowActionPermissions() ? 7 : 6"
                     class="empty-table-cell">
                   <div class="table-empty">
                     <div class="empty-icon-wrap">
@@ -166,17 +225,19 @@
                 <tr class="table-row">
                   <!-- USERNAME -->
                   <td>
-                    <span class="primary-name">{{ u.username }}</span>
+                    <span class="code-cell">{{ u.username }}</span>
                   </td>
 
                   <!-- EMPLOYEE NAME -->
                   <td>
-                    <span class="primary-name">{{ u.employee?.firstName }} {{ u.employee?.lastName }}</span>
+                    <span class="cell-text">
+                      {{ u.employee ? (u.employee.firstName + ' ' + u.employee.lastName) : '—' }}
+                    </span>
                   </td>
 
                   <!-- EMPLOYEE CODE -->
-                  <td>
-                    <span class="primary-name">{{ u.employee?.employeeCode }}</span>
+                  <td class="cell-text">
+                    {{ u.employee?.employeeCode || '—' }}
                   </td>
 
                   <!-- ROLE -->
@@ -184,7 +245,7 @@
                     @if (u.role; as role) {
                       <span class="cell-text">{{ role.name }}</span>
                     } @else {
-                      <span class="text-muted">—</span>
+                      <span class="cell-text text-muted">—</span>
                     }
                   </td>
 
@@ -195,42 +256,43 @@
                     </span>
                   </td>
 
-                  <!-- STATUS -->
+                  <!-- STATUS: Normal text (equal to name, no badge) -->
                   <td>
-                    <app-badge [variant]="u.isActive ? 'active' : 'inactive'">
+                    <span class="cell-text">
                       {{ u.isActive ? 'Active' : 'Inactive' }}
-                    </app-badge>
+                    </span>
                   </td>
 
                   <!-- ACTIONS -->
-                  @if (hasAnyActionPermissions()) {
+                  @if (hasRowActionPermissions()) {
                     <td class="text-right">
                       <div class="action-buttons">
-                        <button
-                          *appHasPermission="Permission.USER_VIEW"
-                          type="button"
-                          class="action-icon-btn"
-                          (click)="openViewUserModal(u)"
-                          title="View Details"
-                          aria-label="View Details"
-                        >
-                          <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
-                        </button>
-
-                        <button
-                          *appHasPermission="Permission.USER_EDIT"
-                          type="button"
-                          class="action-icon-btn"
-                          (click)="openEditUserModal(u)"
-                          title="Edit User"
-                          aria-label="Edit User"
-                        >
-                          <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
-                        </button>
-
-                        @if (u.isActive) {
+                        @if (canViewUser()) {
                           <button
-                            *appHasPermission="Permission.USER_DEACTIVATE"
+                            type="button"
+                            class="action-icon-btn view-action-btn"
+                            (click)="openViewUserModal(u)"
+                            title="View User Details"
+                            aria-label="View Details"
+                          >
+                            <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+                        }
+
+                        @if (canEditUser()) {
+                          <button
+                            type="button"
+                            class="action-icon-btn"
+                            (click)="openEditUserModal(u)"
+                            title="Edit User"
+                            aria-label="Edit User"
+                          >
+                            <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+                        }
+
+                        @if (u.isActive && canDeactivateUser()) {
+                          <button
                             type="button"
                             class="action-btn danger"
                             (click)="toggleUserStatus(u)"
@@ -239,9 +301,10 @@
                             <app-icon name="x" [size]="15"></app-icon>
                             <span>Deactivate</span>
                           </button>
-                        } @else {
+                        }
+                         
+                        @if (!u.isActive && canActivateUser()) {
                           <button
-                            *appHasPermission="Permission.USER_ACTIVATE"
                             type="button"
                             class="action-btn success"
                             (click)="toggleUserStatus(u)"

@@ -223,12 +223,12 @@ The HRMS platform enforces a 4-tier role hierarchy:
 ### 6.9 Organization (Departments & Designations)
 | Permission Code | Description | Admin | HR | Manager | Employee |
 | :--- | :--- | :---: | :---: | :---: | :---: |
-| `DEPARTMENT_VIEW` | View company departments | `✓` | `✓` | `✓` | `✓` |
-| `DEPARTMENT_CREATE` | Create company department | `✓` | `✓` | `—` | `—` |
-| `DEPARTMENT_UPDATE` | Modify department details and head | `✓` | `✓` | `—` | `—` |
-| `DESIGNATION_VIEW` | View job designations / roles | `✓` | `✓` | `✓` | `✓` |
-| `DESIGNATION_CREATE` | Create new job titles and grade bands | `✓` | `✓` | `—` | `—` |
-| `DESIGNATION_UPDATE` | Modify job title designations | `✓` | `✓` | `—` | `—` |
+| `DPT_VIEW` | View company departments | `✓` | `✓` | `✓` | `✓` |
+| `DPT_CREATE` | Create company department | `✓` | `✓` | `—` | `—` |
+| `DPT_UPDATE` | Modify department details and head | `✓` | `✓` | `—` | `—` |
+| `DSG_VIEW` | View job designations / roles | `✓` | `✓` | `✓` | `✓` |
+| `DSG_CREATE` | Create new job titles and grade bands | `✓` | `✓` | `—` | `—` |
+| `DSG_UPDATE` | Modify job title designations | `✓` | `✓` | `—` | `—` |
 
 ---
 

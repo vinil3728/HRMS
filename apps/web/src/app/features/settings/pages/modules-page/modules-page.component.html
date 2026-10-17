@@ -11,15 +11,59 @@
     </div>
 
     <div class="header-actions">
-      <button
-        type="button"
-        class="btn btn-primary"
-        *appHasPermission="Permission.MODULE_CREATE"
-        (click)="openCreateModuleModal()"
-      >
-        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
-        <span>New Module</span>
-      </button>
+      @if (canCreateModule()) {
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="openCreateModuleModal()"
+        >
+          <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+          <span>New Module</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Module Metrics / Summary Cards (Outside content-card) ── -->
+  <div class="module-metrics-grid">
+    <div class="m-metric-card">
+      <div class="m-metric-icon m-icon-blue">
+        <app-icon name="grid" [size]="20"></app-icon>
+      </div>
+      <div class="m-metric-info">
+        <span class="m-metric-value">{{ totalModulesCount() }}</span>
+        <span class="m-metric-label">Total Modules</span>
+      </div>
+    </div>
+
+    <div class="m-metric-card">
+      <div class="m-metric-icon m-icon-blue">
+        <app-icon name="check" [size]="20"></app-icon>
+      </div>
+      <div class="m-metric-info">
+        <span class="m-metric-value">{{ activeModulesCount() }}</span>
+        <span class="m-metric-label">Active Modules</span>
+      </div>
+    </div>
+
+    <div class="m-metric-card">
+      <div class="m-metric-icon m-icon-blue">
+        <app-icon name="x" [size]="20"></app-icon>
+      </div>
+      <div class="m-metric-info">
+        <span class="m-metric-value">{{ inactiveModulesCount() }}</span>
+        <span class="m-metric-label">Inactive Modules</span>
+      </div>
+    </div>
+
+    <div class="m-metric-card">
+      <div class="m-metric-icon m-icon-blue">
+        <app-icon name="shield" [size]="20"></app-icon>
+      </div>
+      <div class="m-metric-info">
+        <span class="m-metric-value">{{ totalPermissionsMappedCount() }}</span>
+        <span class="m-metric-label">Permissions Mapped</span>
+      </div>
     </div>
   </div>
 
@@ -33,7 +77,7 @@
           type="button"
           class="tab-btn active"
         >
-          <app-icon name="shield" [size]="16"></app-icon>
+          <app-icon name="grid" [size]="16"></app-icon>
           <span>All Modules</span>
         </button>
       </div>
@@ -86,47 +130,40 @@
         <table class="table">
           <thead>
             <tr>
-              <th class="cursor-pointer" (click)="setSort('code')">
+              <th style="width: 50px;" class="cursor-pointer" (click)="setSort('code')">
                 <span class="th-content">
                   <span>CODE</span>
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              <th class="cursor-pointer" (click)="setSort('name')">
+              <th style="width: 210px;" class="cursor-pointer" (click)="setSort('name')">
                 <span class="th-content">
                   <span>MODULE NAME</span>
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
               <th>DESCRIPTION</th>
-              <th class="cursor-pointer" (click)="setSort('permissionCount')">
+              <th style="width: 150px;" class="cursor-pointer" (click)="setSort('permissionCount')">
                 <span class="th-content">
                   <span>PERMISSIONS</span>
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              <th class="cursor-pointer" (click)="setSort('isActive')">
+              <th style="width: 110px;" class="cursor-pointer" (click)="setSort('isActive')">
                 <span class="th-content">
                   <span>STATUS</span>
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              <th class="cursor-pointer" (click)="setSort('isDeleted')">
-                <span class="th-content">
-                  <span>DELETED</span>
-                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
-                </span>
-              </th>
-              @if (hasAnyActionPermissions()) {
-                <th class="text-right">ACTIONS</th>
+              @if (hasRowActionPermissions()) {
+                <th style="width: 180px;" class="text-right">Row ACTIONS</th>
               }
             </tr>
           </thead>
           <tbody>
             @if (loading()) {
               <tr>
-                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
-                    class="empty-table-cell">
+                <td [attr.colspan]="hasRowActionPermissions() ? 6 : 5" class="empty-table-cell">
                   <div class="table-loading">
                     <span class="spinner"></span>
                     <span>Loading modules...</span>
@@ -135,8 +172,7 @@
               </tr>
             } @else if (displayedModules().length === 0) {
               <tr>
-                  <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
-                      class="empty-table-cell">
+                <td [attr.colspan]="hasRowActionPermissions() ? 6 : 5" class="empty-table-cell">
                   <div class="table-empty">
                     <div class="empty-icon-wrap">
                       <app-icon [name]="hasActiveFilters() ? 'search' : 'shield'" [size]="28"></app-icon>
@@ -163,63 +199,55 @@
             } @else {
               @for (mod of displayedModules(); track mod.id) {
                 <tr class="table-row">
-                  <!-- CODE -->
+                  <!-- CODE: Bold with normal font only -->
                   <td class="code-cell">
                     {{ mod.code }}
                   </td>
 
-                  <!-- MODULE NAME -->
+                  <!-- MODULE NAME: Normal text -->
                   <td>
-                    <span class="primary-name">{{ mod.name }}</span>
+                    <span class="cell-text">{{ mod.name }}</span>
                   </td>
 
-                  <!-- DESCRIPTION -->
+                  <!-- DESCRIPTION: Normal text -->
                   <td>
                     <span class="desc-text">
                       {{ mod.description || '—' }}
                     </span>
                   </td>
 
-                  <!-- PERMISSIONS -->
+                  <!-- PERMISSIONS: Normal text -->
                   <td>
                     <span class="cell-text">
                       {{ mod.permissionCount ?? 0 }} {{ (mod.permissionCount === 1) ? 'permission' : 'permissions' }}
                     </span>
                   </td>
 
-                  <!-- STATUS -->
+                  <!-- STATUS: Normal text (equal to module name, no badge) -->
                   <td>
-                    <app-badge [variant]="mod.isActive ? 'info' : 'gray'">
+                    <span class="cell-text">
                       {{ mod.isActive ? 'Active' : 'Inactive' }}
-                    </app-badge>
-                  </td>
-
-                  <!-- DELETED -->
-                  <td>
-                    <app-badge [variant]="mod.isDeleted ? 'info' : 'gray'">
-                      {{ mod.isDeleted ? 'True' : 'False' }}
-                    </app-badge>
+                    </span>
                   </td>
 
                   <!-- ACTIONS -->
-                  @if (hasAnyActionPermissions()) {
+                  @if (hasRowActionPermissions()) {
                     <td class="text-right">
                       <div class="action-buttons">
-                        @if (mod.isDeleted) {
-                          <!-- For deleted module: ONLY Activate option exists! -->
+                        @if (canViewModule()) {
                           <button
-                            *appHasPermission="Permission.MODULE_ACTIVATE"
                             type="button"
-                            class="action-btn success"
-                            (click)="toggleModuleActive(mod)"
-                            title="Activate and restore module"
+                            class="action-icon-btn view-action-btn"
+                            (click)="openViewPermissionsModal(mod)"
+                            title="View Module Permissions"
+                            aria-label="View Module Permissions"
                           >
-                            <app-icon name="check" [size]="15"></app-icon>
-                            <span>Activate</span>
+                            <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
                           </button>
-                        } @else {
+                        }
+                        
+                        @if (canEditModule()) {
                           <button
-                            *appHasPermission="Permission.MODULE_EDIT"
                             type="button"
                             class="action-icon-btn"
                             (click)="openEditModuleModal(mod)"
@@ -228,41 +256,28 @@
                           >
                             <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
                           </button>
+                        }
 
+                        @if (mod.isActive && canDeactivateModule()) {
                           <button
-                            *appHasPermission="Permission.MODULE_DELETE"
                             type="button"
-                            class="action-icon-btn"
-                            (click)="deleteModule(mod)"
-                            title="Delete Module"
-                            aria-label="Delete Module"
+                            class="action-btn danger"
+                            (click)="toggleModuleActive(mod)"
+                            title="Deactivate Module"
                           >
-                            <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
+                            <span>Deactivate</span>
                           </button>
+                        } 
 
-                          @if (mod.isActive) {
-                            <button
-                              *appHasPermission="Permission.MODULE_DEACTIVATE"
-                              type="button"
-                              class="action-btn danger"
-                              (click)="toggleModuleActive(mod)"
-                              title="Deactivate Module"
-                            >
-                              <app-icon name="x" [size]="15"></app-icon>
-                              <span>Deactivate</span>
-                            </button>
-                          } @else {
-                            <button
-                              *appHasPermission="Permission.MODULE_ACTIVATE"
-                              type="button"
-                              class="action-btn success"
-                              (click)="toggleModuleActive(mod)"
-                              title="Activate Module"
-                            >
-                              <app-icon name="check" [size]="15"></app-icon>
-                              <span>Activate</span>
-                            </button>
-                          }
+                        @if (!mod.isActive && canActivateModule()) {
+                          <button
+                            type="button"
+                            class="action-btn success"
+                            (click)="toggleModuleActive(mod)"
+                            title="Activate Module"
+                          >
+                            <span>Activate</span>
+                          </button>
                         }
                       </div>
                     </td>
@@ -310,7 +325,7 @@
   </div>
 </div>
 
-<!-- Modal -->
+<!-- Modals -->
 @if (isModuleModalOpen()) {
   <app-module-form-modal
     [isOpen]="isModuleModalOpen()"
@@ -318,4 +333,12 @@
     (closeModal)="closeModuleModal()"
     (saved)="onModuleSaved()"
   ></app-module-form-modal>
+}
+
+@if (isViewPermissionsModalOpen()) {
+  <app-module-permissions-modal
+    [isOpen]="isViewPermissionsModalOpen()"
+    [module]="selectedModuleForPermissions()"
+    (closeModal)="closeViewPermissionsModal()"
+  ></app-module-permissions-modal>
 }

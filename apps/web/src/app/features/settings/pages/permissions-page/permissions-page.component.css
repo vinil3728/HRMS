@@ -166,6 +166,60 @@
   color: #111827;
 }
 
+/* ── Permission Metrics / Summary Cards (Outside content-card) ─────────── */
+
+.perm-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.p-metric-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.p-metric-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.p-icon-blue {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+}
+
+.p-metric-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.p-metric-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.p-metric-label {
+  font-size: 12.5px;
+  color: #6b7280;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
 /* ── Table Block (Table & Pagination in Single Block with Border) ────────── */
 .table-block {
   margin: 16px 20px 20px 20px;
@@ -244,20 +298,19 @@
   gap: 6px;
 }
 
+/* CODE: BOLD with normal font only */
 .code-cell {
   color: #0f172a;
   font-size: 13px;
-  font-family: monospace;
+  font-weight: 700;
+  font-family: inherit;
 }
 
-.primary-name {
-  font-size: 13px;
-  color: #64748b;
-}
-
+.primary-name,
 .cell-text {
   font-size: 13px;
-  color: #64748b;
+  color: #475569;
+  font-weight: 400;
 }
 
 .desc-text {
@@ -275,11 +328,11 @@
   text-align: right !important;
 }
 
-/* ── Action Buttons & Status Toggle ──────────────────────────────────────── */
+/* ── Action Buttons: Compact Icon Buttons ────────────────────────────────── */
 .action-buttons {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   justify-content: flex-end;
 }
 
@@ -294,16 +347,13 @@
   align-items: center;
   justify-content: center;
   transition: all 0.15s ease;
+  width: 30px;
+  height: 30px;
 }
 
 .action-icon-btn:hover {
   background-color: #f1f5f9;
   color: #334155;
-}
-
-.action-icon-btn.delete-action-btn:hover {
-  background-color: #fef2f2;
-  color: #dc2626;
 }
 
 .action-btn {
@@ -471,6 +521,18 @@
   border-color: #1d4ed8;
 }
 
+.btn-secondary {
+  background-color: #ffffff;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.btn-secondary:hover {
+  background-color: #f8fafc;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
 .btn-outline {
   background-color: #ffffff;
   color: #374151;
@@ -485,4 +547,16 @@
 .btn-sm {
   padding: 6px 12px;
   font-size: 13px;
+}
+
+@media (max-width: 1024px) {
+  .perm-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .perm-metrics-grid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -43,6 +43,59 @@
   flex-wrap: wrap;
 }
 
+/* ── Role Metrics / Summary Cards (Outside content-card) ─────────────────── */
+.role-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.d-metric-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.d-metric-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.d-icon-blue {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+}
+
+.d-metric-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.d-metric-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.d-metric-label {
+  font-size: 12.5px;
+  color: #6b7280;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
 /* ── Main Unified Content Card ───────────────────────────────────────────── */
 .content-card {
   background-color: #ffffff;
@@ -245,20 +298,25 @@
 }
 
 .code-cell {
-  color: #64748b;
+  color: #0f172a;
   font-size: 13px;
-  font-family: monospace;
+  font-weight: 700;
+  font-family: inherit;
 }
 
 .primary-name {
   font-size: 13px;
-  color: #64748b;
+  color: #334155;
+}
+
+.primary-name.cursor-pointer:hover {
+  color: #2563eb;
 }
 
 .cell-text {
   font-size: 13px;
   font-weight: 400;
-  color: #64748b;
+  color: #334155;
 }
 
 .desc-text {
@@ -270,20 +328,6 @@
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.perm-link-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: #2563eb;
-  cursor: pointer;
-}
-
-.perm-link-btn:hover {
-  text-decoration: underline;
 }
 
 .text-right {
@@ -316,9 +360,9 @@
   color: #334155;
 }
 
-.action-icon-btn.delete-action-btn:hover {
-  background-color: #fef2f2;
-  color: #dc2626;
+.action-icon-btn.view-action-btn:hover {
+  background-color: #eff6ff;
+  color: #2563eb;
 }
 
 .action-btn {

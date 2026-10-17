@@ -11,15 +11,68 @@
     </div>
 
     <div class="header-actions">
-      <button
-        type="button"
-        class="btn btn-primary"
-        *appHasPermission="Permission.PERMISSION_CREATE"
-        (click)="openCreatePermissionModal()"
-      >
-        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
-        <span>New Permission</span>
-      </button>
+      @if (canCreatePermission()) {
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="openBulkAddModal()"
+        >
+          <app-icon name="plus" [size]="16" [strokeWidth]="1.8"></app-icon>
+          <span>Bulk Create Permissions</span>
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="openCreatePermissionModal()"
+        >
+          <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+          <span>New Permission</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Permission Metrics / Summary Cards (Outside content-card) ── -->
+  <div class="perm-metrics-grid">
+    <div class="p-metric-card">
+      <div class="p-metric-icon p-icon-blue">
+        <app-icon name="shield" [size]="20"></app-icon>
+      </div>
+      <div class="p-metric-info">
+        <span class="p-metric-value">{{ totalPermissionsCount() }}</span>
+        <span class="p-metric-label">Total Permissions</span>
+      </div>
+    </div>
+
+    <div class="p-metric-card">
+      <div class="p-metric-icon p-icon-blue">
+        <app-icon name="check" [size]="20"></app-icon>
+      </div>
+      <div class="p-metric-info">
+        <span class="p-metric-value">{{ activePermissionsCount() }}</span>
+        <span class="p-metric-label">Active Permissions</span>
+      </div>
+    </div>
+
+    <div class="p-metric-card">
+      <div class="p-metric-icon p-icon-blue">
+        <app-icon name="x" [size]="20"></app-icon>
+      </div>
+      <div class="p-metric-info">
+        <span class="p-metric-value">{{ inactivePermissionsCount() }}</span>
+        <span class="p-metric-label">Inactive Permissions</span>
+      </div>
+    </div>
+
+    <div class="p-metric-card">
+      <div class="p-metric-icon p-icon-blue">
+        <app-icon name="grid" [size]="20"></app-icon>
+      </div>
+      <div class="p-metric-info">
+        <span class="p-metric-value">{{ modulesCount() }}</span>
+        <span class="p-metric-label">Functional Modules</span>
+      </div>
     </div>
   </div>
 
@@ -97,7 +150,7 @@
         <table class="table">
           <thead>
             <tr>
-              <th class="cursor-pointer" (click)="setSort('code')">
+              <th style="width: 260px;" class="cursor-pointer" (click)="setSort('code')">
                 <span class="th-content">
                   <span>CODE</span>
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
@@ -109,36 +162,34 @@
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              <th class="cursor-pointer" (click)="setSort('module')">
+              <th class="cursor-pointer" (click)="setSort('description')">
+                <span class="th-content">
+                  <span>DESCRIPTION</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
+              <th style="width: 180px;" class="cursor-pointer" (click)="setSort('module')">
                 <span class="th-content">
                   <span>MODULE</span>
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              <th>SCOPE</th>
-              <th>DESCRIPTION</th>
-              <th class="cursor-pointer" (click)="setSort('isActive')">
+              <th style="width: 130px;">SCOPE</th>
+              <th style="width: 120px;" class="cursor-pointer" (click)="setSort('isActive')">
                 <span class="th-content">
                   <span>STATUS</span>
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              <th class="cursor-pointer" (click)="setSort('isDeleted')">
-                <span class="th-content">
-                  <span>DELETED</span>
-                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
-                </span>
-              </th>
-              @if (hasAnyActionPermissions()){
-                <th class="text-right">ACTIONS</th>
+              @if (hasRowActionPermissions()) {
+                <th style="width: 180px;" class="text-right">ROW ACTIONS</th>
               }
             </tr>
           </thead>
           <tbody>
             @if (loadingPermissions()) {
               <tr>
-                <td [attr.colspan]="hasAnyActionPermissions() ? 8 : 7"
-                  class="empty-table-cell">
+                <td [attr.colspan]="hasRowActionPermissions() ? 7 : 6" class="empty-table-cell">
                   <div class="table-loading">
                     <span class="spinner"></span>
                     <span>Loading permissions...</span>
@@ -147,8 +198,7 @@
               </tr>
             } @else if (displayedPermissions().length === 0) {
               <tr>
-                <td [attr.colspan]="hasAnyActionPermissions() ? 8 : 7"
-                  class="empty-table-cell">
+                <td [attr.colspan]="hasRowActionPermissions() ? 7 : 6" class="empty-table-cell">
                   <div class="table-empty">
                     <div class="empty-icon-wrap">
                       <app-icon [name]="hasActiveFilters() ? 'search' : 'shield'" [size]="28"></app-icon>
@@ -175,70 +225,44 @@
             } @else {
               @for (perm of displayedPermissions(); track perm.id) {
                 <tr class="table-row">
-                  <!-- CODE -->
+                  <!-- CODE: Bold with normal font only -->
                   <td class="code-cell">
                     {{ perm.code }}
                   </td>
 
-                  <!-- PERMISSION NAME -->
+                  <!-- PERMISSION NAME: Normal text -->
                   <td>
-                    <span class="primary-name">{{ perm.name }}</span>
+                    <span class="cell-text">{{ perm.name }}</span>
                   </td>
 
-                  <!-- MODULE -->
+                  <!-- DESCRIPTION: Normal text -->
+                  <td>
+                    <span class="desc-text">{{ perm.description || '—' }}</span>
+                  </td>
+
+                  <!-- MODULE: Normal text -->
                   <td>
                     <span class="cell-text">{{ getModuleName(perm) }}</span>
                   </td>
 
-                  <!-- SCOPE -->
+                  <!-- SCOPE: Normal text -->
                   <td>
-                    <span class="cell-text" style="font-family: monospace; font-size: 11px;">
-                      {{ perm.scopes || 'SELF' }}
-                    </span>
+                    <span class="cell-text">{{ perm.scopes || 'SELF' }}</span>
                   </td>
 
-                  <!-- DESCRIPTION -->
+                  <!-- STATUS: Normal text (equal to permission name) -->
                   <td>
-                    <span class="desc-text">
-                      {{ perm.description || '—' }}
-                    </span>
-                  </td>
-
-                  <!-- STATUS -->
-                  <td>
-                    <app-badge [variant]="perm.isActive ? 'info' : 'gray'">
+                    <span class="cell-text">
                       {{ perm.isActive ? 'Active' : 'Inactive' }}
-                    </app-badge>
-                  </td>
-
-                  <!-- DELETED -->
-                  <td>
-                    <app-badge [variant]="isModuleDeleted(perm) ? 'info' : 'gray'">
-                      {{ isModuleDeleted(perm) ? 'True' : 'False' }}
-                    </app-badge>
+                    </span>
                   </td>
 
                   <!-- ACTIONS -->
-                  @if (hasAnyActionPermissions()) {
+                  @if (hasRowActionPermissions()) {
                     <td class="text-right">
                       <div class="action-buttons">
-                        @if (isParentModuleDeleted(perm)) {
-                          <span class="cell-text" title="Module is deleted. Activate module to enable actions.">—</span>
-                        } @else if (perm.isDeleted) {
-                          <!-- For deleted permission: ONLY Activate option exists! -->
+                        @if (canEditPermission()) {
                           <button
-                            *appHasPermission="Permission.PERMISSION_ACTIVATE"
-                            type="button"
-                            class="action-btn success"
-                            (click)="togglePermissionActive(perm)"
-                            title="Activate and restore permission"
-                          >
-                            <app-icon name="check" [size]="15"></app-icon>
-                            <span>Activate</span>
-                          </button>
-                        } @else {
-                          <button
-                            *appHasPermission="Permission.PERMISSION_EDIT"
                             type="button"
                             class="action-icon-btn"
                             (click)="openEditPermissionModal(perm)"
@@ -247,41 +271,29 @@
                           >
                             <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
                           </button>
-
+                        }
+                        @if (perm.isActive && canDeactivatePermission()) {
                           <button
-                            *appHasPermission="Permission.PERMISSION_DELETE"
                             type="button"
-                            class="action-icon-btn delete-action-btn"
-                            (click)="deletePermission(perm)"
-                            title="Delete Permission"
-                            aria-label="Delete Permission"
+                            class="action-btn danger"
+                            (click)="togglePermissionActive(perm)"
+                            title="Deactivate Permission"
                           >
-                            <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
+                            <app-icon name="x" [size]="15"></app-icon>
+                            <span>Deactivate</span>
                           </button>
+                        }
 
-                          @if (perm.isActive) {
-                            <button
-                              *appHasPermission="Permission.PERMISSION_DEACTIVATE"
-                              type="button"
-                              class="action-btn danger"
-                              (click)="togglePermissionActive(perm)"
-                              title="Deactivate Permission"
-                            >
-                              <app-icon name="x" [size]="15"></app-icon>
-                              <span>Deactivate</span>
-                            </button>
-                          } @else {
-                            <button
-                              *appHasPermission="Permission.PERMISSION_ACTIVATE"
-                              type="button"
-                              class="action-btn success"
-                              (click)="togglePermissionActive(perm)"
-                              title="Activate Permission"
-                            >
-                              <app-icon name="check" [size]="15"></app-icon>
-                              <span>Activate</span>
-                            </button>
-                          }
+                        @if (!perm.isActive && canActivatePermission()) {
+                          <button
+                            type="button"
+                            class="action-btn success"
+                            (click)="togglePermissionActive(perm)"
+                            title="Activate Permission"
+                          >
+                            <app-icon name="check" [size]="15"></app-icon>
+                            <span>Activate</span>
+                          </button>
                         }
                       </div>
                     </td>
@@ -329,7 +341,7 @@
   </div>
 </div>
 
-<!-- Modal -->
+<!-- Modal: Edit / Create Single Permission -->
 @if (isPermissionModalOpen()) {
   <app-permission-form-modal
     [isOpen]="isPermissionModalOpen()"
@@ -337,4 +349,14 @@
     (closeModal)="closePermissionModal()"
     (saved)="onPermissionSaved()"
   ></app-permission-form-modal>
+}
+
+<!-- Modal: Bulk Create Permissions -->
+@if (isBulkModalOpen()) {
+  <app-permission-bulk-modal
+    [isOpen]="isBulkModalOpen()"
+    [modules]="modules()"
+    (closeModal)="closeBulkModal()"
+    (saved)="onBulkSaved($event)"
+  ></app-permission-bulk-modal>
 }

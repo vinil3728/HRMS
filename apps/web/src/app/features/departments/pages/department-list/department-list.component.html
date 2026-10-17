@@ -9,15 +9,59 @@
     </div>
 
     <div class="header-actions">
-      <button
-        *appHasPermission="Permission.DEPARTMENT_CREATE"
-        type="button"
-        class="btn btn-primary"
-        (click)="openAddModal()"
-      >
-        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
-        <span>Add Department</span>
-      </button>
+      @if (canCreateDepartment()) {
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="openAddModal()"
+        >
+          <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+          <span>Add Department</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Department Metrics / Summary Cards (Outside content-card) ── -->
+  <div class="department-metrics-grid">
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="building" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ totalDepartmentsCount() }}</span>
+        <span class="d-metric-label">Total Departments</span>
+      </div>
+    </div>
+
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="check" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ activeDepartmentsCount() }}</span>
+        <span class="d-metric-label">Active Departments</span>
+      </div>
+    </div>
+
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="x" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ inactiveDepartmentsCount() }}</span>
+        <span class="d-metric-label">Inactive Departments</span>
+      </div>
+    </div>
+
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="id-card" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ totalDesignationsCount() }}</span>
+        <span class="d-metric-label">Designations Mapped</span>
+      </div>
     </div>
   </div>
 
@@ -112,9 +156,10 @@
                   <span>BRANCH</span>
                 </span>
               </th>
-              <th>
+              <th class="cursor-pointer" (click)="setSort('designations')">
                 <span class="th-content">
                   <span>DESIGNATIONS</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
               <th class="cursor-pointer" (click)="setSort('createdAt')">
@@ -129,9 +174,9 @@
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              @if (hasAnyActionPermissions()) {
-                <th class="text-right">
-                  ACTIONS
+              @if (hasRowActionPermissions()) {
+                <th style="width: 180px;" class="text-right">
+                  ROW ACTIONS
                 </th>
               }
             </tr>
@@ -139,7 +184,7 @@
           <tbody>
             @if (loading()) {
               <tr>
-                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                <td [attr.colspan]="hasRowActionPermissions() ? 7 : 6"
                     class="empty-table-cell">
                   <div class="table-loading">
                     <span class="spinner"></span>
@@ -149,7 +194,7 @@
               </tr>
             } @else if (displayedDepartments().length === 0) {
               <tr>
-                <td [attr.colspan]="hasAnyActionPermissions() ? 7 : 6"
+                <td [attr.colspan]="hasRowActionPermissions() ? 7 : 6"
                     class="empty-table-cell">
                   <div class="table-empty">
                     <div class="empty-icon-wrap">
@@ -184,7 +229,7 @@
 
                   <!-- DEPARTMENT NAME -->
                   <td>
-                    <span class="primary-name">{{ dept.name }}</span>
+                    <span class="primary-name cursor-pointer" (click)="openDetailModal(dept)">{{ dept.name }}</span>
                   </td>
 
                   <!-- BRANCH -->
@@ -196,11 +241,10 @@
                     }
                   </td>
 
-                  <!-- DESIGNATIONS -->
+                  <!-- DESIGNATIONS: Normal text -->
                   <td>
-                    <span class="designation-count-badge">
-                      <app-icon name="id-card" [size]="13"></app-icon>
-                      <span>{{ dept.designations?.length || 0 }} {{ (dept.designations?.length === 1) ? 'Position' : 'Positions' }}</span>
+                    <span class="cell-text">
+                      {{ dept.designations?.length || 0 }} {{ (dept.designations?.length === 1) ? 'designation' : 'designations' }}
                     </span>
                   </td>
 
@@ -211,51 +255,55 @@
                     </span>
                   </td>
 
-                  <!-- STATUS -->
+                  <!-- STATUS: Normal text (equal to department name, no badge) -->
                   <td>
-                    <app-badge [variant]="dept.isActive ? 'active' : 'inactive'">
+                    <span class="cell-text">
                       {{ dept.isActive ? 'Active' : 'Inactive' }}
-                    </app-badge>
+                    </span>
                   </td>
 
                   <!-- ACTIONS -->
-                  @if (hasAnyActionPermissions()) {
+                  @if (hasRowActionPermissions()) {
                     <td class="text-right">
                       <div class="action-buttons">
-                        <button
-                          *appHasPermission="Permission.DEPARTMENT_EDIT"
-                          type="button"
-                          class="action-icon-btn"
-                          (click)="openEditModal(dept)"
-                          title="Edit Department"
-                          aria-label="Edit Department"
-                        >
-                          <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
-                        </button>
-                         <button
-                          *appHasPermission="Permission.DEPARTMENT_DELETE"
-                          type="button"
-                          class="action-icon-btn"
-                          (click)="openDeleteModal(dept)"
-                          title="Delete Department"ś
-                          aria-label="Delete Department"
-                        >
-                          <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
-                        </button>
-                        @if (dept.isActive) {
+                        @if (canViewDepartment()) {
                           <button
-                            *appHasPermission="Permission.DEPARTMENT_DEACTIVATE"
                             type="button"
-                            class="action-btn danger"ś
+                            class="action-icon-btn view-action-btn"
+                            (click)="openDetailModal(dept)"
+                            title="View Department Details"
+                            aria-label="View Department Details"
+                          >
+                            <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+                        }
+
+                        @if (canEditDepartment()) {
+                          <button
+                            type="button"
+                            class="action-icon-btn"
+                            (click)="openEditModal(dept)"
+                            title="Edit Department"
+                            aria-label="Edit Department"
+                          >
+                            <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
+                          </button>
+                        }
+
+                        @if (dept.isActive && canDeactivateDepartment()) {
+                          <button
+                            type="button"
+                            class="action-btn danger"
                             (click)="toggleStatus(dept)"
                             title="Deactivate Department"
                           >
                             <app-icon name="x" [size]="15"></app-icon>
                             <span>Deactivate</span>
                           </button>
-                        } @else {
+                        } 
+
+                        @if (!dept.isActive && canActivateDepartment()) {
                           <button
-                            *appHasPermission="Permission.DEPARTMENT_ACTIVATE"
                             type="button"
                             class="action-btn success"
                             (click)="toggleStatus(dept)"
@@ -319,4 +367,13 @@
     (closeModal)="closeModal()"
     (saved)="onDepartmentSaved($event)"
   ></app-department-form-modal>
+}
+
+<!-- Detail Modal -->
+@if (isDetailModalOpen()) {
+  <app-department-detail-modal
+    [isOpen]="isDetailModalOpen()"
+    [department]="selectedDepartmentForDetail()"
+    (closeModal)="closeDetailModal()"
+  ></app-department-detail-modal>
 }

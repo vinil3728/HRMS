@@ -11,15 +11,59 @@
     </div>
 
     <div class="header-actions">
-      <button
-        type="button"
-        class="btn btn-primary"
-        *appHasPermission="Permission.ROLE_CREATE"
-        (click)="openCreateRoleModal()"
-      >
-        <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
-        <span>Create Role</span>
-      </button>
+      @if (canCreateRole()) {
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="openCreateRoleModal()"
+        >
+          <app-icon name="plus" [size]="16" [strokeWidth]="2"></app-icon>
+          <span>Create Role</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Role Metrics / Summary Cards (Outside content-card) ── -->
+  <div class="role-metrics-grid">
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="shield" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ totalRolesCount() }}</span>
+        <span class="d-metric-label">Total Roles</span>
+      </div>
+    </div>
+
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="check" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ activeRolesCount() }}</span>
+        <span class="d-metric-label">Active Roles</span>
+      </div>
+    </div>
+
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="x" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ inactiveRolesCount() }}</span>
+        <span class="d-metric-label">Inactive Roles</span>
+      </div>
+    </div>
+
+    <div class="d-metric-card">
+      <div class="d-metric-icon d-icon-blue">
+        <app-icon name="award" [size]="20"></app-icon>
+      </div>
+      <div class="d-metric-info">
+        <span class="d-metric-value">{{ totalPrivilegesCount() }}</span>
+        <span class="d-metric-label">Total Privileges</span>
+      </div>
     </div>
   </div>
 
@@ -100,28 +144,27 @@
               </th>
               <th>DESCRIPTION</th>
               <th>CATEGORY</th>
-              <th>PRIVILEGES</th>
+              <th class="cursor-pointer" (click)="setSort('privileges')">
+                <span class="th-content">
+                  <span>PRIVILEGES</span>
+                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
+                </span>
+              </th>
               <th class="cursor-pointer" (click)="setSort('isActive')">
                 <span class="th-content">
                   <span>STATUS</span>
                   <app-icon name="arrow-up-down" [size]="12"></app-icon>
                 </span>
               </th>
-              <th class="cursor-pointer" (click)="setSort('isDeleted')">
-                <span class="th-content">
-                  <span>DELETED</span>
-                  <app-icon name="arrow-up-down" [size]="12"></app-icon>
-                </span>
-              </th>
-              @if (hasAnyActionPermissions()) {
-                <th class="text-right">ACTIONS</th>
+              @if (hasRowActionPermissions()) {
+                <th style="width: 180px;" class="text-right">ROW ACTIONS</th>
               }
             </tr>
           </thead>
           <tbody>
             @if (loadingRoles()) {
               <tr>
-                <td [attr.colspan]="hasAnyActionPermissions() ? 8 : 7"
+                <td [attr.colspan]="hasRowActionPermissions() ? 7 : 6"
                     class="empty-table-cell">
                   <div class="table-loading">
                     <span class="spinner"></span>
@@ -131,7 +174,7 @@
               </tr>
             } @else if (displayedRoles().length === 0) {
               <tr>
-                <td [attr.colspan]="hasAnyActionPermissions() ? 8 : 7"
+                <td [attr.colspan]="hasRowActionPermissions() ? 7 : 6"
                     class="empty-table-cell">
                   <div class="table-empty">
                     <div class="empty-icon-wrap">
@@ -166,7 +209,7 @@
 
                   <!-- ROLE NAME -->
                   <td>
-                    <span class="primary-name">{{ role.name }}</span>
+                    <span class="primary-name cursor-pointer" (click)="openDetailModal(role)">{{ role.name }}</span>
                   </td>
 
                   <!-- DESCRIPTION -->
@@ -179,56 +222,42 @@
                   <!-- CATEGORY -->
                   <td>
                     <span class="cell-text">
-                      {{ role.isSystemRole ? 'System Built-in' : 'Custom' }}
+                      {{ role.isSystemRole ? 'System' : 'Custom' }}
                     </span>
                   </td>
 
-                  <!-- PRIVILEGES -->
+                  <!-- PRIVILEGES: Normal text -->
                   <td>
-                    <button
-                      type="button"
-                      class="perm-link-btn"
-                      *appHasPermission="Permission.ROLE_VIEW"
-                      (click)="openPermissionMatrix(role)"
-                      title="Click to inspect/edit permission matrix"
-                    >
-                      {{ role.rolePermissions?.length || 0 }} Privileges
-                    </button>
+                    <span class="cell-text">
+                      {{ role.rolePermissions?.length || 0 }} {{ (role.rolePermissions?.length === 1) ? 'privilege' : 'privileges' }}
+                    </span>
                   </td>
 
-                  <!-- STATUS -->
+                  <!-- STATUS: Normal text (equal to role name, no badge) -->
                   <td>
-                    <app-badge [variant]="role.isActive ? 'info' : 'gray'">
+                    <span class="cell-text">
                       {{ role.isActive ? 'Active' : 'Inactive' }}
-                    </app-badge>
-                  </td>
-
-                  <!-- DELETED -->
-                  <td>
-                    <app-badge [variant]="role.isDeleted ? 'info' : 'gray'">
-                      {{ role.isDeleted ? 'True' : 'False' }}
-                    </app-badge>
+                    </span>
                   </td>
 
                   <!-- ACTIONS -->
-                  @if (hasAnyActionPermissions()) {
+                  @if (hasRowActionPermissions()) {
                     <td class="text-right">
                       <div class="action-buttons">
-                        @if (role.isDeleted) {
-                          <!-- For deleted role: ONLY Activate option exists! -->
+                        @if (canViewRole()) {
                           <button
-                            *appHasPermission="Permission.ROLE_ACTIVATE"
                             type="button"
-                            class="action-btn success"
-                            (click)="toggleRoleActive(role)"
-                            title="Activate and restore role"
+                            class="action-icon-btn view-action-btn"
+                            (click)="openDetailModal(role)"
+                            title="View Role Details"
+                            aria-label="View Role Details"
                           >
-                            <app-icon name="check" [size]="15"></app-icon>
-                            <span>Activate</span>
+                            <app-icon name="eye" [size]="16" [strokeWidth]="1.8"></app-icon>
                           </button>
-                        } @else {
+                        }
+
+                        @if (canEditRole()) {
                           <button
-                            *appHasPermission="Permission.ROLE_EDIT"
                             type="button"
                             class="action-icon-btn"
                             (click)="openEditRoleModal(role)"
@@ -237,43 +266,30 @@
                           >
                             <app-icon name="edit" [size]="16" [strokeWidth]="1.8"></app-icon>
                           </button>
+                        }
 
-                          @if (!role.isSystemRole) {
-                            <button
-                              *appHasPermission="Permission.ROLE_DELETE"
-                              type="button"
-                              class="action-icon-btn delete-action-btn"
-                              (click)="deleteRole(role)"
-                              title="Delete Role"
-                              aria-label="Delete Role"
-                            >
-                              <app-icon name="trash" [size]="16" [strokeWidth]="1.8"></app-icon>
-                            </button>
-                          }
+                        @if (role.isActive && canDeactivateRole()) {
+                          <button
+                            type="button"
+                            class="action-btn danger"
+                            (click)="toggleRoleActive(role)"
+                            title="Deactivate Role"
+                          >
+                            <app-icon name="x" [size]="15"></app-icon>
+                            <span>Deactivate</span>
+                          </button>
+                        }
 
-                          @if (role.isActive) {
-                            <button
-                              *appHasPermission="Permission.ROLE_DEACTIVATE"
-                              type="button"
-                              class="action-btn danger"
-                              (click)="toggleRoleActive(role)"
-                              title="Deactivate Role"
-                            >
-                              <app-icon name="x" [size]="15"></app-icon>
-                              <span>Deactivate</span>
-                            </button>
-                          } @else {
-                            <button
-                              *appHasPermission="Permission.ROLE_ACTIVATE"
-                              type="button"
-                              class="action-btn success"
-                              (click)="toggleRoleActive(role)"
-                              title="Activate Role"
-                            >
-                              <app-icon name="check" [size]="15"></app-icon>
-                              <span>Activate</span>
-                            </button>
-                          }
+                        @if (!role.isActive && canActivateRole()) {
+                          <button
+                            type="button"
+                            class="action-btn success"
+                            (click)="toggleRoleActive(role)"
+                            title="Activate Role"
+                          >
+                            <app-icon name="check" [size]="15"></app-icon>
+                            <span>Activate</span>
+                          </button>
                         }
                       </div>
                     </td>
@@ -338,4 +354,13 @@
     (closeModal)="closeMatrixModal()"
     (saved)="onPermissionsSaved()"
   ></app-permission-matrix-modal>
+}
+
+<!-- Detail Modal -->
+@if (isDetailModalOpen()) {
+  <app-role-detail-modal
+    [isOpen]="isDetailModalOpen()"
+    [role]="selectedRoleForDetail()"
+    (closeModal)="closeDetailModal()"
+  ></app-role-detail-modal>
 }

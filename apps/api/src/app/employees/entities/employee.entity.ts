@@ -71,6 +71,7 @@ export class Employee {
 
     @ManyToOne(
         () => Designation,
+        (designation) => designation.employees,
         {
             nullable: false,
             onDelete: 'RESTRICT',

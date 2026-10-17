@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -8,8 +8,6 @@ import {
   signal,
 } from '@angular/core';
 import { Permission } from '../../../../core/models/permission.model';
-import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
-import { BadgeComponent } from '../../../../shared/ui/badge/badge.component';
 import { IconComponent } from '../../../../shared/ui/icon/icon.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/select/select.component';
 import { UserFormModalComponent } from '../../components/user-form-modal/user-form-modal.component';
@@ -22,10 +20,9 @@ import { RbacService } from '../../../../core/services/rbac.service';
   selector: 'app-users-page',
   imports: [
     CommonModule,
+    DatePipe,
     IconComponent,
-    BadgeComponent,
     SelectComponent,
-    HasPermissionDirective,
     UserFormModalComponent,
     UserViewModalComponent,
   ],
@@ -45,26 +42,64 @@ export class UsersPageComponent implements OnInit {
   readonly userSearchQuery = signal<string>('');
   readonly userRoleFilter = signal<string>('ALL');
   readonly userStatusFilter = signal<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
-  readonly sortField = signal<'username' | 'createdAt' | 'isActive'>('username');
+  readonly sortField = signal<'username' | 'createdAt' | 'isActive' | 'employeeCode' | 'employeeName' | 'role'>('username');
   readonly sortDirection = signal<'asc' | 'desc'>('asc');
 
   readonly currentPage = signal<number>(1);
   readonly pageSize = 10;
 
+  // ── Permission Signals (Replacing directive) ─────────────────────────────
+  readonly canCreateUser = computed(() =>
+    this.rbacService.hasPermission(Permission.USR_CREATE)
+  );
+
+  readonly canViewUser = computed(() =>
+    this.rbacService.hasPermission(Permission.USR_VIEW)
+  );
+
+  readonly canEditUser = computed(() =>
+    this.rbacService.hasPermission(Permission.USR_UPDATE)
+  );
+
+  readonly canDeleteUser = computed(() =>
+    this.rbacService.hasPermission(Permission.USR_DELETE)
+  );
+
+  readonly canActivateUser = computed(() =>
+    this.rbacService.hasPermission(Permission.USR_ACTIVATE)
+  );
+
+  readonly canDeactivateUser = computed(() =>
+    this.rbacService.hasPermission(Permission.USR_DEACTIVATE)
+  );
+
+  readonly hasRowActionPermissions = computed(() => {
+    return (
+      this.canViewUser() ||
+      this.canEditUser() ||
+      this.canActivateUser() ||
+      this.canDeactivateUser()
+    );
+  });
+
+  readonly hasAnyActionPermissions = this.hasRowActionPermissions;
+
+  // ── Metrics Computed Signals ─────────────────────────────────────────────
+  readonly totalUsersCount = computed(() => this.users().length);
+  readonly activeUsersCount = computed(
+    () => this.users().filter((u) => u.isActive).length
+  );
+  readonly inactiveUsersCount = computed(
+    () => this.users().filter((u) => !u.isActive).length
+  );
+  readonly linkedEmployeesCount = computed(
+    () => this.users().filter((u) => !!u.employee).length
+  );
+
   readonly roleOptions = computed<SelectOption[]>(() => [
     { value: 'ALL', label: 'All Roles' },
     ...this.roles().map((r) => ({ value: r.id, label: r.name })),
   ]);
-
-  readonly hasAnyActionPermissions = computed(() => {
-    return (
-      this.rbacService.hasPermission(Permission.USER_VIEW) ||
-      this.rbacService.hasPermission(Permission.USER_EDIT) ||
-      this.rbacService.hasPermission(Permission.USER_DELETE) ||
-      this.rbacService.hasPermission(Permission.USER_ACTIVATE) ||
-      this.rbacService.hasPermission(Permission.USER_DEACTIVATE)
-    );
-  });
 
   readonly statusOptions: SelectOption[] = [
     { value: 'ALL', label: 'All Statuses' },
@@ -129,12 +164,36 @@ export class UsersPageComponent implements OnInit {
     });
 
     list.sort((a, b) => {
-      const valA = a[field];
-      const valB = b[field];
+      if (field === 'employeeCode') {
+        const codeA = a.employee?.employeeCode || '';
+        const codeB = b.employee?.employeeCode || '';
+        return codeA.localeCompare(codeB, undefined, { sensitivity: 'base' }) * (dir === 'asc' ? 1 : -1);
+      }
+
+      if (field === 'employeeName') {
+        const nameA = a.employee ? `${a.employee.firstName} ${a.employee.lastName}` : '';
+        const nameB = b.employee ? `${b.employee.firstName} ${b.employee.lastName}` : '';
+        return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' }) * (dir === 'asc' ? 1 : -1);
+      }
+
+      if (field === 'role') {
+        const roleA = a.role?.name || '';
+        const roleB = b.role?.name || '';
+        return roleA.localeCompare(roleB, undefined, { sensitivity: 'base' }) * (dir === 'asc' ? 1 : -1);
+      }
+
+      const valA = a[field as keyof SystemUser];
+      const valB = b[field as keyof SystemUser];
 
       if (typeof valA === 'string' && typeof valB === 'string') {
         const cmp = valA.localeCompare(valB, undefined, { sensitivity: 'base' });
         return dir === 'asc' ? cmp : -cmp;
+      }
+
+      if (typeof valA === 'boolean' && typeof valB === 'boolean') {
+        const numA = valA ? 1 : 0;
+        const numB = valB ? 1 : 0;
+        return (numA - numB) * (dir === 'asc' ? 1 : -1);
       }
 
       if (valA === valB) return 0;
@@ -209,7 +268,7 @@ export class UsersPageComponent implements OnInit {
     this.currentPage.set(page);
   }
 
-  setSort(field: 'username' | 'createdAt' | 'isActive'): void {
+  setSort(field: 'username' | 'createdAt' | 'isActive' | 'employeeCode' | 'employeeName' | 'role'): void {
     if (this.sortField() === field) {
       this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
     } else {
@@ -316,7 +375,7 @@ export class UsersPageComponent implements OnInit {
     link.setAttribute('href', encodedUri);
     link.setAttribute(
       'download',
-      `user_accounts_${new Date().toISOString().split('T')[0]}.csv`
+      `USR_accounts_${new Date().toISOString().split('T')[0]}.csv`
     );
     document.body.appendChild(link);
     link.click();

@@ -125,6 +125,7 @@ export const API_CONFIG = {
     },
     rbac: {
       permissions: '/permissions',
+      bulkPermissions: '/permissions/bulk',
       permissionDetail: (id: string) => `/permissions/${id}`,
       activatePermission: (id: string) => `/permissions/${id}/activate`,
       deactivatePermission: (id: string) => `/permissions/${id}/deactivate`,

@@ -4,6 +4,17 @@ export interface DepartmentRef {
   code: string;
 }
 
+export interface EmployeeRef {
+  id: string;
+  employeeCode: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  status?: string;
+  dateOfJoining?: string;
+}
+
 export interface Designation {
   id: string;
   name: string;
@@ -11,6 +22,7 @@ export interface Designation {
   isActive: boolean;
   departmentId?: string | null;
   department?: DepartmentRef | null;
+  employees?: EmployeeRef[];
   createdAt: string;
   updatedAt: string;
 }

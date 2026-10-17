@@ -58,7 +58,12 @@ export type IconName =
   | 'list'
   | 'copy'
   | 'map-pin'
-  | 'briefcase';
+  | 'briefcase'
+  | 'power'
+  | 'slash'
+  | 'x-circle'
+  | 'toggle-left'
+  | 'toggle-right';
 
 @Component({
   selector: 'app-icon',

@@ -2,6 +2,7 @@ export interface DesignationRef {
   id: string;
   name: string;
   code: string;
+  isActive?: boolean;
 }
 
 export interface BranchRef {

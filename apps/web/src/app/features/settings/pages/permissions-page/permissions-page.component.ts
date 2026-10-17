@@ -8,11 +8,10 @@ import {
   signal,
 } from '@angular/core';
 import { Permission } from '../../../../core/models/permission.model';
-import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
-import { BadgeComponent } from '../../../../shared/ui/badge/badge.component';
 import { IconComponent } from '../../../../shared/ui/icon/icon.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/select/select.component';
 import { PermissionFormModalComponent } from '../../components/permission-form-modal/permission-form-modal.component';
+import { PermissionBulkModalComponent } from '../../components/permission-bulk-modal/permission-bulk-modal.component';
 import { SystemModule, SystemPermission } from '../../models/settings.model';
 import { SettingsService } from '../../services/settings.service';
 import { RbacService } from '../../../../core/services/rbac.service';
@@ -22,10 +21,9 @@ import { RbacService } from '../../../../core/services/rbac.service';
   imports: [
     CommonModule,
     IconComponent,
-    BadgeComponent,
     SelectComponent,
-    HasPermissionDirective,
     PermissionFormModalComponent,
+    PermissionBulkModalComponent,
   ],
   templateUrl: './permissions-page.component.html',
   styleUrl: './permissions-page.component.css',
@@ -43,23 +41,55 @@ export class PermissionsPageComponent implements OnInit {
   readonly permSearchQuery = signal<string>('');
   readonly permModuleFilter = signal<string>('ALL');
   readonly permStatusFilter = signal<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED'>('ALL');
-  readonly sortField = signal<'code' | 'name' | 'module' | 'isActive' | 'isDeleted'>('name');
+  readonly sortField = signal<'code' | 'name' | 'description' | 'module' | 'isActive'>('name');
   readonly sortDirection = signal<'asc' | 'desc'>('asc');
 
   readonly currentPage = signal<number>(1);
   readonly pageSize = 10;
 
   readonly isPermissionModalOpen = signal<boolean>(false);
+  readonly isBulkModalOpen = signal<boolean>(false);
   readonly selectedPermissionToEdit = signal<SystemPermission | null>(null);
 
-  readonly hasAnyActionPermissions = computed(() => {
+  // ── Permission Signals (Replacing directive) ─────────────────────────────
+  readonly canCreatePermission = computed(() =>
+    this.rbacService.hasPermission(Permission.PRM_CREATE)
+  );
+
+  readonly canEditPermission = computed(() =>
+    this.rbacService.hasPermission(Permission.PRM_UPDATE)
+  );
+
+  readonly canDeletePermission = computed(() =>
+    this.rbacService.hasPermission(Permission.PRM_DELETE)
+  );
+
+  readonly canActivatePermission = computed(() =>
+    this.rbacService.hasPermission(Permission.PRM_ACTIVATE)
+  );
+
+  readonly canDeactivatePermission = computed(() =>
+    this.rbacService.hasPermission(Permission.PRM_DEACTIVATE)
+  );
+
+  readonly hasRowActionPermissions = computed(() => {
     return (
-      this.rbacService.hasPermission(Permission.PERMISSION_EDIT) ||
-      this.rbacService.hasPermission(Permission.PERMISSION_DELETE) ||
-      this.rbacService.hasPermission(Permission.PERMISSION_ACTIVATE) ||
-      this.rbacService.hasPermission(Permission.PERMISSION_DEACTIVATE)
+      this.canEditPermission() ||
+      this.canDeletePermission() ||
+      this.canActivatePermission() ||
+      this.canDeactivatePermission()
     );
   });
+
+  // ── Metrics Computed Signals ─────────────────────────────────────────────
+  readonly totalPermissionsCount = computed(() => this.permissions().length);
+  readonly activePermissionsCount = computed(
+    () => this.permissions().filter((p) => p.isActive && !this.isModuleDeleted(p)).length
+  );
+  readonly inactivePermissionsCount = computed(
+    () => this.permissions().filter((p) => !p.isActive && !this.isModuleDeleted(p)).length
+  );
+  readonly modulesCount = computed(() => this.allModules().length);
 
   getModuleName(p: SystemPermission): string {
     if (p.module && typeof p.module === 'object') return p.module.name;
@@ -150,11 +180,6 @@ export class PermissionsPageComponent implements OnInit {
         valB = this.getModuleName(b);
       }
 
-      if (field === 'isDeleted') {
-        valA = this.isModuleDeleted(a) ? 1 : 0;
-        valB = this.isModuleDeleted(b) ? 1 : 0;
-        return (valA < valB ? -1 : valA > valB ? 1 : 0) * (dir === 'asc' ? 1 : -1);
-      }
 
       if (typeof valA === 'string' && typeof valB === 'string') {
         const cmp = valA.localeCompare(valB, undefined, { sensitivity: 'base' });
@@ -234,7 +259,7 @@ export class PermissionsPageComponent implements OnInit {
     this.currentPage.set(page);
   }
 
-  setSort(field: 'code' | 'name' | 'module' | 'isActive' | 'isDeleted'): void {
+  setSort(field: 'code' | 'name' | 'description' | 'module' | 'isActive'): void {
     if (this.sortField() === field) {
       this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
     } else {
@@ -260,6 +285,20 @@ export class PermissionsPageComponent implements OnInit {
 
   onPermissionSaved(): void {
     this.closePermissionModal();
+    this.loadPermissions();
+    this.loadModules();
+  }
+
+  openBulkAddModal(): void {
+    this.isBulkModalOpen.set(true);
+  }
+
+  closeBulkModal(): void {
+    this.isBulkModalOpen.set(false);
+  }
+
+  onBulkSaved(_count: number): void {
+    this.closeBulkModal();
     this.loadPermissions();
     this.loadModules();
   }

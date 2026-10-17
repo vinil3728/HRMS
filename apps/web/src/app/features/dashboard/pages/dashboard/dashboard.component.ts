@@ -286,7 +286,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   loadDashboardData(): void {
-    if (this.rbacService.hasPermission(Permission.HOLIDAY_VIEW)) {
+    if (this.rbacService.hasPermission(Permission.HLD_VIEW)) {
       this.holidayService
         .getUpcomingHolidays(4)
         .pipe(catchError(() => of([])))

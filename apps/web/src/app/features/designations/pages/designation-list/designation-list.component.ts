@@ -304,20 +304,21 @@ export class DesignationListComponent implements OnInit {
   }
 
   toggleStatus(desig: Designation): void {
+    const isDeactivating = desig.isActive;
+    const confirmMsg = isDeactivating
+      ? `Are you sure you want to deactivate designation "${desig.name}"?\n\nThis will automatically deactivate active employees assigned to this designation. If no other active designations remain in its department, the department will also be deactivated.`
+      : `Are you sure you want to activate designation "${desig.name}"?\n\nThis will ensure its parent department and branch are also activated.`;
+
+    if (!window.confirm(confirmMsg)) return;
+
     this.designationService
       .toggleStatus(desig.id, desig.isActive)
       .subscribe({
-        next: (updatedDesig) => {
-          const current = this.designations();
-          const index = current.findIndex((d) => d.id === updatedDesig.id);
-          if (index >= 0) {
-            const updated = [...current];
-            updated[index] = {
-              ...current[index],
-              isActive: updatedDesig.isActive,
-            };
-            this.designations.set(updated);
-          }
+        next: () => {
+          this.loadDesignations();
+        },
+        error: (err: any) => {
+          alert(err?.error?.message || err.message || 'Failed to toggle designation status');
         },
       });
   }

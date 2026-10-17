@@ -1,8 +1,10 @@
 import {
+    BadRequestException,
     ConflictException,
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
+import { EmployeeStatus } from '../enums/employee-status.enum';
 
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -62,8 +64,14 @@ export class EmployeeService {
             );
 
         if (!department.isActive) {
-            throw new NotFoundException(
-                'Department not found or inactive',
+            throw new BadRequestException(
+                'Cannot assign an employee to an inactive department',
+            );
+        }
+
+        if (department.branch && !department.branch.isActive) {
+            throw new BadRequestException(
+                'Cannot assign an employee to a department whose parent branch is inactive',
             );
         }
 
@@ -73,8 +81,8 @@ export class EmployeeService {
             );
 
         if (!designation.isActive) {
-            throw new NotFoundException(
-                'Designation not found or inactive',
+            throw new BadRequestException(
+                'Cannot assign an employee to an inactive designation',
             );
         }
 
@@ -408,8 +416,14 @@ export class EmployeeService {
                 );
 
             if (!department.isActive) {
-                throw new NotFoundException(
-                    'Department not found or inactive',
+                throw new BadRequestException(
+                    'Cannot assign an employee to an inactive department',
+                );
+            }
+
+            if (department.branch && !department.branch.isActive) {
+                throw new BadRequestException(
+                    'Cannot assign an employee to a department whose parent branch is inactive',
                 );
             }
 
@@ -423,8 +437,8 @@ export class EmployeeService {
                 );
 
             if (!designation.isActive) {
-                throw new NotFoundException(
-                    'Designation not found or inactive',
+                throw new BadRequestException(
+                    'Cannot assign an employee to an inactive designation',
                 );
             }
 
@@ -483,15 +497,43 @@ export class EmployeeService {
         id: string,
         dto: UpdateEmployeeStatusDto,
     ): Promise<Employee> {
-        const employee =
-            await this.findOne(id);
+        const employee = await this.employeeRepository.findOne({
+            where: { id },
+            relations: {
+                department: { branch: true },
+                designation: true,
+            },
+        });
 
-        if (
-            employee.status === dto.status
-        ) {
+        if (!employee) {
+            throw new NotFoundException('Employee not found');
+        }
+
+        if (employee.status === dto.status) {
             throw new ConflictException(
                 `Employee is already ${dto.status}`,
             );
+        }
+
+        // Rule 4: Hierarchy validation when activating an employee
+        if (dto.status === EmployeeStatus.ACTIVE) {
+            if (employee.department && !employee.department.isActive) {
+                throw new BadRequestException(
+                    `Cannot activate employee: Assigned department "${employee.department.name}" is inactive. All parent entities (Branch -> Department -> Designation) must be active.`,
+                );
+            }
+
+            if (employee.designation && !employee.designation.isActive) {
+                throw new BadRequestException(
+                    `Cannot activate employee: Assigned designation "${employee.designation.name}" is inactive. All parent entities (Branch -> Department -> Designation) must be active.`,
+                );
+            }
+
+            if (employee.department?.branch && !employee.department.branch.isActive) {
+                throw new BadRequestException(
+                    `Cannot activate employee: Assigned branch "${employee.department.branch.name}" is inactive. All parent entities (Branch -> Department -> Designation) must be active.`,
+                );
+            }
         }
 
         employee.status = dto.status;

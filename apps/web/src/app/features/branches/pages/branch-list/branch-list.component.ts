@@ -262,20 +262,21 @@ export class BranchListComponent implements OnInit {
   }
 
   toggleStatus(branch: Branch): void {
+    const isDeactivating = branch.isActive;
+    const confirmMsg = isDeactivating
+      ? `Are you sure you want to deactivate branch "${branch.name}"?\n\nThis will automatically deactivate all associated departments, designations, and active employees under this branch.`
+      : `Are you sure you want to activate branch "${branch.name}"?\n\nThis will also activate all associated departments and designations under it.`;
+
+    if (!window.confirm(confirmMsg)) return;
+
     this.branchService
       .toggleStatus(branch.id, branch.isActive)
       .subscribe({
-        next: (updatedBranch) => {
-          const current = this.branches();
-          const index = current.findIndex((b) => b.id === updatedBranch.id);
-          if (index >= 0) {
-            const updated = [...current];
-            updated[index] = {
-              ...current[index],
-              isActive: updatedBranch.isActive,
-            };
-            this.branches.set(updated);
-          }
+        next: () => {
+          this.loadBranches();
+        },
+        error: (err: any) => {
+          alert(err?.error?.message || err.message || 'Failed to toggle branch status');
         },
       });
   }

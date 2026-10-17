@@ -75,6 +75,8 @@ export class EmployeeFormModalComponent implements OnInit {
   readonly statusOptions: SelectOption[] = [
     { label: 'Active', value: EmployeeStatus.ACTIVE },
     { label: 'Inactive', value: EmployeeStatus.INACTIVE },
+    { label: 'Resigned', value: EmployeeStatus.RESIGNED },
+    { label: 'Terminated', value: EmployeeStatus.TERMINATED },
   ];
 
   readonly managerOptions = computed<SelectOption[]>(() => [

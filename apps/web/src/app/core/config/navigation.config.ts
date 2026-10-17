@@ -27,7 +27,7 @@ export const ALL_SERVICES: ServiceItem[] = [
   { label: 'Dashboard',              description: 'Overview & analytics',             route: '/dashboard',      icon: 'home',        color: '#6366f1' },
   { label: 'My Profile',             description: 'Personal profile, KYC & documents', route: '/my-profile',     icon: 'id-card',     color: '#3b82f6' },
   { label: 'Directory',              description: 'Coworker lookup & team directory',  route: '/directory',      icon: 'users',       color: '#0284c7', permission: Permission.EMPLOYEE_DIRECTORY_VIEW },
-  { label: 'Employees',              description: 'Manage people & profiles',         route: '/employees',      icon: 'users',       color: '#0ea5e9', permission: Permission.EMPLOYEE_VIEWS },
+  { label: 'Employees',              description: 'Manage people & profiles',         route: '/employees',      icon: 'users',       color: '#0ea5e9', permission: Permission.EMPLOYEE_VIEW },
   { label: 'Branches',               description: 'Branch offices & locations',        route: '/branches',       icon: 'map-pin',     color: '#0284c7', permission: Permission.BRN_VIEW },
   { label: 'Departments',            description: 'Org structure & departments',      route: '/departments',    icon: 'building',    color: '#f59e0b', permission: Permission.DPT_VIEW },
   { label: 'Designations',           description: 'Job titles & designations',        route: '/designations',   icon: 'id-card',     color: '#8b5cf6', permission: Permission.DSG_VIEW },

@@ -272,7 +272,7 @@
                           <app-icon name="x" [size]="15"></app-icon>
                           <span>Deactivate</span>
                         </button>
-                      } @else {
+                      } @else if (emp.status === EmployeeStatus.INACTIVE) {
                         <button
                           *appHasPermission="Permission.EMPLOYEE_STATUS_UPDATE"
                           type="button"

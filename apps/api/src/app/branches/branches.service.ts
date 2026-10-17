@@ -7,6 +7,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Branch } from './entities/branch.entity';
+import { Department } from '../departments/entities/department.entity';
+import { Designation } from '../designations/entities/designation.entity';
+import { Employee } from '../employees/entities/employee.entity';
+import { EmployeeStatus } from '../employees/enums/employee-status.enum';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 
@@ -15,6 +19,12 @@ export class BranchesService {
   constructor(
     @InjectRepository(Branch)
     private readonly branchRepository: Repository<Branch>,
+    @InjectRepository(Department)
+    private readonly departmentRepository: Repository<Department>,
+    @InjectRepository(Designation)
+    private readonly designationRepository: Repository<Designation>,
+    @InjectRepository(Employee)
+    private readonly employeeRepository: Repository<Employee>,
   ) {}
 
   async create(dto: CreateBranchDto): Promise<Branch> {
@@ -95,7 +105,66 @@ export class BranchesService {
   async toggleStatus(id: string, isActive: boolean): Promise<Branch> {
     const branch = await this.findOne(id);
     branch.isActive = isActive;
-    return this.branchRepository.save(branch);
+    await this.branchRepository.save(branch);
+
+    // Find all departments belonging to this branch
+    const departments = await this.departmentRepository.find({
+      where: { branchId: id },
+    });
+
+    if (departments.length > 0) {
+      const deptIds = departments.map((d) => d.id);
+
+      if (!isActive) {
+        // ── 1. DEACTIVATE BRANCH HIERARCHY ──────────────────────────────
+        // Deactivate all associated departments
+        await this.departmentRepository
+          .createQueryBuilder()
+          .update(Department)
+          .set({ isActive: false })
+          .where('branchId = :id', { id })
+          .execute();
+
+        // Deactivate all associated designations under those departments
+        await this.designationRepository
+          .createQueryBuilder()
+          .update(Designation)
+          .set({ isActive: false })
+          .where('departmentId IN (:...deptIds)', { deptIds })
+          .execute();
+
+        // Deactivate active employees under this branch (preserve resigned/terminated/inactive)
+        await this.employeeRepository
+          .createQueryBuilder()
+          .update(Employee)
+          .set({ status: EmployeeStatus.INACTIVE })
+          .where('department_id IN (:...deptIds)', { deptIds })
+          .andWhere('status = :activeStatus', { activeStatus: EmployeeStatus.ACTIVE })
+          .execute();
+      } else {
+        // ── 2. ACTIVATE BRANCH HIERARCHY ────────────────────────────────
+        // Activate all associated departments
+        await this.departmentRepository
+          .createQueryBuilder()
+          .update(Department)
+          .set({ isActive: true })
+          .where('branchId = :id', { id })
+          .execute();
+
+        // Activate all associated designations under those departments
+        await this.designationRepository
+          .createQueryBuilder()
+          .update(Designation)
+          .set({ isActive: true })
+          .where('departmentId IN (:...deptIds)', { deptIds })
+          .execute();
+
+        // Note: Employees become eligible, but are NOT automatically reactivated
+        // to preserve resigned/terminated and independently deactivated employee statuses.
+      }
+    }
+
+    return this.findOne(id);
   }
 
   async remove(id: string): Promise<{ success: boolean; message: string }> {
@@ -103,11 +172,10 @@ export class BranchesService {
 
     // If departments are assigned, soft deactivate to preserve historical integrity
     if (branch.departments && branch.departments.length > 0) {
-      branch.isActive = false;
-      await this.branchRepository.save(branch);
+      await this.toggleStatus(id, false);
       return {
         success: true,
-        message: 'Branch has subordinate departments; deactivated successfully to preserve organizational structure.',
+        message: 'Branch has subordinate departments/records; deactivated successfully to preserve organizational structure.',
       };
     }
 

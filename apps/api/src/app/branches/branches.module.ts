@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Branch } from './entities/branch.entity';
 import { Department } from '../departments/entities/department.entity';
+import { Designation } from '../designations/entities/designation.entity';
+import { Employee } from '../employees/entities/employee.entity';
 import { BranchesController } from './branches.controller';
 import { BranchesService } from './branches.service';
 
@@ -11,7 +13,7 @@ import { PermissionsModule } from '../permissions/permissions.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Branch, Department]),
+    TypeOrmModule.forFeature([Branch, Department, Designation, Employee]),
     AuthModule,
     PermissionsModule,
   ],

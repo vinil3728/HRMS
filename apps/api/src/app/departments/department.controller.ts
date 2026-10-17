@@ -1,6 +1,7 @@
 import {
     Body,
     Controller,
+    Delete,
     Get,
     Param,
     ParseUUIDPipe,
@@ -69,5 +70,17 @@ export class DepartmentController {
             id,
             dto,
         );
+    }
+
+    @Delete(':id')
+    @Permissions(Permission.DPT_DELETE)
+    remove(
+        @Param(
+            'id',
+            new ParseUUIDPipe(),
+        )
+        id: string,
+    ) {
+        return this.departmentService.remove(id);
     }
 }

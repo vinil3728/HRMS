@@ -1,6 +1,7 @@
 import {
     Body,
     Controller,
+    Delete,
     Get,
     Param,
     ParseUUIDPipe,
@@ -69,5 +70,17 @@ export class DesignationController {
             id,
             dto,
         );
+    }
+
+    @Delete(':id')
+    @Permissions(Permission.DSG_DELETE)
+    remove(
+        @Param(
+            'id',
+            new ParseUUIDPipe(),
+        )
+        id: string,
+    ) {
+        return this.designationService.remove(id);
     }
 }

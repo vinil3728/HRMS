@@ -71,6 +71,8 @@ export class EmployeeListComponent implements OnInit {
     { label: 'All Statuses', value: 'ALL' },
     { label: 'Active', value: 'ACTIVE' },
     { label: 'Inactive', value: 'INACTIVE' },
+    { label: 'Resigned', value: 'RESIGNED' },
+    { label: 'Terminated', value: 'TERMINATED' },
   ];
 
   readonly totalEmployees = signal<number>(0);
@@ -264,6 +266,10 @@ export class EmployeeListComponent implements OnInit {
         return 'Active';
       case EmployeeStatus.INACTIVE:
         return 'Inactive';
+      case EmployeeStatus.RESIGNED:
+        return 'Resigned';
+      case EmployeeStatus.TERMINATED:
+        return 'Terminated';
       default:
         return status;
     }
@@ -337,6 +343,11 @@ export class EmployeeListComponent implements OnInit {
   }
 
   toggleStatus(employee: Employee): void {
+    if (employee.status === EmployeeStatus.RESIGNED || employee.status === EmployeeStatus.TERMINATED) {
+      alert(`Cannot toggle status for ${employee.status.toLowerCase()} employee. Status updates for resigned or terminated employees must be handled through explicit profile management.`);
+      return;
+    }
+
     const newStatus =
       employee.status === EmployeeStatus.ACTIVE
         ? EmployeeStatus.INACTIVE
@@ -347,8 +358,8 @@ export class EmployeeListComponent implements OnInit {
         this.showActionMessage(`Employee status updated to ${newStatus}`);
         this.fetchEmployees();
       },
-      error: (err: Error) => {
-        this.errorMessage.set(err.message || 'Failed to update status');
+      error: (err: any) => {
+        this.errorMessage.set(err?.error?.message || err.message || 'Failed to update status');
       },
     });
   }

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -8,6 +9,9 @@ import { Repository } from 'typeorm';
 
 import { Department } from './entities/department.entity';
 import { Branch } from '../branches/entities/branch.entity';
+import { Designation } from '../designations/entities/designation.entity';
+import { Employee } from '../employees/entities/employee.entity';
+import { EmployeeStatus } from '../employees/enums/employee-status.enum';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 
@@ -18,6 +22,10 @@ export class DepartmentService {
     private readonly departmentRepository: Repository<Department>,
     @InjectRepository(Branch)
     private readonly branchRepository: Repository<Branch>,
+    @InjectRepository(Designation)
+    private readonly designationRepository: Repository<Designation>,
+    @InjectRepository(Employee)
+    private readonly employeeRepository: Repository<Employee>,
   ) {}
 
   async create(dto: CreateDepartmentDto): Promise<Department> {
@@ -40,6 +48,11 @@ export class DepartmentService {
       });
       if (!branch) {
         throw new NotFoundException('Branch not found');
+      }
+      if (!branch.isActive && dto.isActive !== false) {
+        throw new BadRequestException(
+          'Cannot create an active department under an inactive branch. Please activate the branch first.',
+        );
       }
     }
 
@@ -117,8 +130,89 @@ export class DepartmentService {
 
     if (dto.name !== undefined) department.name = dto.name;
     if (dto.code !== undefined) department.code = dto.code;
+
+    const statusChanged = dto.isActive !== undefined && dto.isActive !== department.isActive;
     if (dto.isActive !== undefined) department.isActive = dto.isActive;
 
-    return this.departmentRepository.save(department);
+    await this.departmentRepository.save(department);
+
+    if (statusChanged) {
+      if (!department.isActive) {
+        // ── 1. DEACTIVATE DEPARTMENT HIERARCHY ──────────────────────────
+        // Deactivate all designations under this department
+        await this.designationRepository
+          .createQueryBuilder()
+          .update(Designation)
+          .set({ isActive: false })
+          .where('departmentId = :id', { id })
+          .execute();
+
+        // Deactivate active employees in this department (preserve resigned/inactive)
+        await this.employeeRepository
+          .createQueryBuilder()
+          .update(Employee)
+          .set({ status: EmployeeStatus.INACTIVE })
+          .where('department_id = :id', { id })
+          .andWhere('status = :activeStatus', { activeStatus: EmployeeStatus.ACTIVE })
+          .execute();
+
+        // Rule 8: If all departments in the branch are now deactivated, deactivate branch
+        if (department.branchId) {
+          const activeDeptsInBranch = await this.departmentRepository.count({
+            where: {
+              branchId: department.branchId,
+              isActive: true,
+            },
+          });
+          if (activeDeptsInBranch === 0) {
+            await this.branchRepository.update(department.branchId, { isActive: false });
+          }
+        }
+      } else {
+        // ── 2. ACTIVATE DEPARTMENT HIERARCHY ────────────────────────────
+        // Rule 2 & 9: Ensure parent branch is active (activate parent branch if inactive)
+        if (department.branchId) {
+          const branch = await this.branchRepository.findOne({
+            where: { id: department.branchId },
+          });
+          if (branch && !branch.isActive) {
+            branch.isActive = true;
+            await this.branchRepository.save(branch);
+          }
+        }
+
+        // Activate all associated designations under this department
+        await this.designationRepository
+          .createQueryBuilder()
+          .update(Designation)
+          .set({ isActive: true })
+          .where('departmentId = :id', { id })
+          .execute();
+      }
+    }
+
+    return this.findOne(id);
+  }
+
+  async remove(id: string): Promise<{ success: boolean; message: string }> {
+    const department = await this.findOne(id);
+
+    const designationsCount = await this.designationRepository.count({
+      where: { departmentId: id },
+    });
+    const employeesCount = await this.employeeRepository.count({
+      where: { department: { id } },
+    });
+
+    if (designationsCount > 0 || employeesCount > 0) {
+      await this.update(id, { isActive: false });
+      return {
+        success: true,
+        message: 'Department has subordinate designations/records; deactivated successfully to preserve organizational structure.',
+      };
+    }
+
+    await this.departmentRepository.remove(department);
+    return { success: true, message: 'Department removed successfully.' };
   }
 }

@@ -1,6 +1,8 @@
 export enum EmployeeStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
+  RESIGNED = 'RESIGNED',
+  TERMINATED = 'TERMINATED',
 }
 
 export interface DepartmentRef {

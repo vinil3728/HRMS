@@ -301,17 +301,21 @@ export class DepartmentListComponent implements OnInit {
   }
 
   toggleStatus(dept: Department): void {
+    const isDeactivating = dept.isActive;
+    const confirmMsg = isDeactivating
+      ? `Are you sure you want to deactivate department "${dept.name}"?\n\nThis will automatically deactivate all associated designations and active employees under it. If this is the last active department in its branch, the branch will also be deactivated.`
+      : `Are you sure you want to activate department "${dept.name}"?\n\nThis will ensure its parent branch is activated and will also activate its associated designations.`;
+
+    if (!window.confirm(confirmMsg)) return;
+
     this.departmentService
       .toggleStatus(dept.id, dept.isActive)
       .subscribe({
-        next: (updatedDept) => {
-          const current = this.departments();
-          const index = current.findIndex((d) => d.id === updatedDept.id);
-          if (index >= 0) {
-            const updated = [...current];
-            updated[index] = updatedDept;
-            this.departments.set(updated);
-          }
+        next: () => {
+          this.loadDepartments();
+        },
+        error: (err: any) => {
+          alert(err?.error?.message || err.message || 'Failed to toggle department status');
         },
       });
   }

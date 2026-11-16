@@ -1,4 +1,4 @@
-# TreasureX HRMS (Human Resource Management System)
+# HRMS (Human Resource Management System)
 
 A modern, enterprise-grade Human Resource Management System built on an **Nx Monorepo** architecture powered by **NestJS** on the backend and **Angular 19+** on the frontend with PostgreSQL and TypeORM.
 
